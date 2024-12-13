@@ -1,0 +1,85 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&family=Roboto:wght@400;500&display=swap');
+
+@layer base {
+  :root {
+    --background: 220 13% 97%;
+    --foreground: 210 15% 9%;
+    --primary: 210 77% 26%;
+    --secondary: 210 33% 86%;
+    --accent: 210 60% 46%;
+  }
+
+  body {
+    @apply bg-[#F3F4F6] text-[#1B262C] antialiased text-[17px];
+    font-family: 'Roboto', sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Montserrat', sans-serif;
+    @apply font-bold text-[#1B262C];
+  }
+
+  .subtext {
+    @apply text-sm text-gray-600;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply rounded-md px-6 py-3 font-semibold transition-all duration-200 hover:scale-105;
+  }
+
+  .btn-primary {
+    @apply bg-[#0F4C75] text-[#F8F9FA] hover:bg-[#0D3D5F];
+  }
+
+  .card {
+    @apply bg-white rounded-lg shadow-[0_4px_8px_rgba(0,0,0,0.1)] p-4 opacity-0 animate-fade-in hover:scale-105 transition-transform duration-250;
+  }
+
+  .progress-bar {
+    @apply rounded-full bg-gradient-to-r from-[#3282B8] to-[#0F4C75];
+  }
+
+  .tooltip {
+    @apply invisible opacity-0 transition-all duration-200 group-hover:visible group-hover:opacity-100;
+  }
+
+  .section {
+    @apply opacity-0 animate-fade-in mb-6;
+  }
+  
+  .testimonial-slide {
+    @apply opacity-0 transition-opacity duration-500;
+  }
+  
+  .testimonial-slide.active {
+    @apply opacity-100;
+  }
+
+  .badge {
+    @apply px-4 py-1.5 rounded-[20px] text-sm font-medium transition-colors duration-200;
+  }
+  
+  .section-gradient {
+    @apply bg-gradient-to-b from-[#edf2fb] to-[#e2eafc];
+  }
+}
+
+@layer utilities {
+  .container-padding {
+    @apply px-6 sm:px-8 lg:px-12 py-10;
+  }
+
+  .responsive-text {
+    @apply text-[85%] sm:text-[90%] md:text-100%;
+  }
+  
+  .section-spacing {
+    @apply py-10;
+  }
+}

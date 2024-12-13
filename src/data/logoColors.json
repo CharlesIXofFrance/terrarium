@@ -1,0 +1,96 @@
+{
+  "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Adyen_Corporate_Logo.svg/2560px-Adyen_Corporate_Logo.svg.png": {
+    "jobId": "2",
+    "companyName": "Adyen",
+    "logoUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Adyen_Corporate_Logo.svg/2560px-Adyen_Corporate_Logo.svg.png",
+    "dominantColor": "#34b454",
+    "palette": [
+      "#34b454",
+      "#2cac5c",
+      "#98e1aa",
+      "#227637",
+      "#1f7941"
+    ],
+    "contrast": {
+      "light": 2.691433045330734,
+      "dark": 7.802534800719681
+    },
+    "timestamp": "2024-12-09T13:23:56.952Z"
+  },
+  "https://upload.wikimedia.org/wikipedia/commons/thumb/4/49/ING_Group_N.V._Logo.svg/1280px-ING_Group_N.V._Logo.svg.png": {
+    "jobId": "3",
+    "companyName": "ING Tech",
+    "logoUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/49/ING_Group_N.V._Logo.svg/1280px-ING_Group_N.V._Logo.svg.png",
+    "dominantColor": "#fc6404",
+    "palette": [
+      "#fc6404",
+      "#0b1c5c",
+      "#fcb47c",
+      "#973b01",
+      "#102988",
+      "#954303"
+    ],
+    "contrast": {
+      "light": 3.0156334194882386,
+      "dark": 6.9637111275825285
+    },
+    "timestamp": "2024-12-09T13:23:58.035Z"
+  },
+  "https://play-lh.googleusercontent.com/qI_TUIRUO7VeW3x-Cf4u6tP3fIOLyRjstgNtO4fuJ64RzlbV12HnZ7p96oOrsukRLSw": {
+    "jobId": "6",
+    "companyName": "ABN AMRO",
+    "logoUrl": "https://play-lh.googleusercontent.com/qI_TUIRUO7VeW3x-Cf4u6tP3fIOLyRjstgNtO4fuJ64RzlbV12HnZ7p96oOrsukRLSw",
+    "dominantColor": "#fcbc17",
+    "palette": [
+      "#fcbc17",
+      "#049e94",
+      "#fcd04c",
+      "#976d01",
+      "#03958b",
+      "#eaf3e9"
+    ],
+    "contrast": {
+      "light": 1.701128058958849,
+      "dark": 12.344749643864406
+    },
+    "timestamp": "2024-12-09T13:23:59.355Z"
+  },
+  "https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/Booking.com_logo.svg/2560px-Booking.com_logo.svg.png": {
+    "jobId": "7",
+    "companyName": "Booking.com Financial Services",
+    "logoUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/Booking.com_logo.svg/2560px-Booking.com_logo.svg.png",
+    "dominantColor": "#3cb4e4",
+    "palette": [
+      "#3cb4e4",
+      "#243c7c",
+      "#4b9cdc",
+      "#126586",
+      "#223976",
+      "#185280"
+    ],
+    "contrast": {
+      "light": 2.3753177878632625,
+      "dark": 8.84092229987076
+    },
+    "timestamp": "2024-12-09T13:24:00.493Z"
+  },
+  "https://upload.wikimedia.org/wikipedia/en/thumb/5/54/Rabobank_logo.svg/1200px-Rabobank_logo.svg.png": {
+    "jobId": "8",
+    "companyName": "Rabobank",
+    "logoUrl": "https://upload.wikimedia.org/wikipedia/en/thumb/5/54/Rabobank_logo.svg/1200px-Rabobank_logo.svg.png",
+    "dominantColor": "#f36414",
+    "palette": [
+      "#f36414",
+      "#2c3493",
+      "#fcbe52",
+      "#a87c5f",
+      "#3f3671",
+      "#969cc4"
+    ],
+    "contrast": {
+      "light": 3.1607906656986415,
+      "dark": 6.643907243809292
+    },
+    "timestamp": "2024-12-09T13:24:01.661Z"
+  }
+}

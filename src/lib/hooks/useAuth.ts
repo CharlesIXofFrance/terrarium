@@ -2,8 +2,9 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { useAtom } from 'jotai';
 import { userAtom, hasCompletedOnboardingAtom } from '../auth';
-import { login, logout, register } from '../api/auth';
+import { authService } from '../../services/auth';
 import type { LoginCredentials, RegisterData } from '../types/auth';
+import { AuthError } from '@supabase/supabase-js';
 
 const USER_QUERY_KEY = ['auth', 'user'];
 
@@ -14,22 +15,20 @@ export function useAuth() {
 
   const { isLoading: isCheckingAuth } = useQuery({
     queryKey: USER_QUERY_KEY,
-    queryFn: () => {
-      const storedUser = localStorage.getItem('user');
-      return storedUser ? JSON.parse(storedUser) : null;
-    },
+    queryFn: authService.getCurrentUser,
     initialData: user,
-    staleTime: Infinity, // Only refetch on explicit invalidation
-    cacheTime: Infinity,
   });
 
   const loginMutation = useMutation({
-    mutationFn: login,
-    onSuccess: (user) => {
-      setUser(user);
-      localStorage.setItem('user', JSON.stringify(user));
+    mutationFn: authService.login,
+    onSuccess: ({ user, needsEmailVerification }) => {
+      if (needsEmailVerification) {
+        // Don't set user or redirect if email needs verification
+        return;
+      }
       
-      if (user.role === 'admin') {
+      setUser(user);
+      if (user?.role === 'admin') {
         navigate(hasCompletedOnboarding ? '/c/default' : '/onboarding');
       } else {
         navigate('/m/women-in-fintech');
@@ -38,20 +37,38 @@ export function useAuth() {
   });
 
   const registerMutation = useMutation({
-    mutationFn: register,
-    onSuccess: (user) => {
-      setUser(user);
-      localStorage.setItem('user', JSON.stringify(user));
-      navigate('/onboarding');
+    mutationFn: authService.register,
+    onSuccess: ({ user, needsEmailVerification }) => {
+      if (needsEmailVerification) {
+        // Don't set user or redirect if email needs verification
+        return;
+      }
+      
+      if (user) {
+        setUser(user);
+        navigate('/onboarding');
+      }
+    },
+    onError: (error) => {
+      console.error('Registration error:', error);
+      if (error instanceof AuthError) {
+        switch (error.message) {
+          case 'Email rate limit exceeded':
+            return 'Too many attempts. Please try again later.';
+          case 'User already registered':
+            return 'This email is already registered.';
+          default:
+            return error.message;
+        }
+      }
+      return 'An unexpected error occurred. Please try again.';
     },
   });
 
   const logoutMutation = useMutation({
-    mutationFn: logout,
+    mutationFn: authService.logout,
     onSuccess: () => {
       setUser(null);
-      localStorage.removeItem('user');
-      localStorage.removeItem('onboarding_completed');
       navigate('/login');
     },
   });
@@ -59,12 +76,13 @@ export function useAuth() {
   return {
     user,
     isCheckingAuth,
+    isLoggingIn: loginMutation.isPending,
+    isRegistering: registerMutation.isPending,
+    isLoggingOut: logoutMutation.isPending,
+    loginError: loginMutation.error?.message,
+    registerError: registerMutation.error instanceof Error ? registerMutation.error.message : 'Registration failed',
     login: loginMutation.mutate,
     register: registerMutation.mutate,
     logout: logoutMutation.mutate,
-    isLoggingIn: loginMutation.isPending,
-    isRegistering: registerMutation.isPending,
-    loginError: loginMutation.error instanceof Error ? loginMutation.error.message : null,
-    registerError: registerMutation.error instanceof Error ? registerMutation.error.message : null,
   };
 }

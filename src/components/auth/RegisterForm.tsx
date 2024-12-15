@@ -1,94 +1,97 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useSetAtom } from 'jotai';
-import { userAtom } from '../../lib/auth';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { useAuth } from '../../lib/hooks/useAuth';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 
+const registerSchema = z.object({
+  email: z.string().email('Invalid email address'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+  name: z.string().min(2, 'Name must be at least 2 characters'),
+});
+
+type RegisterFormData = z.infer<typeof registerSchema>;
+
 export function RegisterForm() {
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    name: '',
+  const { register: registerUser, isRegistering, registerError } = useAuth();
+  const [isConfirmationSent, setIsConfirmationSent] = useState(false);
+  
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<RegisterFormData>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+      name: '',
+    },
   });
-  const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const setUser = useSetAtom(userAtom);
-  const navigate = useNavigate();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setIsLoading(true);
-
+  const onSubmit = async (data: RegisterFormData) => {
     try {
-      // Simulated registration - replace with actual API call
-      const user = {
-        id: crypto.randomUUID(),
-        email: formData.email,
-        name: formData.name,
-        role: 'member' as const,
-        communities: ['default'],
-        createdAt: new Date().toISOString(),
-      };
-
-      setUser(user);
-      localStorage.setItem('user', JSON.stringify(user));
-      navigate('/onboarding');
-    } catch (err) {
-      setError('Registration failed. Please try again.');
-    } finally {
-      setIsLoading(false);
+      await registerUser(data);
+      setIsConfirmationSent(true);
+    } catch (error) {
+      console.error('Registration error:', error);
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData((prev) => ({
-      ...prev,
-      [e.target.name]: e.target.value,
-    }));
-  };
+  if (isConfirmationSent) {
+    return (
+      <div className="text-center space-y-4">
+        <h3 className="text-lg font-semibold text-gray-900">Check your email</h3>
+        <p className="text-gray-600">
+          We've sent you a confirmation email. Please click the link in the email to verify your account.
+        </p>
+        <p className="text-sm text-gray-500">
+          Don't see the email? Check your spam folder.
+        </p>
+      </div>
+    );
+  }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form 
+      onSubmit={handleSubmit(onSubmit)}
+      className="space-y-4"
+    >
       <div>
         <Input
           type="text"
-          id="name"
-          name="name"
-          value={formData.name}
-          onChange={handleChange}
-          placeholder="Full Name"
-          required
+          label="Full Name"
+          {...register('name')}
+          error={errors.name?.message}
         />
       </div>
       <div>
         <Input
           type="email"
-          id="email"
-          name="email"
-          value={formData.email}
-          onChange={handleChange}
-          placeholder="Email"
-          required
+          label="Email"
+          {...register('email')}
+          error={errors.email?.message}
         />
       </div>
       <div>
         <Input
           type="password"
-          id="password"
-          name="password"
-          value={formData.password}
-          onChange={handleChange}
-          placeholder="Password"
-          required
+          label="Password"
+          {...register('password')}
+          error={errors.password?.message}
         />
       </div>
-      {error && <p className="text-red-500 text-sm">{error}</p>}
+      {registerError && (
+        <p className="text-red-500 text-sm" role="alert">
+          {registerError}
+        </p>
+      )}
       <Button
         type="submit"
         className="w-full"
-        isLoading={isLoading}
+        isLoading={isRegistering}
       >
         Create Account
       </Button>

@@ -3,6 +3,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { LandingPage } from './pages/LandingPage';
 import { Login } from './pages/auth/Login';
 import { Register } from './pages/auth/Register';
+import { AuthCallback } from './pages/auth/AuthCallback';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { CommunityLayout } from './components/community/CommunityLayout';
 import { MemberLayout } from './components/member/MemberLayout';
@@ -20,6 +21,7 @@ import { JobDetails } from './pages/member/JobDetails';
 import { Events } from './pages/member/Events';
 import { Feed } from './pages/member/Feed';
 import { MemberProfile } from './pages/member/MemberProfile';
+import { RBACTest } from './pages/RBACTest';
 
 export function App() {
   return (
@@ -30,6 +32,8 @@ export function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/auth/callback" element={<AuthCallback />} />
+          <Route path="/rbac-test" element={<RBACTest />} />
           <Route path="/onboarding" element={<OnboardingFlow />} />
 
           {/* Protected community admin routes */}

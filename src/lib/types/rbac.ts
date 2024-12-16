@@ -1,8 +1,15 @@
-export type Role = 'admin' | 'member' | 'employer';
+export type Role = 'app_admin' | 'community_admin' | 'member' | 'employer';
 
 export interface Permission {
-  action: 'create' | 'read' | 'update' | 'delete';
-  resource: 'jobs' | 'profiles' | 'community' | 'settings' | 'members';
+  action: 'create' | 'read' | 'update' | 'delete' | 'manage';
+  resource:
+    | 'jobs'
+    | 'profiles'
+    | 'community'
+    | 'settings'
+    | 'members'
+    | 'communities'
+    | 'platform';
 }
 
 export interface RolePermissions {
@@ -12,8 +19,13 @@ export interface RolePermissions {
 export const DEFAULT_ROLE = 'member';
 
 export const ROLE_PERMISSIONS: RolePermissions = {
-  admin: [
-    // Full access to everything
+  app_admin: [
+    // Full access to everything including platform management
+    { action: 'manage', resource: 'platform' }, // Special permission for platform-wide settings
+    { action: 'create', resource: 'communities' },
+    { action: 'read', resource: 'communities' },
+    { action: 'update', resource: 'communities' },
+    { action: 'delete', resource: 'communities' },
     { action: 'create', resource: 'jobs' },
     { action: 'read', resource: 'jobs' },
     { action: 'update', resource: 'jobs' },
@@ -22,10 +34,6 @@ export const ROLE_PERMISSIONS: RolePermissions = {
     { action: 'read', resource: 'profiles' },
     { action: 'update', resource: 'profiles' },
     { action: 'delete', resource: 'profiles' },
-    { action: 'create', resource: 'community' },
-    { action: 'read', resource: 'community' },
-    { action: 'update', resource: 'community' },
-    { action: 'delete', resource: 'community' },
     { action: 'create', resource: 'settings' },
     { action: 'read', resource: 'settings' },
     { action: 'update', resource: 'settings' },
@@ -34,6 +42,24 @@ export const ROLE_PERMISSIONS: RolePermissions = {
     { action: 'read', resource: 'members' },
     { action: 'update', resource: 'members' },
     { action: 'delete', resource: 'members' },
+  ],
+  community_admin: [
+    // Full access to their community's resources
+    { action: 'create', resource: 'jobs' },
+    { action: 'read', resource: 'jobs' },
+    { action: 'update', resource: 'jobs' },
+    { action: 'delete', resource: 'jobs' },
+    { action: 'read', resource: 'profiles' },
+    { action: 'update', resource: 'profiles' },
+    { action: 'create', resource: 'community' },
+    { action: 'read', resource: 'community' },
+    { action: 'update', resource: 'community' },
+    { action: 'delete', resource: 'community' },
+    { action: 'read', resource: 'settings' },
+    { action: 'update', resource: 'settings' },
+    { action: 'create', resource: 'members' },
+    { action: 'read', resource: 'members' },
+    { action: 'update', resource: 'members' },
   ],
   employer: [
     // Can manage their own jobs and view profiles

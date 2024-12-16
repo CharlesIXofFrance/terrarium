@@ -1,8 +1,34 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import tsconfigPaths from 'vite-tsconfig-paths';
+import { resolve } from 'path';
 
+// https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react({
+      // Add React Refresh for better development experience
+      babel: {
+        plugins: [
+          ['@babel/plugin-transform-react-jsx', { runtime: 'automatic' }],
+        ],
+      },
+    }),
+    // Support for TypeScript path aliases
+    tsconfigPaths(),
+  ],
+  resolve: {
+    alias: {
+      '@': resolve(__dirname, './src'),
+      '@components': resolve(__dirname, './src/components'),
+      '@features': resolve(__dirname, './src/features'),
+      '@hooks': resolve(__dirname, './src/hooks'),
+      '@utils': resolve(__dirname, './src/utils'),
+      '@services': resolve(__dirname, './src/services'),
+      '@stores': resolve(__dirname, './src/stores'),
+      '@types': resolve(__dirname, './src/types'),
+    },
+  },
   build: {
     rollupOptions: {
       output: {
@@ -27,6 +53,14 @@ export default defineConfig({
     },
     reportCompressedSize: false,
     chunkSizeWarningLimit: 1000,
+    // Enable source maps for production builds
+    sourcemap: true,
+    // Improve build performance
+    target: 'esnext',
+    // Enable CSS code splitting
+    cssCodeSplit: true,
+    // Enable asset optimization
+    assetsInlineLimit: 4096,
   },
   optimizeDeps: {
     include: [
@@ -35,12 +69,41 @@ export default defineConfig({
       'react-router-dom',
       '@tanstack/react-query',
       'jotai',
-      'lucide-react'
-    ]
+      'lucide-react',
+      '@radix-ui/react-tabs',
+      'react-hook-form',
+      '@hookform/resolvers/zod',
+      'zod',
+      'chart.js',
+      'react-chartjs-2',
+    ],
+    // Enable dependency optimization for development
+    esbuildOptions: {
+      target: 'esnext',
+    },
   },
   server: {
     watch: {
-      usePolling: true
-    }
-  }
+      usePolling: true,
+    },
+    // Enable HMR
+    hmr: {
+      overlay: true,
+    },
+    // Configure port
+    port: 3000,
+    // Enable CORS
+    cors: true,
+  },
+  // Enable test configuration
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: './src/test/setup.ts',
+    css: true,
+    coverage: {
+      reporter: ['text', 'json', 'html'],
+      exclude: ['node_modules/', 'src/test/'],
+    },
+  },
 });

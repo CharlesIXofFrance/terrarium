@@ -1,8 +1,8 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&family=Roboto:wght@400;500&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&family=Roboto:wght@400;500&display=swap');
 
 @layer base {
   :root {
@@ -18,7 +18,12 @@
     font-family: 'Roboto', sans-serif;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-family: 'Montserrat', sans-serif;
     @apply font-bold text-[#1B262C];
   }
@@ -52,11 +57,11 @@
   .section {
     @apply opacity-0 animate-fade-in mb-6;
   }
-  
+
   .testimonial-slide {
     @apply opacity-0 transition-opacity duration-500;
   }
-  
+
   .testimonial-slide.active {
     @apply opacity-100;
   }
@@ -64,7 +69,7 @@
   .badge {
     @apply px-4 py-1.5 rounded-[20px] text-sm font-medium transition-colors duration-200;
   }
-  
+
   .section-gradient {
     @apply bg-gradient-to-b from-[#edf2fb] to-[#e2eafc];
   }
@@ -78,7 +83,7 @@
   .responsive-text {
     @apply text-[85%] sm:text-[90%] md:text-100%;
   }
-  
+
   .section-spacing {
     @apply py-10;
   }

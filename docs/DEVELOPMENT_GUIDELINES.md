@@ -209,7 +209,104 @@ describe('Job API', () => {
 });
 ```
 
-## 7. Documentation Requirements
+## 7. Role-Based Access Control (RBAC)
+
+### User Roles
+
+```typescript
+// Role definitions
+enum UserRole {
+  APP_ADMIN = 'app_admin', // Global application administrator
+  COMMUNITY_ADMIN = 'community_admin', // Administrator of specific communities
+  MEMBER = 'member', // Regular community member
+  EMPLOYER = 'employer', // Employer with job posting privileges
+}
+```
+
+### Database Structure
+
+```sql
+-- Core tables
+profiles          -- User profiles with role information
+communities       -- Community information
+community_members -- User-community relationships
+community_admins  -- Community administrator assignments
+
+-- Row-Level Security (RLS)
+- App admins: Full access to all tables
+- Community admins:
+  * Read access to all profiles
+  * Write access to community members' profiles
+  * Full access to their communities
+- Members:
+  * Read access to all profiles
+  * Write access to own profile
+```
+
+### Security Functions
+
+```sql
+-- Role check functions
+auth.has_role(role)              -- Check if user has specific role
+auth.is_app_admin()              -- Check if user is app admin
+auth.is_community_admin(comm_id) -- Check if user is admin of specific community
+```
+
+## 8. Environment Setup
+
+### Required Environment Variables
+
+```bash
+# Supabase Configuration
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_anon_key
+
+# Other configurations as needed
+```
+
+### Development Setup Steps
+
+1. Clone repository:
+
+   ```bash
+   git clone https://github.com/CharlesIXofFrance/terrarium.git
+   cd terrarium
+   ```
+
+2. Install dependencies:
+
+   ```bash
+   npm install
+   ```
+
+3. Set up Supabase:
+
+   ```bash
+   # Install Supabase CLI
+   brew install supabase/tap/supabase
+
+   # Link your project
+   npx supabase link --project-ref your_project_ref
+
+   # Apply migrations
+   npx supabase db push
+   ```
+
+4. Create `.env.local` with required environment variables
+
+5. Start development server:
+   ```bash
+   npm run dev
+   ```
+
+### Database Migrations
+
+- Location: `supabase/migrations/`
+- Format: `YYYYMMDD_description.sql`
+- Apply: `npx supabase db push`
+- Reset: `npx supabase db reset`
+
+## 9. Documentation Requirements
 
 ### Code Documentation
 
@@ -246,7 +343,7 @@ class JobService {
  */
 ```
 
-## 8. Performance Guidelines
+## 10. Performance Guidelines
 
 ### Frontend
 
@@ -262,7 +359,7 @@ class JobService {
 3. Optimize API responses
 4. Handle N+1 query problems
 
-## 9. Error Handling
+## 11. Error Handling
 
 ### Frontend Error Boundaries
 
@@ -308,7 +405,7 @@ const errorHandler = (
 };
 ```
 
-## 10. Deployment and CI/CD
+## 12. Deployment and CI/CD
 
 ### Build Process
 
@@ -325,7 +422,7 @@ const errorHandler = (
 4. SSL certificates
 5. Monitoring setup
 
-## 11. Monitoring and Logging
+## 13. Monitoring and Logging
 
 ### Application Monitoring
 
@@ -359,7 +456,7 @@ const trackAPIMetrics = (req: Request, res: Response, next: NextFunction) => {
 };
 ```
 
-## 12. Code Review Guidelines
+## 14. Code Review Guidelines
 
 ### Pull Request Template
 

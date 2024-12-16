@@ -26,44 +26,110 @@ Terrarium is a modern platform for building and managing professional communitie
 - **Talent Access**: Connect with verified talent pools
 - **Brand Presence**: Maintain company visibility within communities
 
-## 🚀 Getting Started
-
-1. Install dependencies:
-
-```bash
-npm install
-```
-
-2. Start the development server:
-
-```bash
-npm run dev
-```
-
-3. Visit `http://localhost:5173` in your browser
-
 ## 🛠 Tech Stack
 
-- React 18 with TypeScript
-- Vite for build tooling
-- React Router for navigation
-- React Query for data management
-- Jotai for state management
-- Tailwind CSS for styling
-- Chart.js for analytics
-- Radix UI for accessible components
+- **Frontend**: React 18 with TypeScript
+- **Build Tool**: Vite
+- **Styling**: TailwindCSS
+- **State Management**: Jotai
+- **Backend/Auth**: Supabase
+- **Form Handling**: React Hook Form + Zod
+- **Routing**: React Router
+- **Analytics**: Chart.js
+- **UI Components**: Radix UI
+
+## 🚀 Getting Started
+
+1. Clone the repository:
+
+   ```bash
+   git clone https://github.com/CharlesIXofFrance/terrarium.git
+   cd terrarium
+   ```
+
+2. Install dependencies:
+
+   ```bash
+   npm install
+   ```
+
+3. Set up Supabase:
+
+   ```bash
+   # Install Supabase CLI
+   brew install supabase/tap/supabase
+
+   # Link your project
+   npx supabase link --project-ref your_project_ref
+
+   # Apply migrations
+   npx supabase db push
+   ```
+
+4. Create `.env.local` with the following variables:
+
+   ```bash
+   VITE_SUPABASE_URL=your_supabase_url
+   VITE_SUPABASE_ANON_KEY=your_anon_key
+   ```
+
+5. Start the development server:
+
+   ```bash
+   npm run dev
+   ```
+
+6. Visit `http://localhost:5173` in your browser
+
+## 📁 Project Structure
+
+```
+terrarium/
+├── src/
+│   ├── components/     # React components
+│   │   ├── common/    # Reusable UI components
+│   │   ├── features/  # Feature-specific components
+│   │   └── layout/    # Layout components
+│   ├── lib/           # Utilities and types
+│   │   ├── types/    # TypeScript interfaces
+│   │   └── utils/    # Helper functions
+│   ├── pages/         # Page components
+│   └── test/          # Test files
+├── supabase/
+│   └── migrations/    # Database migrations
+└── docs/             # Project documentation
+```
 
 ## 📚 Documentation
 
-- [API Documentation](./docs/API.md)
-- [Architecture Overview](./docs/ARCHITECTURE.md)
-- [Requirements](./docs/REQUIREMENTS.md)
-- [Changelog](./docs/CHANGELOG.md)
+- [Architecture Overview](docs/ARCHITECTURE.md)
+- [Development Guidelines](docs/DEVELOPMENT_GUIDELINES.md)
+- [Database Migration Plan](docs/DATABASE_MIGRATION_PLAN.md)
+- [Features](docs/FEATURES.md)
+- [Implementation Status](docs/IMPLEMENTATION_STATUS.md)
+
+## 🔒 Security Features
+
+- **Role-Based Access Control (RBAC)**
+
+  - App Administrators: Global system management
+  - Community Administrators: Community-specific management
+  - Members: Basic platform access
+  - Employers: Job posting and talent access
+
+- **Row-Level Security (RLS)**
+  - Secure multi-tenant data isolation
+  - Fine-grained access control
+  - Automated policy enforcement
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please read our contributing guidelines for details on our code of conduct and the process for submitting pull requests.
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'feat: add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

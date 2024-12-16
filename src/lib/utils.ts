@@ -17,3 +17,13 @@ export function formatCurrency(amount: number, currency = 'USD') {
     maximumFractionDigits: 0,
   }).format(amount);
 }
+
+export function logError(message: string, error: unknown) {
+  console.error(message, error);
+  if (error instanceof Error) {
+    console.error('Error details:', {
+      message: error.message,
+      stack: error.stack,
+    });
+  }
+}

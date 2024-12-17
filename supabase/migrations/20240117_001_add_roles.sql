@@ -30,23 +30,8 @@ CREATE TABLE IF NOT EXISTS community_admins (
     UNIQUE(community_id, admin_id)
 );
 
--- Temporarily rename the old role column
-ALTER TABLE profiles RENAME COLUMN role TO role_old;
-
--- Add new role column
+-- Add role column to profiles
 ALTER TABLE profiles ADD COLUMN role user_role NOT NULL DEFAULT 'member';
-
--- Convert existing roles
-UPDATE profiles 
-SET role = CASE 
-    WHEN role_old = 'admin' THEN 'app_admin'::user_role
-    WHEN role_old = 'member' THEN 'member'::user_role
-    WHEN role_old = 'employer' THEN 'employer'::user_role
-    ELSE 'member'::user_role
-END;
-
--- Drop old column
-ALTER TABLE profiles DROP COLUMN role_old;
 
 -- Create index on role column
 CREATE INDEX idx_profiles_role ON profiles(role);

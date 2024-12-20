@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { JobCard } from './JobCard';
 import { scrollToTop } from '../../lib/utils/scroll';
 import { useJobs } from '../../lib/hooks/useJobs';
@@ -14,19 +14,17 @@ export function RelatedJobs({ currentJobId = '' }: RelatedJobsProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(true);
-  const { jobs } = useJobs('women-in-fintech');
   const navigate = useNavigate();
+  const { communitySlug } = useParams();
+  const { jobs } = useJobs(communitySlug);
 
   // Get related jobs dynamically
-  const relatedJobs = currentJobId ? getRelatedJobs(
-    jobs.find(j => j.id === currentJobId)!,
-    jobs.filter(j => j.id !== currentJobId),
-    3
-  ) : [];
+  const relatedJobs = getRelatedJobs(jobs, currentJobId);
 
   const handleScroll = () => {
     if (scrollContainerRef.current) {
-      const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
+      const { scrollLeft, scrollWidth, clientWidth } =
+        scrollContainerRef.current;
       setShowLeftArrow(scrollLeft > 0);
       setShowRightArrow(scrollLeft < scrollWidth - clientWidth - 10);
     }
@@ -46,14 +44,14 @@ export function RelatedJobs({ currentJobId = '' }: RelatedJobsProps) {
       const scrollAmount = scrollContainerRef.current.clientWidth * 0.8;
       scrollContainerRef.current.scrollBy({
         left: direction === 'left' ? -scrollAmount : scrollAmount,
-        behavior: 'smooth'
+        behavior: 'smooth',
       });
     }
   };
 
   const handleJobClick = (jobId: string) => {
     scrollToTop();
-    navigate(`/m/women-in-fintech/jobs/${jobId}`);
+    navigate(`/m/${communitySlug}/jobs/${jobId}`);
   };
 
   if (relatedJobs.length === 0) return null;
@@ -61,7 +59,7 @@ export function RelatedJobs({ currentJobId = '' }: RelatedJobsProps) {
   return (
     <div className="bg-white rounded-xl p-4 md:p-6">
       <h2 className="text-xl font-semibold mb-4 md:mb-6">Similar Roles</h2>
-      
+
       <div className="relative">
         {showLeftArrow && (
           <button
@@ -78,8 +76,8 @@ export function RelatedJobs({ currentJobId = '' }: RelatedJobsProps) {
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {relatedJobs.map((job) => (
-            <div 
-              key={job.id} 
+            <div
+              key={job.id}
               className="flex-none w-[85vw] md:w-auto"
               onClick={() => handleJobClick(job.id)}
             >

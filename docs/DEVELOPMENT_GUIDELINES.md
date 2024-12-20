@@ -85,62 +85,107 @@ const useUserProfile = (userId: string) => {
 };
 ```
 
-## 3. State Management
+## 3. State Management Patterns
 
-### Data Flow Patterns
-
-1. Use React Query for server state
-2. Use Zustand for client state
-3. Use Context for theme/auth state
+### Authentication State
 
 ```typescript
-// Example Zustand store
-interface CommunityStore {
-  currentCommunity: Community | null;
-  setCommunity: (community: Community) => void;
-}
+// Use Jotai atoms for global state
+import { atom } from 'jotai';
+import type { UserProfile, Community } from '../types';
 
-const useCommunityStore = create<CommunityStore>((set) => ({
-  currentCommunity: null,
-  setCommunity: (community) => set({ currentCommunity: community }),
-}));
+// Define atoms at the top level
+export const userAtom = atom<UserProfile | null>(null);
+export const userCommunityAtom = atom<Community | null>(null);
+
+// Use atoms in components
+function MyComponent() {
+  const [user] = useAtom(userAtom);
+  const [community] = useAtom(userCommunityAtom);
+
+  // Access user and community data
+}
 ```
 
-## 4. API and Data Handling
-
-### API Structure
+### Protected Routes
 
 ```typescript
-// Use repository pattern
-interface JobRepository {
-  findJobs(filters: JobFilters): Promise<Job[]>;
-  createJob(job: CreateJobDTO): Promise<Job>;
-  updateJob(id: string, job: UpdateJobDTO): Promise<Job>;
-}
-
-// Implement proper error handling
-class APIError extends Error {
-  constructor(
-    public statusCode: number,
-    public code: string,
-    message: string
-  ) {
-    super(message);
+// Use the ProtectedRoute component
+<Route
+  path="/c/:slug/*"
+  element={
+    <ProtectedRoute>
+      <CommunityLayout />
+    </ProtectedRoute>
   }
+/>
+
+// Validate community access
+if (!user || user.role !== 'community_admin' || !userCommunity || userCommunity.slug !== slug) {
+  return <Navigate to="/login" replace />;
 }
 ```
 
-### Data Validation
+### Error Handling
 
 ```typescript
-// Use Zod for runtime validation
-const JobSchema = z.object({
-  title: z.string().min(3),
-  description: z.string(),
-  salary: z.number().optional(),
-});
+// Handle missing data gracefully
+const { slug } = useParams();
+if (!slug) {
+  return <div>Invalid community</div>;
+}
 
-type Job = z.infer<typeof JobSchema>;
+// Validate community access
+if (!community) {
+  return <Navigate to="/dashboard" replace />;
+}
+```
+
+## 4. Database Patterns
+
+### Community Data Structure
+
+```sql
+-- communities table
+CREATE TABLE communities (
+  id UUID PRIMARY KEY,
+  name TEXT NOT NULL,
+  description TEXT,
+  owner_id UUID REFERENCES profiles(id),
+  slug TEXT UNIQUE NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- community_settings table
+CREATE TABLE community_settings (
+  community_id UUID REFERENCES communities(id),
+  settings JSONB DEFAULT '{}'::jsonb,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+```
+
+### Row-Level Security
+
+```sql
+-- Enable RLS
+ALTER TABLE communities ENABLE ROW LEVEL SECURITY;
+
+-- Admin access policy
+CREATE POLICY "Community admins can access their communities"
+ON communities
+FOR ALL
+USING (owner_id = auth.uid());
+
+-- Member access policy
+CREATE POLICY "Members can view their communities"
+ON communities
+FOR SELECT
+USING (id IN (
+  SELECT community_id
+  FROM community_members
+  WHERE user_id = auth.uid()
+));
 ```
 
 ## 5. Security Practices
@@ -340,7 +385,6 @@ class JobService {
  * @apiSuccess {Job} job Created job posting
  * @apiError {APIError} 400 Invalid input data
  * @apiError {APIError} 403 Insufficient permissions
- */
 ```
 
 ## 10. Performance Guidelines
@@ -493,3 +537,127 @@ const trackAPIMetrics = (req: Request, res: Response, next: NextFunction) => {
 4. Performance impact
 5. Test coverage
 6. Documentation updated
+
+## File Organization
+
+### Frontend Structure
+
+```
+src/
+├── components/
+│   ├── ui/              # Design-locked UI components
+│   │   ├── atoms/       # Basic UI elements
+│   │   ├── molecules/   # Simple component combinations
+│   │   └── organisms/   # Complex UI components
+│   ├── features/        # Feature-specific components
+│   │   ├── jobs/        # Job-related features
+│   │   ├── members/     # Member-related features
+│   │   └── settings/    # Settings-related features
+│   └── layouts/         # Design-locked layouts
+├── styles/             # Design-locked styles
+│   ├── tailwind/       # Tailwind configuration
+│   └── theme/          # Theme variables
+├── lib/               # Core functionality
+│   ├── api/           # API integration
+│   ├── hooks/         # Custom hooks
+│   ├── stores/        # State management
+│   └── utils/         # Utility functions
+└── types/            # TypeScript types
+    ├── ui/           # UI-related types
+    ├── api/          # API-related types
+    └── domain/       # Domain-specific types
+```
+
+### Implementation Guidelines
+
+1. UI Components (`components/ui/`)
+
+   - Never modify without explicit request
+   - Keep all Tailwind classes
+   - Maintain accessibility features
+   - Document with @preserve-design tag
+
+2. Feature Components (`components/features/`)
+
+   - Can modify logic and data flow
+   - Must preserve existing UI structure
+   - Can add new props for functionality
+   - Cannot modify visual appearance
+
+3. Layout Components (`components/layouts/`)
+
+   - Design-locked like UI components
+   - Can add new routes and navigation
+   - Must maintain existing grid/flex structure
+   - Cannot modify visual hierarchy
+
+4. Core Functionality (`lib/`)
+   - Main focus for backend implementation
+   - Can be modified freely
+   - Should not affect UI components
+   - Must maintain type safety
+
+### Best Practices for Backend Implementation
+
+1. Separation of Concerns
+
+```typescript
+// Good: Separate data fetching
+const useJobs = () => {
+  return useQuery({
+    queryKey: ['jobs'],
+    queryFn: fetchJobs,
+  });
+};
+
+// Good: UI remains unchanged
+function JobList() {
+  const { data: jobs } = useJobs();
+  return (
+    <div className="existing-classes">
+      {jobs?.map(job => (
+        <JobCard key={job.id} job={job} />
+      ))}
+    </div>
+  );
+}
+```
+
+2. State Management
+
+```typescript
+// Good: Backend state management
+const jobsStore = create<JobsStore>((set) => ({
+  jobs: [],
+  setJobs: (jobs) => set({ jobs }),
+}));
+
+// Good: UI connection
+function JobCard({ job }: JobCardProps) {
+  const applyToJob = useJobApplication();
+  return (
+    <ExistingCardComponent
+      job={job}
+      onApply={() => applyToJob.mutate(job.id)}
+    />
+  );
+}
+```
+
+3. Error Handling
+
+```typescript
+// Good: Error boundary wrapper
+const JobListErrorBoundary = () => (
+  <ErrorBoundary fallback={<ExistingErrorUI />}>
+    <JobList />
+  </ErrorBoundary>
+);
+
+// Good: Loading states
+function JobList() {
+  const { isLoading } = useJobs();
+  if (isLoading) return <ExistingLoadingUI />;
+  return <ExistingListComponent />;
+}
+```

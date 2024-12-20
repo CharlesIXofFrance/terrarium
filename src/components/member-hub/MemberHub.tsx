@@ -1,4 +1,6 @@
 import React, { useMemo } from 'react';
+import { useAtom } from 'jotai';
+import { currentCommunityAtom } from '../../lib/stores/community';
 import { ProfileSection } from './ProfileSection';
 import { OpportunitiesSection } from './OpportunitiesSection';
 import { CareerAcademy } from './CareerAcademy';
@@ -11,29 +13,43 @@ interface MemberHubProps {
     role: string;
     profileComplete: number;
     avatar: string;
+    community?: any;
   };
 }
 
 export function MemberHub({ styles, testUser }: MemberHubProps) {
+  const [currentCommunity] = useAtom(currentCommunityAtom);
+
   // Memoize user data to prevent unnecessary re-renders
-  const userData = useMemo(() => ({
-    userName: testUser?.name || 'Clara',
-    profileComplete: testUser?.profileComplete || 70,
-    userAvatar: testUser?.avatar || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&h=120&fit=crop'
-  }), [testUser]);
+  const userData = useMemo(
+    () => ({
+      userName: testUser?.name || 'Clara',
+      profileComplete: testUser?.profileComplete || 70,
+      userAvatar:
+        testUser?.avatar ||
+        'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&h=120&fit=crop',
+      communityName:
+        testUser?.community?.name ||
+        currentCommunity?.name ||
+        'Women in Fintech',
+    }),
+    [testUser, currentCommunity]
+  );
 
   return (
-    <div 
+    <div
       className="min-h-screen"
-      style={{ 
+      style={{
         backgroundColor: '#F8F7FF',
         fontFamily: styles.typography.bodyFont,
-        color: styles.colors.text
+        color: styles.colors.text,
       }}
     >
       <div className="min-h-screen overflow-x-hidden px-2 sm:px-4">
         <div className="max-w-[1400px] mx-auto px-4 py-8">
-          <h1 className="text-2xl md:text-3xl font-bold mb-6 md:mb-8">Hi, {testUser?.name}!</h1>
+          <h1 className="text-2xl md:text-3xl font-bold mb-6 md:mb-8">
+            Welcome to {userData.communityName}, {userData.userName}!
+          </h1>
 
           <div className="grid lg:grid-cols-9 gap-6 lg:gap-8">
             {/* Center Column - Main Content */}

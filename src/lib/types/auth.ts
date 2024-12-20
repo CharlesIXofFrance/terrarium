@@ -9,14 +9,14 @@ export interface LoginCredentials {
 }
 
 export interface RegisterData extends LoginCredentials {
-  name: string;
+  full_name: string;
   role?: Role;
 }
 
 export interface User {
   id: string;
   email: string;
-  name: string;
+  full_name: string;
   role: Role;
   emailVerified: boolean;
   createdAt: string;

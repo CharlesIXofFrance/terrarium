@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useAtom } from 'jotai';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { communitySettingsAtom } from '../stores/settings';
-import { RecruitCRMService } from '../api/recruitcrm';
+import { RecruitCRMService } from '../utils/recruitcrm';
 import type { RecruitCRMSettings } from '../stores/settings';
 
 export function useRecruitCRM(communityId: string) {
@@ -32,7 +32,9 @@ export function useRecruitCRM(communityId: string) {
   const { data: jobTypes, isLoading: isLoadingJobTypes } = useQuery({
     queryKey: ['recruitcrm', 'jobTypes', communityId],
     queryFn: () => service.getJobTypes(),
-    enabled: !!communitySettings.recruitCRM.enabled && !!communitySettings.recruitCRM.apiKey,
+    enabled:
+      !!communitySettings.recruitCRM.enabled &&
+      !!communitySettings.recruitCRM.apiKey,
   });
 
   const syncMutation = useMutation({

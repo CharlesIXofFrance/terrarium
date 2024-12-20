@@ -1,16 +1,23 @@
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { useAtom } from 'jotai';
-import { userAtom, hasCompletedOnboardingAtom } from '../auth';
+import { userAtom, userCommunityAtom } from '../stores/auth';
 import { authService } from '../../services/auth';
 import type { LoginCredentials, RegisterData } from '../types/auth';
 import { AuthError } from '@supabase/supabase-js';
+import { atom } from 'jotai';
+import { supabase } from '../supabase';
+import { useCallback } from 'react';
 
 const USER_QUERY_KEY = ['auth', 'user'];
+const isRegisteringAtom = atom(false);
+const registerErrorAtom = atom('');
 
 export function useAuth() {
   const [user, setUser] = useAtom(userAtom);
-  const [hasCompletedOnboarding] = useAtom(hasCompletedOnboardingAtom);
+  const [userCommunity, setUserCommunity] = useAtom(userCommunityAtom);
+  const [isRegistering, setIsRegistering] = useAtom(isRegisteringAtom);
+  const [registerError, setRegisterError] = useAtom(registerErrorAtom);
   const navigate = useNavigate();
 
   const { isLoading: isCheckingAuth } = useQuery({
@@ -21,47 +28,60 @@ export function useAuth() {
 
   const loginMutation = useMutation({
     mutationFn: authService.login,
-    onSuccess: ({ user, needsEmailVerification }) => {
+    onSuccess: async ({ user, session, needsEmailVerification }) => {
       if (needsEmailVerification) {
-        // Don't set user or redirect if email needs verification
+        // Show email verification message
         return;
       }
-      
+
+      if (!user || !session) {
+        throw new Error('No user or session after login');
+      }
+
       setUser(user);
-      if (user?.role === 'admin') {
-        navigate(hasCompletedOnboarding ? '/c/default' : '/onboarding');
+
+      if (user.role === 'community_admin') {
+        // For community admins, check if they have a community
+        const { data: community, error: communityError } = await supabase
+          .from('communities')
+          .select('*')
+          .eq('owner_id', user.id)
+          .single();
+
+        if (communityError && communityError.code !== 'PGRST116') {
+          console.error('Error fetching community:', communityError);
+        }
+
+        setUserCommunity(community);
+
+        if (!community || !user.profile_complete) {
+          navigate('/onboarding');
+        } else {
+          navigate(`/m/${community.slug}`);
+        }
       } else {
         navigate('/m/women-in-fintech');
       }
+    },
+    onError: (error: AuthError) => {
+      console.error('Login error:', error);
+      if (error.message.includes('Email not confirmed')) {
+        return { needsEmailVerification: true };
+      }
+      throw error;
     },
   });
 
   const registerMutation = useMutation({
     mutationFn: authService.register,
-    onSuccess: ({ user, needsEmailVerification }) => {
-      if (needsEmailVerification) {
-        // Don't set user or redirect if email needs verification
-        return;
-      }
-      
-      if (user) {
-        setUser(user);
-        navigate('/onboarding');
-      }
+    onSuccess: () => {
+      setIsRegistering(false);
+      navigate('/login?verification=pending');
     },
-    onError: (error) => {
+    onError: (error: AuthError) => {
       console.error('Registration error:', error);
-      if (error instanceof AuthError) {
-        switch (error.message) {
-          case 'Email rate limit exceeded':
-            return 'Too many attempts. Please try again later.';
-          case 'User already registered':
-            return 'This email is already registered.';
-          default:
-            return error.message;
-        }
-      }
-      return 'An unexpected error occurred. Please try again.';
+      setRegisterError(error.message);
+      setIsRegistering(false);
     },
   });
 
@@ -69,20 +89,68 @@ export function useAuth() {
     mutationFn: authService.logout,
     onSuccess: () => {
       setUser(null);
-      navigate('/login');
+      setUserCommunity(null);
+      navigate('/');
     },
   });
 
+  const signIn = useCallback(
+    async (email: string, password: string) => {
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (error) throw error;
+
+        if (data.user) {
+          // Get user's community
+          const { data: communityData } = await supabase
+            .from('communities')
+            .select('*')
+            .eq('owner_id', data.user.id)
+            .single();
+
+          setUser(data.user);
+          if (communityData) {
+            setUserCommunity(communityData);
+            navigate(`/m/${communityData.slug}`);
+          }
+        }
+      } catch (error) {
+        console.error('Error signing in:', error);
+        throw error;
+      }
+    },
+    [navigate, setUser, setUserCommunity]
+  );
+
+  const signOut = useCallback(async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      setUser(null);
+      setUserCommunity(null);
+      navigate('/');
+    } catch (error) {
+      console.error('Error signing out:', error);
+      throw error;
+    }
+  }, [navigate, setUser, setUserCommunity]);
+
   return {
     user,
+    userCommunity,
     isCheckingAuth,
-    isLoggingIn: loginMutation.isPending,
-    isRegistering: registerMutation.isPending,
-    isLoggingOut: logoutMutation.isPending,
-    loginError: loginMutation.error?.message,
-    registerError: registerMutation.error instanceof Error ? registerMutation.error.message : 'Registration failed',
+    isLoggingIn: loginMutation.isLoading,
+    isRegistering,
+    registerError,
+    loginError: loginMutation.error,
     login: loginMutation.mutate,
     register: registerMutation.mutate,
     logout: logoutMutation.mutate,
+    signIn,
+    signOut,
   };
 }

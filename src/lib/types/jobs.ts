@@ -54,6 +54,7 @@ export interface Job {
   experience?: string;
   description: string;
   requirements: string[];
+  roleBenefits: string[];
   status: 'draft' | 'active' | 'closed';
   postedAt: string;
   communityId: string;

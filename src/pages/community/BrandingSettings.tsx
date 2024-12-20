@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { useAtom } from 'jotai';
 import { currentCommunityAtom } from '../../stores/community';
 import { Button } from '../../components/ui/Button';
-import { Input } from '../../components/ui/Input';
+import { Input } from '../../components/ui/atoms/Input';
 
 const brandingSchema = z.object({
   name: z.string().min(1, 'Community name is required'),
@@ -23,8 +23,12 @@ type BrandingSettings = z.infer<typeof brandingSchema>;
 
 export function BrandingSettings() {
   const [community] = useAtom(currentCommunityAtom);
-  
-  const { register, handleSubmit, formState: { errors } } = useForm<BrandingSettings>({
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<BrandingSettings>({
     resolver: zodResolver(brandingSchema),
     defaultValues: {
       name: community?.name,
@@ -48,7 +52,7 @@ export function BrandingSettings() {
           <h2 className="text-lg font-medium text-gray-900 mb-4">
             Basic Information
           </h2>
-          
+
           <div className="space-y-4">
             <Input
               label="Community Name"
@@ -66,7 +70,9 @@ export function BrandingSettings() {
                 className="block w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-indigo-500 focus:ring-indigo-500"
               />
               {errors.description?.message && (
-                <p className="mt-1 text-sm text-red-600">{errors.description.message}</p>
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.description.message}
+                </p>
               )}
             </div>
           </div>
@@ -76,7 +82,7 @@ export function BrandingSettings() {
           <h2 className="text-lg font-medium text-gray-900 mb-4">
             Brand Colors
           </h2>
-          
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -115,10 +121,8 @@ export function BrandingSettings() {
         </div>
 
         <div className="bg-white rounded-lg shadow-sm p-6">
-          <h2 className="text-lg font-medium text-gray-900 mb-4">
-            Assets
-          </h2>
-          
+          <h2 className="text-lg font-medium text-gray-900 mb-4">Assets</h2>
+
           <div className="space-y-4">
             <Input
               label="Logo URL"
@@ -138,7 +142,7 @@ export function BrandingSettings() {
           <h2 className="text-lg font-medium text-gray-900 mb-4">
             Domain Settings
           </h2>
-          
+
           <Input
             label="Custom Domain"
             {...register('customDomain')}
@@ -151,9 +155,7 @@ export function BrandingSettings() {
         </div>
 
         <div className="flex justify-end">
-          <Button type="submit">
-            Save Changes
-          </Button>
+          <Button type="submit">Save Changes</Button>
         </div>
       </form>
     </div>

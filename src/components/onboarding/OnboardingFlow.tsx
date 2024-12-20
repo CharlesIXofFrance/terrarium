@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAtom, useSetAtom } from 'jotai';
-import { currentCommunityAtom } from '../../stores/community';
-import { hasCompletedOnboardingAtom } from '../../lib/auth';
-import { Button } from '../ui/Button';
-import { Input } from '../ui/Input';
+import { useAtom } from 'jotai';
+import { userAtom, userCommunityAtom } from '../../lib/stores/auth';
+import { Button } from '../ui/atoms/Button';
+import { Input } from '../ui/atoms/Input';
+import { supabase } from '../../lib/supabase';
+import { slugify } from '../../lib/utils/string';
 
 const steps = [
   {
@@ -27,6 +28,8 @@ const steps = [
 
 export function OnboardingFlow() {
   const [currentStep, setCurrentStep] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -35,235 +38,242 @@ export function OnboardingFlow() {
       categories: ['Engineering', 'Design', 'Product'],
     },
   });
-  
-  const setCommunity = useSetAtom(currentCommunityAtom);
-  const [, setHasCompletedOnboarding] = useAtom(hasCompletedOnboardingAtom);
+
+  const [user, setUser] = useAtom(userAtom);
+  const [userCommunity, setUserCommunity] = useAtom(userCommunityAtom);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    // Check if onboarding is already completed
-    if (localStorage.getItem('onboarding_completed')) {
-      navigate('/c/default');
+  const handleNext = async () => {
+    if (!formData.name && currentStep === 1) {
+      setError('Please enter a community name');
+      return;
     }
-  }, [navigate]);
 
-  const handleNext = () => {
+    if (currentStep === 1) {
+      setIsSubmitting(true);
+      setError(null);
+
+      try {
+        if (!user) throw new Error('User not found');
+
+        const { data: community, error: createError } = await supabase
+          .from('communities')
+          .insert([
+            {
+              name: formData.name,
+              slug: slugify(formData.name),
+              description: formData.description,
+              owner_id: user.id,
+              settings: {
+                jobBoard: {
+                  requireApproval: true,
+                  categories: ['Engineering', 'Design', 'Product'],
+                },
+                branding: {
+                  primaryColor: '#4F46E5',
+                  secondaryColor: '#818CF8',
+                  fontFamily: 'Inter',
+                },
+              },
+            },
+          ])
+          .select()
+          .single();
+
+        if (createError) throw createError;
+        if (!community) throw new Error('Failed to create community');
+
+        const { error: memberError } = await supabase
+          .from('community_members')
+          .insert([
+            {
+              community_id: community.id,
+              profile_id: user.id,
+              role: 'admin',
+            },
+          ]);
+
+        if (memberError) throw memberError;
+
+        setUserCommunity(community);
+        setCurrentStep((prev) => prev + 1);
+      } catch (err) {
+        console.error('Error creating community:', err);
+        setError(
+          err instanceof Error ? err.message : 'Failed to create community'
+        );
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
+
     if (currentStep === steps.length - 1) {
-      // Create community
-      const community = {
-        id: crypto.randomUUID(),
-        ...formData,
-        members: [],
-        employers: [],
-        settings: {
-          branding: {},
-          jobBoard: formData.jobBoardSettings,
-        },
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      
-      setCommunity(community);
-      localStorage.setItem('onboarding_completed', 'true');
-      setHasCompletedOnboarding(true);
-      navigate('/c/default');
+      setIsSubmitting(true);
+      setError(null);
+
+      try {
+        if (!user || !userCommunity)
+          throw new Error('User or community not found');
+
+        const { error: updateError } = await supabase
+          .from('communities')
+          .update({
+            settings: {
+              ...userCommunity.settings,
+              jobBoard: formData.jobBoardSettings,
+            },
+          })
+          .eq('id', userCommunity.id)
+          .select()
+          .single();
+
+        if (updateError) throw updateError;
+
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({ profile_complete: 1 })
+          .eq('id', user.id)
+          .select()
+          .single();
+
+        if (profileError) {
+          console.error('Profile update error:', profileError);
+          throw new Error('Failed to update profile completion status');
+        }
+
+        setUser({ ...user, profile_complete: true });
+
+        navigate('/admin/dashboard');
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : 'Failed to update community'
+        );
+        console.error('Error in final step:', err);
+      } finally {
+        setIsSubmitting(false);
+      }
     } else {
-      setCurrentStep(prev => prev + 1);
+      setCurrentStep((prev) => prev + 1);
     }
   };
 
   const handleBack = () => {
-    setCurrentStep(prev => prev - 1);
+    setCurrentStep((prev) => prev - 1);
   };
 
-  const renderStep = () => {
-    switch (currentStep) {
-      case 0:
-        return (
-          <div className="text-center">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              Welcome to Terrarium
-            </h2>
-            <p className="text-gray-600 mb-8">
-              Let's get your community set up in just a few minutes.
-            </p>
-          </div>
-        );
-      
-      case 1:
-        return (
-          <div className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Community Name
-              </label>
-              <Input
-                value={formData.name}
-                onChange={(e) => setFormData(prev => ({
-                  ...prev,
-                  name: e.target.value,
-                }))}
-                placeholder="e.g., Women in Fintech"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Description
-              </label>
-              <textarea
-                value={formData.description}
-                onChange={(e) => setFormData(prev => ({
-                  ...prev,
-                  description: e.target.value,
-                }))}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                rows={4}
-                placeholder="Tell us about your community..."
-              />
-            </div>
-          </div>
-        );
-      
-      case 2:
-        return (
-          <div className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Job Categories
-              </label>
-              <div className="space-y-2">
-                {formData.jobBoardSettings.categories.map((category, index) => (
-                  <Input
-                    key={index}
-                    value={category}
-                    onChange={(e) => {
-                      const newCategories = [...formData.jobBoardSettings.categories];
-                      newCategories[index] = e.target.value;
-                      setFormData(prev => ({
-                        ...prev,
-                        jobBoardSettings: {
-                          ...prev.jobBoardSettings,
-                          categories: newCategories,
-                        },
-                      }));
-                    }}
-                  />
-                ))}
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setFormData(prev => ({
-                    ...prev,
-                    jobBoardSettings: {
-                      ...prev.jobBoardSettings,
-                      categories: [...prev.jobBoardSettings.categories, ''],
-                    },
-                  }))}
-                >
-                  Add Category
-                </Button>
-              </div>
-            </div>
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                checked={formData.jobBoardSettings.requireApproval}
-                onChange={(e) => setFormData(prev => ({
-                  ...prev,
-                  jobBoardSettings: {
-                    ...prev.jobBoardSettings,
-                    requireApproval: e.target.checked,
-                  },
-                }))}
-                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-              />
-              <label className="ml-2 block text-sm text-gray-900">
-                Require approval for new job postings
-              </label>
-            </div>
-          </div>
-        );
-      
-      case 3:
-        return (
-          <div className="space-y-6">
-            <div className="bg-gray-50 rounded-lg p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">
-                Review Your Settings
-              </h3>
-              <dl className="space-y-4">
-                <div>
-                  <dt className="text-sm font-medium text-gray-500">
-                    Community Name
-                  </dt>
-                  <dd className="text-sm text-gray-900 mt-1">
-                    {formData.name}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-sm font-medium text-gray-500">
-                    Description
-                  </dt>
-                  <dd className="text-sm text-gray-900 mt-1">
-                    {formData.description}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-sm font-medium text-gray-500">
-                    Job Categories
-                  </dt>
-                  <dd className="text-sm text-gray-900 mt-1">
-                    {formData.jobBoardSettings.categories.join(', ')}
-                  </dd>
-                </div>
-              </dl>
-            </div>
-          </div>
-        );
-    }
+  const updateFormData = (field: string, value: any) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
   };
+
+  if (!user) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
           <div className="mb-8">
-            <div className="relative">
-              <div className="overflow-hidden h-2 mb-4 text-xs flex rounded bg-gray-100">
-                <div
-                  style={{ width: `${((currentStep + 1) / steps.length) * 100}%` }}
-                  className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-indigo-600"
-                />
-              </div>
-              <div className="flex justify-between text-xs text-gray-500">
-                {steps.map((step, index) => (
-                  <div
-                    key={index}
-                    className={`${
-                      index <= currentStep ? 'text-indigo-600' : ''
-                    }`}
-                  >
-                    Step {index + 1}
-                  </div>
-                ))}
-              </div>
-            </div>
+            <h2 className="text-2xl font-bold text-gray-900 text-center">
+              {steps[currentStep].title}
+            </h2>
+            <p className="mt-2 text-sm text-gray-600 text-center">
+              {steps[currentStep].description}
+            </p>
           </div>
 
-          {renderStep()}
+          {error && (
+            <div className="mb-4 p-2 text-sm text-red-700 bg-red-100 rounded">
+              {error}
+            </div>
+          )}
 
-          <div className="mt-8 flex justify-between">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleBack}
-              disabled={currentStep === 0}
-            >
-              Back
-            </Button>
-            <Button type="button" onClick={handleNext}>
-              {currentStep === steps.length - 1 ? 'Launch Community' : 'Next'}
-            </Button>
+          <div className="space-y-6">
+            {currentStep === 1 && (
+              <>
+                <div>
+                  <label
+                    htmlFor="name"
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    Community Name
+                  </label>
+                  <Input
+                    id="name"
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => updateFormData('name', e.target.value)}
+                    required
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="description"
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    Description
+                  </label>
+                  <Input
+                    id="description"
+                    type="text"
+                    value={formData.description}
+                    onChange={(e) =>
+                      updateFormData('description', e.target.value)
+                    }
+                    required
+                  />
+                </div>
+              </>
+            )}
+
+            {currentStep === 2 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Job Board Settings
+                </label>
+                <div className="mt-2">
+                  <label className="inline-flex items-center">
+                    <input
+                      type="checkbox"
+                      className="form-checkbox"
+                      checked={formData.jobBoardSettings.requireApproval}
+                      onChange={(e) =>
+                        updateFormData('jobBoardSettings', {
+                          ...formData.jobBoardSettings,
+                          requireApproval: e.target.checked,
+                        })
+                      }
+                    />
+                    <span className="ml-2">
+                      Require approval for new job posts
+                    </span>
+                  </label>
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-between">
+              {currentStep > 0 && (
+                <Button
+                  type="button"
+                  onClick={handleBack}
+                  disabled={isSubmitting}
+                >
+                  Back
+                </Button>
+              )}
+              <Button
+                type="button"
+                onClick={handleNext}
+                disabled={isSubmitting}
+              >
+                {currentStep === steps.length - 1 ? 'Finish' : 'Next'}
+              </Button>
+            </div>
           </div>
         </div>
       </div>

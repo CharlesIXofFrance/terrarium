@@ -1,7 +1,7 @@
 import React from 'react';
 import { MapPin, Building2, Clock, Euro, BriefcaseIcon } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import type { Job } from '../../lib/types';
+import { Link, useParams } from 'react-router-dom';
+import type { Job } from '../../lib/types/jobs';
 import { useImageLoader } from '../../lib/hooks/useImageLoader';
 import { scrollToTop } from '../../lib/utils/scroll';
 import { renderLogo } from '../../lib/utils/renderLogo';
@@ -20,39 +20,42 @@ interface JobCardProps {
 const TYPE_COLORS = {
   'Full-Time': {
     bg: 'bg-[#FFE9C8]',
-    text: 'text-[#B76E00]'
+    text: 'text-[#B76E00]',
   },
   'Part-Time': {
     bg: 'bg-blue-100',
-    text: 'text-blue-800'
+    text: 'text-blue-800',
   },
-  'Contract': {
+  Contract: {
     bg: 'bg-purple-100',
-    text: 'text-purple-800'
+    text: 'text-purple-800',
   },
-  'Internship': {
+  Internship: {
     bg: 'bg-green-100',
-    text: 'text-green-800'
-  }
+    text: 'text-green-800',
+  },
 } as const;
 
-export function JobCard({ 
-  job, 
-  onApply, 
+export function JobCard({
+  job,
+  onApply,
   onSave,
   variant = 'default',
   labels = {
-    scoreName: 'SisterScore®'
+    scoreName: 'SisterScore®',
   },
-  className = ''
+  className = '',
 }: JobCardProps) {
+  const { communitySlug } = useParams();
   const { optimizeImageUrl } = useImageLoader();
 
-  const typeColors = TYPE_COLORS[job.type as keyof typeof TYPE_COLORS] || TYPE_COLORS['Full-Time'];
+  const typeColors =
+    TYPE_COLORS[job.type as keyof typeof TYPE_COLORS] ||
+    TYPE_COLORS['Full-Time'];
 
   return (
-    <Link 
-      to={`/m/women-in-fintech/jobs/${job.id}`}
+    <Link
+      to={`/m/${communitySlug}/jobs/${job.id}`}
       onClick={scrollToTop}
       className={`block bg-white rounded-xl border border-gray-100 hover:shadow-lg transition-all duration-200 hover:scale-[1.02] ${className}`}
     >
@@ -74,7 +77,10 @@ export function JobCard({
             <div className="w-16 h-16 bg-white rounded-lg flex items-center justify-center shadow-sm p-2">
               {job.companyLogo ? (
                 <img
-                  src={optimizeImageUrl(job.companyLogo, { width: 64, height: 64 })}
+                  src={optimizeImageUrl(job.companyLogo, {
+                    width: 64,
+                    height: 64,
+                  })}
                   alt={job.company}
                   className="w-full h-full object-contain"
                 />
@@ -84,14 +90,12 @@ export function JobCard({
                   size: 32,
                   color: '#6B7280',
                   className: 'w-12 h-12',
-                  fallbackType: 'initials'
+                  fallbackType: 'initials',
                 })
               )}
             </div>
             <div className="flex flex-col gap-2">
-              <span 
-                className="badge bg-[#e7f8ec] text-[#166534] hover:bg-[#dcf5e3]"
-              >
+              <span className="badge bg-[#e7f8ec] text-[#166534] hover:bg-[#dcf5e3]">
                 {job.type}
               </span>
               {job.isEarlyApplicant && (
@@ -130,7 +134,10 @@ export function JobCard({
           {job.salary && (
             <div className="flex items-center text-gray-600">
               <Euro className="h-5 w-5 mr-2" />
-              <span>{job.salary.min/1000}-{job.salary.max/1000}k {job.salary.currency}</span>
+              <span>
+                {job.salary.min / 1000}-{job.salary.max / 1000}k{' '}
+                {job.salary.currency}
+              </span>
             </div>
           )}
         </div>

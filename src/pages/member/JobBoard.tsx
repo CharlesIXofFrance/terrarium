@@ -1,22 +1,36 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { Search, Filter, Building2, Briefcase, Rss, X, ArrowUp } from 'lucide-react';
+import { useParams } from 'react-router-dom';
+import {
+  Search,
+  Filter,
+  Building2,
+  Briefcase,
+  Rss,
+  X,
+  ArrowUp,
+} from 'lucide-react';
 import { useJobs } from '../../lib/hooks/useJobs';
 import { JobList } from '../../components/jobs/JobList';
 import { JobFilters, filterLabels } from '../../components/jobs/JobFilters';
 import { SelectedFilters } from '../../components/jobs/SelectedFilters';
 import { useScrollRestoration } from '../../lib/hooks/useScrollRestoration';
 import { Button } from '../../components/ui/Button';
-import { Tabs, TabsList, TabsTrigger } from '../../components/ui/Tabs';
+import {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+} from '../../components/ui/molecules/Tabs';
 
 export function JobBoard() {
   useScrollRestoration();
+  const { communitySlug } = useParams();
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('jobs');
   const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [showLoadMore, setShowLoadMore] = useState(false);
-  const { jobs, totalJobs } = useJobs('women-in-fintech');
+  const { jobs, totalJobs } = useJobs(communitySlug);
   const listEndRef = useRef<HTMLDivElement>(null);
 
   // Handle scroll to show/hide buttons and check for list end
@@ -27,7 +41,8 @@ export function JobBoard() {
 
       // Check if user is near bottom of the list
       if (listEndRef.current) {
-        const listEndPosition = listEndRef.current.getBoundingClientRect().bottom;
+        const listEndPosition =
+          listEndRef.current.getBoundingClientRect().bottom;
         const viewportHeight = window.innerHeight;
         setShowLoadMore(listEndPosition <= viewportHeight + 100); // 100px threshold
       }
@@ -50,9 +65,9 @@ export function JobBoard() {
   }, []);
 
   const handleFilterChange = useCallback((filterId: string) => {
-    setSelectedFilters(prev => 
+    setSelectedFilters((prev) =>
       prev.includes(filterId)
-        ? prev.filter(id => id !== filterId)
+        ? prev.filter((id) => id !== filterId)
         : [...prev, filterId]
     );
   }, []);
@@ -62,13 +77,14 @@ export function JobBoard() {
   }, []);
 
   const toggleMobileFilters = useCallback(() => {
-    setShowMobileFilters(prev => !prev);
+    setShowMobileFilters((prev) => !prev);
   }, []);
 
-  const filteredJobs = jobs.filter(job => 
-    job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    job.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    job.location.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredJobs = jobs.filter(
+    (job) =>
+      job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      job.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      job.location.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -98,17 +114,30 @@ export function JobBoard() {
             </div>
 
             {/* Navigation Tabs */}
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-shrink-0">
+            <Tabs
+              value={activeTab}
+              onValueChange={setActiveTab}
+              className="flex-shrink-0"
+            >
               <TabsList>
-                <TabsTrigger value="companies" className="flex items-center space-x-2">
+                <TabsTrigger
+                  value="companies"
+                  className="flex items-center space-x-2"
+                >
                   <Building2 className="h-4 w-4" />
                   <span>Companies</span>
                 </TabsTrigger>
-                <TabsTrigger value="jobs" className="flex items-center space-x-2">
+                <TabsTrigger
+                  value="jobs"
+                  className="flex items-center space-x-2"
+                >
                   <Briefcase className="h-4 w-4" />
                   <span>Jobs</span>
                 </TabsTrigger>
-                <TabsTrigger value="feed" className="flex items-center space-x-2">
+                <TabsTrigger
+                  value="feed"
+                  className="flex items-center space-x-2"
+                >
                   <Rss className="h-4 w-4" />
                   <span>Live Feed</span>
                 </TabsTrigger>
@@ -132,11 +161,11 @@ export function JobBoard() {
         {showMobileFilters && (
           <div className="md:hidden fixed inset-0 z-50">
             {/* Backdrop */}
-            <div 
+            <div
               className="absolute inset-0 bg-black/50"
               onClick={toggleMobileFilters}
             />
-            
+
             {/* Filters Panel */}
             <div className="absolute inset-y-0 right-0 w-[320px] bg-white shadow-xl">
               <div className="flex items-center justify-between p-4 border-b border-gray-200">
@@ -145,7 +174,7 @@ export function JobBoard() {
                   <X className="h-6 w-6 text-gray-500" />
                 </button>
               </div>
-              
+
               <div className="h-[calc(100%-137px)] overflow-y-auto">
                 <JobFilters
                   selectedFilters={selectedFilters}
@@ -155,10 +184,7 @@ export function JobBoard() {
               </div>
 
               <div className="absolute bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200">
-                <Button
-                  className="w-full"
-                  onClick={toggleMobileFilters}
-                >
+                <Button className="w-full" onClick={toggleMobileFilters}>
                   Show {filteredJobs.length} Results
                 </Button>
               </div>
@@ -173,7 +199,7 @@ export function JobBoard() {
             {selectedFilters.length > 0 && (
               <div className="md:sticky md:top-[88px] z-30 bg-white shadow-sm -mx-4 px-4">
                 <div className="flex items-center justify-between py-4">
-                  <SelectedFilters 
+                  <SelectedFilters
                     filters={selectedFilters}
                     labels={filterLabels}
                     onRemove={handleFilterChange}
@@ -188,9 +214,9 @@ export function JobBoard() {
               </div>
             )}
 
-            <JobList 
-              jobs={filteredJobs} 
-              onApply={handleApply} 
+            <JobList
+              jobs={filteredJobs}
+              onApply={handleApply}
               onSave={handleSaveJob}
               className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 pt-6"
             />

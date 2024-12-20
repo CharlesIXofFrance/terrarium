@@ -1,27 +1,35 @@
 import React, { useState } from 'react';
-import { 
-  ArrowLeft, 
-  Monitor, 
-  Smartphone, 
-  Maximize2, 
-  Search, 
-  ChevronRight, 
-  ChevronLeft, 
-  Eye, 
-  Palette, 
-  Type, 
-  Layout, 
+import { useAtom } from 'jotai';
+import { currentCommunityAtom } from '../../lib/stores/community';
+import {
+  ArrowLeft,
+  Monitor,
+  Smartphone,
+  Maximize2,
+  Search,
+  ChevronRight,
+  ChevronLeft,
+  Eye,
+  Palette,
+  Type,
+  Layout,
   Moon,
-  Grid
+  Grid,
 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
-import { Input } from '../../components/ui/Input';
+import { Input } from '../../components/ui/atoms/Input';
 import { StyleEditor } from '../../components/customization/StyleEditor';
 import { PagePreview } from '../../components/customization/PagePreview';
 import { useStyles } from '../../lib/hooks/useStyles';
 
 type PreviewMode = 'desktop' | 'mobile' | 'fullscreen';
-type PageType = 'navigation' | 'member-hub' | 'job-board' | 'job-listing' | 'member-profile' | 'live-feed';
+type PageType =
+  | 'navigation'
+  | 'member-hub'
+  | 'job-board'
+  | 'job-listing'
+  | 'member-profile'
+  | 'live-feed';
 type TestUserType = 'member' | 'employer' | 'admin';
 
 const sections = [
@@ -34,15 +42,21 @@ const sections = [
 
 export function CustomizationPortal() {
   const { styles, updateStyles } = useStyles();
+  const [currentCommunity] = useAtom(currentCommunityAtom);
   const [currentPage, setCurrentPage] = useState<PageType>('member-hub');
   const [previewMode, setPreviewMode] = useState<PreviewMode>('desktop');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [currentTestUser, setCurrentTestUser] = useState<TestUserType>('member');
+  const [currentTestUser, setCurrentTestUser] =
+    useState<TestUserType>('member');
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
 
-  const handleStyleChange = (category: string, property: string, value: any) => {
+  const handleStyleChange = (
+    category: string,
+    property: string,
+    value: any
+  ) => {
     updateStyles(category, property, value);
   };
 
@@ -56,7 +70,9 @@ export function CustomizationPortal() {
               onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
               className="text-gray-500 hover:text-gray-700"
             >
-              <ArrowLeft className={`h-5 w-5 transition-transform ${isSidebarCollapsed ? 'rotate-180' : ''}`} />
+              <ArrowLeft
+                className={`h-5 w-5 transition-transform ${isSidebarCollapsed ? 'rotate-180' : ''}`}
+              />
             </button>
             <select
               value={currentPage}
@@ -70,7 +86,7 @@ export function CustomizationPortal() {
               <option value="live-feed">Live Feed</option>
             </select>
           </div>
-          
+
           <div className="flex items-center space-x-4">
             {/* Preview Controls */}
             <div className="flex items-center space-x-4 mr-8">
@@ -81,13 +97,17 @@ export function CustomizationPortal() {
                 className="flex items-center space-x-2"
               >
                 <Eye className="h-4 w-4" />
-                <span>{isPreviewMode ? 'Exit Preview' : 'Preview as User'}</span>
+                <span>
+                  {isPreviewMode ? 'Exit Preview' : 'Preview as User'}
+                </span>
               </Button>
-              
+
               {isPreviewMode && (
                 <select
                   value={currentTestUser}
-                  onChange={(e) => setCurrentTestUser(e.target.value as TestUserType)}
+                  onChange={(e) =>
+                    setCurrentTestUser(e.target.value as TestUserType)
+                  }
                   className="h-9 rounded-lg border-gray-300 text-sm"
                 >
                   <option value="member">Test Member</option>
@@ -139,14 +159,17 @@ export function CustomizationPortal() {
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
               className="absolute left-0 top-1/2 transform -translate-y-1/2 bg-white p-1 rounded-r-lg shadow-md z-10"
             >
-              {isSidebarOpen ? <ChevronLeft className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
+              {isSidebarOpen ? (
+                <ChevronLeft className="h-5 w-5" />
+              ) : (
+                <ChevronRight className="h-5 w-5" />
+              )}
             </button>
 
             {/* Settings Sidebar */}
             <div
               className={`bg-white border-r border-gray-200 transition-all duration-300 ${
-                !isSidebarOpen ? 'w-0' :
-                isSidebarCollapsed ? 'w-16' : 'w-80'
+                !isSidebarOpen ? 'w-0' : isSidebarCollapsed ? 'w-16' : 'w-80'
               } ${!isSidebarOpen ? 'pointer-events-none' : ''}`}
             >
               {isSidebarOpen && (
@@ -156,15 +179,19 @@ export function CustomizationPortal() {
                       {sections.map((section) => {
                         const Icon = section.icon;
                         const isExpanded = expandedSection === section.id;
-                        
+
                         return (
                           <div
                             key={section.id}
                             className={`relative group ${isExpanded ? 'text-indigo-600' : 'text-gray-400'}`}
                           >
-                            <div className={`w-8 h-8 mx-auto flex items-center justify-center rounded-lg ${
-                              isExpanded ? 'bg-indigo-50' : 'hover:bg-gray-100'
-                            }`}>
+                            <div
+                              className={`w-8 h-8 mx-auto flex items-center justify-center rounded-lg ${
+                                isExpanded
+                                  ? 'bg-indigo-50'
+                                  : 'hover:bg-gray-100'
+                              }`}
+                            >
                               <Icon className="h-6 w-6" />
                             </div>
                             <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
@@ -200,7 +227,11 @@ export function CustomizationPortal() {
                   name: 'Clara Johnson',
                   role: currentTestUser,
                   profileComplete: 70,
-                  avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&h=120&fit=crop'
+                  avatar:
+                    'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&h=120&fit=crop',
+                  mentoring: true,
+                  coaching: true,
+                  community: currentCommunity,
                 }}
               />
             </div>

@@ -4,9 +4,9 @@ import { RecruitCRMSettings } from '../../components/settings/RecruitCRMSettings
 import { Button } from '../../components/ui/Button';
 
 export function JobBoardSettings() {
-  const { communitySlug } = useParams();
+  const { slug } = useParams();
 
-  if (!communitySlug) {
+  if (!slug) {
     return <div>Invalid community</div>;
   }
 
@@ -18,13 +18,11 @@ export function JobBoardSettings() {
 
       <div className="space-y-8">
         <div className="bg-white rounded-lg shadow-sm p-6">
-          <RecruitCRMSettings communityId={communitySlug} />
+          <RecruitCRMSettings communityId={slug} />
         </div>
 
         <div className="flex justify-end">
-          <Button type="submit">
-            Save Changes
-          </Button>
+          <Button type="submit">Save Changes</Button>
         </div>
       </div>
     </div>

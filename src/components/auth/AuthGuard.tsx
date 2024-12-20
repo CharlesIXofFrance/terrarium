@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAtom } from 'jotai';
-import { userAtom } from '../../lib/auth';
+import { userAtom } from '../../lib/stores/auth';
 
 interface AuthGuardProps {
   children: React.ReactNode;

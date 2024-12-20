@@ -1,18 +1,19 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, Building2, CheckCircle, XCircle } from 'lucide-react';
+import { useCommunity } from '../../lib/hooks/useCommunity';
 import { employersApi } from '../../lib/api';
-import { Button } from '../../components/ui/Button';
+import { Button } from '../../components/ui/atoms/Button';
 import { useAtom } from 'jotai';
-import { currentCommunityAtom } from '../../stores/community';
+import { currentCommunityAtom } from '../../lib/stores/community';
 import type { Company } from '../../lib/types';
 
 export function Employers() {
   const [community] = useAtom(currentCommunityAtom);
-  
+
   const { data: companies, isLoading } = useQuery({
     queryKey: ['employers', community?.id],
-    queryFn: () => community ? employersApi.getCompanies(community.id) : null,
+    queryFn: () => (community ? employersApi.getCompanies(community.id) : null),
     enabled: !!community,
   });
 
@@ -63,7 +64,7 @@ export function Employers() {
               <div className="text-sm text-gray-500">
                 {company.locations.length} locations · {company.size} employees
               </div>
-              
+
               {company.status === 'pending' ? (
                 <div className="flex space-x-2">
                   <Button

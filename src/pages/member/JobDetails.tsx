@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Loader2, AlertCircle, ArrowLeft, ArrowUp } from 'lucide-react';
 import { useAtom } from 'jotai';
-import { jobsAtom } from '../../stores/jobs';
+import { jobsAtom } from '../../lib/stores/jobs';
 import { JobHeader } from '../../components/jobs/JobHeader';
 import { SisterScoreCard } from '../../components/jobs/SisterScoreCard';
 import { RoleDetails } from '../../components/jobs/RoleDetails';
@@ -16,7 +16,7 @@ import { getRelatedJobs } from '../../lib/utils/jobs';
 import { Button } from '../../components/ui/Button';
 
 export function JobDetails() {
-  const { jobId } = useParams();
+  const { jobId, communitySlug } = useParams();
   const navigate = useNavigate();
   const [jobs] = useAtom(jobsAtom);
   const [isLoading, setIsLoading] = useState(true);
@@ -53,71 +53,76 @@ export function JobDetails() {
     );
   }
 
-  const job = jobs.find(j => j.id === jobId);
+  // Find the current job
+  const job = jobs?.find((j) => j.id === jobId);
 
   if (!job) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Job Not Found</h2>
-          <p className="text-gray-600 mb-4">The job you're looking for doesn't exist or has been removed.</p>
-          <button 
-            onClick={() => navigate('/m/women-in-fintech/jobs')}
-            className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+          <p className="text-gray-600">Job not found</p>
+          <Button
+            variant="secondary"
+            className="mt-4"
+            onClick={() => navigate(`/m/${communitySlug}/jobs`)}
           >
-            Back
-          </button>
+            Back to Jobs
+          </Button>
         </div>
       </div>
     );
   }
 
-  const relatedJobs = getRelatedJobs(job, jobs);
+  const relatedJobs = getRelatedJobs(jobs, job.id);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 py-4 md:py-8">
-        {/* Back Button */}
-        <button
-          onClick={() => navigate('/m/women-in-fintech/jobs')}
-          className="flex items-center text-gray-600 hover:text-gray-900 mb-6"
-        >
-          <ArrowLeft className="h-5 w-5 mr-2" />
-          <span>Back</span>
-        </button>
+    <div className="min-h-screen bg-gray-50 pb-12">
+      {/* Back button */}
+      <div className="bg-white border-b border-gray-100 sticky top-16 z-10">
+        <div className="container mx-auto px-4 py-4">
+          <button
+            onClick={() => navigate(`/m/${communitySlug}/jobs`)}
+            className="text-gray-600 hover:text-gray-900 flex items-center space-x-1"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back to Jobs</span>
+          </button>
+        </div>
+      </div>
 
+      <div className="max-w-7xl mx-auto px-4 py-4 md:py-8">
         <div className="space-y-6 md:space-y-8">
           <JobHeader job={job} />
 
-          <SisterScoreCard 
+          <SisterScoreCard
             score={{
               overall: job.sisterScore || 0,
               locationFlexibility: 82,
               hoursFlexibility: 81,
               benefits: 59,
               culture: 85,
-              leadership: 78
+              leadership: 78,
             }}
             testimonial={{
-              name: "Andrea Thompson",
-              role: "Community Lead",
-              avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&h=120&fit=crop",
-              quote: "This company has shown exceptional commitment to fostering diversity and creating opportunities for our community members."
+              name: 'Andrea Thompson',
+              role: 'Community Lead',
+              avatar:
+                'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&h=120&fit=crop',
+              quote:
+                'This company has shown exceptional commitment to fostering diversity and creating opportunities for our community members.',
             }}
             companyName={job.company}
           />
 
           <div className="grid lg:grid-cols-3 gap-6 md:gap-8">
             <div className="lg:col-span-2 space-y-6 md:space-y-8">
-              <RoleDetails 
+              <RoleDetails
                 details={{
                   responsibilities: job.description.split('. ').filter(Boolean),
                   niceToHave: job.requirements,
                   roleBenefits: job.roleBenefits,
-                  languages: [
-                    { name: "English", level: "Fluent" }
-                  ]
+                  languages: [{ name: 'English', level: 'Fluent' }],
                 }}
               />
 
@@ -125,12 +130,10 @@ export function JobDetails() {
                 <EmployeesTake testimonials={job.testimonials} />
               )}
 
-              {job.benefits && (
-                <Benefits benefits={job.benefits} />
-              )}
+              {job.benefits && <Benefits benefits={job.benefits} />}
 
               {job.workingPhotos && (
-                <WorkingAtCompany 
+                <WorkingAtCompany
                   companyName={job.company}
                   photos={job.workingPhotos}
                   jobTitle={job.title}
@@ -140,7 +143,7 @@ export function JobDetails() {
 
             <div className="space-y-6 md:space-y-8">
               {job.companyInsights && (
-                <CompanyInsights 
+                <CompanyInsights
                   insights={job.companyInsights}
                   companyName={job.company}
                   jobTitle={job.title}
@@ -148,10 +151,11 @@ export function JobDetails() {
               )}
 
               <div className="sticky top-4">
-                <CareerConsult 
+                <CareerConsult
                   consultant={{
-                    name: "Sophie",
-                    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&h=120&fit=crop"
+                    name: 'Sophie',
+                    avatar:
+                      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&h=120&fit=crop',
                   }}
                   className="h-auto md:h-[70%]"
                 />

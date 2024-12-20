@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAtom } from 'jotai';
-import { userAtom } from '../../lib/auth';
+import { userAtom } from '../../lib/stores/auth';
 import { MemberHub as MemberHubComponent } from '../../components/member-hub/MemberHub';
 
 export function MemberHub() {
@@ -36,7 +36,9 @@ export function MemberHub() {
     name: user?.name || 'Clara',
     role: user?.role || 'member',
     profileComplete: 70,
-    avatar: user?.avatar || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&h=120&fit=crop',
+    avatar:
+      user?.avatar ||
+      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&h=120&fit=crop',
     mentoring: true,
     coaching: true,
   };

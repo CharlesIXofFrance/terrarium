@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { JOB_TESTIMONIALS } from '../../data/mockJobs';
+import { JOB_TESTIMONIALS } from '../../lib/mocks/mockJobs';
 import type { JobTestimonial } from '../../lib/types/jobs';
 
 interface WorkingAtCompanyProps {
@@ -12,7 +12,11 @@ interface WorkingAtCompanyProps {
   jobTitle?: string;
 }
 
-export function WorkingAtCompany({ companyName, photos, jobTitle }: WorkingAtCompanyProps) {
+export function WorkingAtCompany({
+  companyName,
+  photos,
+  jobTitle,
+}: WorkingAtCompanyProps) {
   const testimonials = useMemo(() => {
     if (!jobTitle || !JOB_TESTIMONIALS) return [];
     return JOB_TESTIMONIALS[jobTitle] || [];
@@ -21,18 +25,20 @@ export function WorkingAtCompany({ companyName, photos, jobTitle }: WorkingAtCom
   return (
     <div className="bg-white rounded-xl p-6">
       <h2 className="text-xl font-semibold mb-6">Working at {companyName}</h2>
-      
+
       <div className="grid md:grid-cols-12 gap-6">
         {photos.map((photo, index) => {
           const testimonial = testimonials[index % testimonials.length];
           const isFullWidth = index % 3 === 0;
-          
+
           return (
             <React.Fragment key={index}>
               {/* Photo */}
               <div
                 className={`relative overflow-hidden rounded-lg transition-transform hover:scale-[1.02] ${
-                  isFullWidth ? 'md:col-span-12 aspect-[21/9]' : 'md:col-span-6 aspect-square'
+                  isFullWidth
+                    ? 'md:col-span-12 aspect-[21/9]'
+                    : 'md:col-span-6 aspect-square'
                 }`}
               >
                 <img
@@ -42,7 +48,7 @@ export function WorkingAtCompany({ companyName, photos, jobTitle }: WorkingAtCom
                   loading={index < 2 ? 'eager' : 'lazy'}
                 />
               </div>
-              
+
               {/* Testimonial */}
               {testimonial && (
                 <div
@@ -64,8 +70,12 @@ export function WorkingAtCompany({ companyName, photos, jobTitle }: WorkingAtCom
                           />
                         </div>
                         <div className="ml-4">
-                          <div className="text-base font-medium text-gray-900">{testimonial.name}</div>
-                          <div className="text-sm text-gray-500">{testimonial.title}</div>
+                          <div className="text-base font-medium text-gray-900">
+                            {testimonial.name}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {testimonial.title}
+                          </div>
                         </div>
                       </div>
                     </footer>

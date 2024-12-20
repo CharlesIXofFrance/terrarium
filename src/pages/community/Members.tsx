@@ -2,17 +2,17 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, MoreVertical, Mail } from 'lucide-react';
 import { communityApi } from '../../lib/api';
-import { Button } from '../../components/ui/Button';
+import { Button } from '../../components/ui/atoms/Button';
 import { useAtom } from 'jotai';
-import { currentCommunityAtom } from '../../stores/community';
+import { currentCommunityAtom } from '../../lib/stores/community';
 import type { User } from '../../lib/types';
 
 export function Members() {
   const [community] = useAtom(currentCommunityAtom);
-  
+
   const { data: members, isLoading } = useQuery({
     queryKey: ['members', community?.id],
-    queryFn: () => community ? communityApi.getMembers(community.id) : null,
+    queryFn: () => (community ? communityApi.getMembers(community.id) : null),
     enabled: !!community,
   });
 
@@ -75,7 +75,9 @@ export function Members() {
                       <div className="text-sm font-medium text-gray-900">
                         {member.name}
                       </div>
-                      <div className="text-sm text-gray-500">{member.email}</div>
+                      <div className="text-sm text-gray-500">
+                        {member.email}
+                      </div>
                     </div>
                   </div>
                 </td>

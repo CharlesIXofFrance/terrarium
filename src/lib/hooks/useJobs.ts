@@ -1,18 +1,21 @@
 import { useAtom } from 'jotai';
-import { jobsAtom, filteredJobsAtom } from '../../stores/jobs';
-import type { Job } from '../types';
+import { jobsStateAtom, filteredJobsAtom } from '../stores/jobs';
+import type { Job } from '../types/domain/jobs';
 
-export function useJobs(communityId?: string) {
-  const [jobs] = useAtom(jobsAtom);
+export function useJobs(communitySlug?: string) {
+  const [{ jobs, isLoading, error }] = useAtom(jobsStateAtom);
   const [filteredJobs] = useAtom(filteredJobsAtom);
 
-  const communityJobs = communityId
-    ? jobs.filter(job => job.communityId === communityId)
-    : jobs;
+  // For now, we'll just use 'women-in-fintech' for mock data
+  // TODO: Update this when we have real community-specific jobs
+  const communityJobs = jobs;
+  const communityFilteredJobs = filteredJobs;
 
   return {
     jobs: communityJobs,
-    filteredJobs,
+    filteredJobs: communityFilteredJobs,
     totalJobs: communityJobs.length,
+    isLoading,
+    error,
   };
 }

@@ -8,6 +8,16 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables');
 }
 
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
+// Debug: Check localStorage
+const authToken = localStorage.getItem('sb-terrarium-auth-token');
+console.log('Debug - localStorage auth token:', authToken);
+
+export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: false,
+  },
+});
 
 export type SupabaseClient = typeof supabase;

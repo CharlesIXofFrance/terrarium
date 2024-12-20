@@ -1,6 +1,14 @@
 import React from 'react';
-import { ChevronRight, ChevronDown, Palette, Type, Layout, Moon, Grid } from 'lucide-react';
-import { Input } from '../ui/Input';
+import {
+  ChevronRight,
+  ChevronDown,
+  Palette,
+  Type,
+  Layout,
+  Moon,
+  Grid,
+} from 'lucide-react';
+import { Input } from '../ui/atoms/Input';
 import { FONTS } from '../../lib/hooks/useStyles';
 
 interface StyleEditorProps {
@@ -15,7 +23,7 @@ const sections = [
     id: 'colors',
     name: 'Global Colors',
     icon: Palette,
-    description: 'Define your community\'s color scheme',
+    description: "Define your community's color scheme",
     fields: [
       { key: 'primary', label: 'Primary Color' },
       { key: 'secondary', label: 'Secondary Color' },
@@ -24,7 +32,7 @@ const sections = [
       { key: 'text', label: 'Text Color' },
       { key: 'textSecondary', label: 'Secondary Text' },
       { key: 'accent', label: 'Accent Color' },
-    ]
+    ],
   },
   {
     id: 'typography',
@@ -32,11 +40,34 @@ const sections = [
     icon: Type,
     description: 'Customize fonts and text styles',
     fields: [
-      { key: 'headingFont', label: 'Heading Font', type: 'select', options: Object.keys(FONTS) },
-      { key: 'bodyFont', label: 'Body Font', type: 'select', options: Object.keys(FONTS) },
-      { key: 'baseSize', label: 'Base Size (px)', type: 'number', min: 12, max: 20 },
-      { key: 'scale', label: 'Scale Ratio', type: 'number', step: 0.05, min: 1.1, max: 1.5 },
-    ]
+      {
+        key: 'headingFont',
+        label: 'Heading Font',
+        type: 'select',
+        options: Object.keys(FONTS),
+      },
+      {
+        key: 'bodyFont',
+        label: 'Body Font',
+        type: 'select',
+        options: Object.keys(FONTS),
+      },
+      {
+        key: 'baseSize',
+        label: 'Base Size (px)',
+        type: 'number',
+        min: 12,
+        max: 20,
+      },
+      {
+        key: 'scale',
+        label: 'Scale Ratio',
+        type: 'number',
+        step: 0.05,
+        min: 1.1,
+        max: 1.5,
+      },
+    ],
   },
   {
     id: 'layout',
@@ -44,10 +75,25 @@ const sections = [
     icon: Grid,
     description: 'Configure page layout and spacing',
     fields: [
-      { key: 'maxWidth', label: 'Max Width', type: 'select', options: ['1200px', '1400px', '1600px'] },
-      { key: 'contentPadding', label: 'Content Padding', type: 'select', options: ['16px', '24px', '32px', '48px'] },
-      { key: 'sectionSpacing', label: 'Section Spacing', type: 'select', options: ['24px', '32px', '48px', '64px'] },
-    ]
+      {
+        key: 'maxWidth',
+        label: 'Max Width',
+        type: 'select',
+        options: ['1200px', '1400px', '1600px'],
+      },
+      {
+        key: 'contentPadding',
+        label: 'Content Padding',
+        type: 'select',
+        options: ['16px', '24px', '32px', '48px'],
+      },
+      {
+        key: 'sectionSpacing',
+        label: 'Section Spacing',
+        type: 'select',
+        options: ['24px', '32px', '48px', '64px'],
+      },
+    ],
   },
   {
     id: 'components',
@@ -55,10 +101,25 @@ const sections = [
     icon: Layout,
     description: 'Style individual UI components',
     fields: [
-      { key: 'cardStyle', label: 'Card Style', type: 'select', options: ['minimal', 'bordered', 'elevated'] },
-      { key: 'buttonStyle', label: 'Button Style', type: 'select', options: ['rounded', 'pill', 'sharp'] },
-      { key: 'inputStyle', label: 'Input Style', type: 'select', options: ['minimal', 'bordered', 'filled'] },
-    ]
+      {
+        key: 'cardStyle',
+        label: 'Card Style',
+        type: 'select',
+        options: ['minimal', 'bordered', 'elevated'],
+      },
+      {
+        key: 'buttonStyle',
+        label: 'Button Style',
+        type: 'select',
+        options: ['rounded', 'pill', 'sharp'],
+      },
+      {
+        key: 'inputStyle',
+        label: 'Input Style',
+        type: 'select',
+        options: ['minimal', 'bordered', 'filled'],
+      },
+    ],
   },
   {
     id: 'effects',
@@ -66,15 +127,30 @@ const sections = [
     icon: Moon,
     description: 'Configure visual effects and animations',
     fields: [
-      { key: 'borderRadius', label: 'Border Radius', type: 'select', options: ['0px', '4px', '8px', '12px', '16px'] },
-      { key: 'shadowLevel', label: 'Shadow Level', type: 'select', options: ['none', 'light', 'medium', 'heavy'] },
+      {
+        key: 'borderRadius',
+        label: 'Border Radius',
+        type: 'select',
+        options: ['0px', '4px', '8px', '12px', '16px'],
+      },
+      {
+        key: 'shadowLevel',
+        label: 'Shadow Level',
+        type: 'select',
+        options: ['none', 'light', 'medium', 'heavy'],
+      },
       { key: 'transitions', label: 'Enable Transitions', type: 'checkbox' },
       { key: 'animations', label: 'Enable Animations', type: 'checkbox' },
-    ]
-  }
+    ],
+  },
 ];
 
-export function StyleEditor({ styles, onChange, expandedSection, setExpandedSection }: StyleEditorProps) {
+export function StyleEditor({
+  styles,
+  onChange,
+  expandedSection,
+  setExpandedSection,
+}: StyleEditorProps) {
   const renderField = (section: string, field: any) => {
     const value = styles[section]?.[field.key];
 
@@ -93,7 +169,7 @@ export function StyleEditor({ styles, onChange, expandedSection, setExpandedSect
             />
           )}
         </div>
-        
+
         {field.type !== 'checkbox' && (
           <div className="mt-1">
             {field.type === 'select' ? (
@@ -112,7 +188,9 @@ export function StyleEditor({ styles, onChange, expandedSection, setExpandedSect
               <Input
                 type="number"
                 value={value}
-                onChange={(e) => onChange(section, field.key, Number(e.target.value))}
+                onChange={(e) =>
+                  onChange(section, field.key, Number(e.target.value))
+                }
                 min={field.min}
                 max={field.max}
                 step={field.step || 1}

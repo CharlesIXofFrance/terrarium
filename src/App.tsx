@@ -1,12 +1,22 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { ErrorBoundary } from './components/ErrorBoundary';
+import React, { useEffect, useState } from 'react';
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from 'react-router-dom';
+import { useAtom } from 'jotai';
+import { userAtom, userCommunityAtom } from './lib/stores/auth';
+import { currentCommunityAtom } from './lib/stores/community';
+import { supabase } from './lib/supabase';
+import { ErrorBoundary } from './components/ui/molecules/ErrorBoundary';
 import { LandingPage } from './pages/LandingPage';
 import { Login } from './pages/auth/Login';
 import { Register } from './pages/auth/Register';
 import { AuthCallback } from './pages/auth/AuthCallback';
-import { ProtectedRoute } from './components/auth/ProtectedRoute';
-import { CommunityLayout } from './components/community/CommunityLayout';
-import { MemberLayout } from './components/member/MemberLayout';
+import { ProtectedRoute } from './components/features/auth/ProtectedRoute';
+import { CommunityLayout } from './components/layout/CommunityLayout';
+import { MemberLayout } from './components/features/members/MemberLayout';
 import { Dashboard } from './pages/community/Dashboard';
 import { Members } from './pages/community/Members';
 import { Jobs } from './pages/community/Jobs';
@@ -14,7 +24,7 @@ import { Employers } from './pages/community/Employers';
 import { JobBoardSettings } from './pages/community/JobBoardSettings';
 import { BrandingSettings } from './pages/community/BrandingSettings';
 import { CustomizationPortal } from './pages/community/CustomizationPortal';
-import { OnboardingFlow } from './components/onboarding/OnboardingFlow';
+import { OnboardingFlow } from './components/features/onboarding/OnboardingFlow';
 import { MemberHub } from './pages/member/MemberHub';
 import { JobBoard } from './pages/member/JobBoard';
 import { JobDetails } from './pages/member/JobDetails';
@@ -22,23 +32,249 @@ import { Events } from './pages/member/Events';
 import { Feed } from './pages/member/Feed';
 import { MemberProfile } from './pages/member/MemberProfile';
 import { RBACTest } from './pages/RBACTest';
+import { CommunityAccessGuard } from './components/features/auth/CommunityAccessGuard';
 
-export function App() {
+function App() {
+  const [user, setUser] = useAtom(userAtom);
+  const [userCommunity, setUserCommunity] = useAtom(userCommunityAtom);
+  const [, setCurrentCommunity] = useAtom(currentCommunityAtom);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Initial session check
+  useEffect(() => {
+    let mounted = true;
+
+    const checkSession = async () => {
+      try {
+        console.log('Debug - Starting session check');
+        const {
+          data: { user: sessionUser },
+        } = await supabase.auth.getUser();
+        console.log('Initial user:', { sessionUser });
+
+        if (!mounted) return;
+
+        if (sessionUser) {
+          // Fetch user profile and community in parallel
+          const [profileResult, communityResult] = await Promise.all([
+            supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', sessionUser.id)
+              .single(),
+            supabase
+              .from('communities')
+              .select('*')
+              .eq('owner_id', sessionUser.id)
+              .single(),
+          ]);
+
+          if (!mounted) return;
+
+          if (profileResult.error) {
+            console.error('Profile fetch error:', profileResult.error);
+            throw profileResult.error;
+          }
+
+          setUser({
+            ...sessionUser,
+            ...profileResult.data,
+            avatar:
+              profileResult.data.avatar_url ||
+              sessionUser.user_metadata?.avatar_url,
+          });
+
+          // If not an owner, check if member of any community
+          if (
+            communityResult.error &&
+            communityResult.error.code === 'PGRST116'
+          ) {
+            const { data: memberCommunity, error: memberError } = await supabase
+              .from('community_members')
+              .select('communities:communities(*)')
+              .eq('user_id', sessionUser.id)
+              .single();
+
+            if (!mounted) return;
+
+            if (memberError && memberError.code !== 'PGRST116') {
+              console.error('Member community fetch error:', memberError);
+              throw memberError;
+            }
+
+            if (memberCommunity?.communities) {
+              console.log(
+                'Setting member community:',
+                memberCommunity.communities
+              );
+              setUserCommunity(memberCommunity.communities);
+              setCurrentCommunity(memberCommunity.communities);
+            }
+          } else if (communityResult.error) {
+            console.error(
+              'Owner community fetch error:',
+              communityResult.error
+            );
+            throw communityResult.error;
+          } else if (communityResult.data) {
+            console.log('Setting owned community:', communityResult.data);
+            setUserCommunity(communityResult.data);
+            setCurrentCommunity(communityResult.data);
+          }
+        }
+      } catch (error) {
+        console.error('Session check error:', error);
+      } finally {
+        if (mounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    checkSession();
+    return () => {
+      mounted = false;
+    };
+  }, [setUser, setUserCommunity, setCurrentCommunity, setIsLoading]);
+
+  // Listen for auth state changes
+  useEffect(() => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state change:', { event, session });
+
+      if (session?.user) {
+        try {
+          const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+
+          if (profileError) {
+            if (profileError.code === 'PGRST116') {
+              const { data: newProfile, error: createError } = await supabase
+                .from('profiles')
+                .upsert({
+                  id: session.user.id,
+                  email: session.user.email,
+                  full_name: session.user.email?.split('@')[0] || 'New User',
+                  role: 'community_admin',
+                  profile_complete: false,
+                })
+                .select()
+                .single();
+
+              if (createError) throw createError;
+              setUser({
+                ...session.user,
+                ...newProfile,
+                avatar:
+                  newProfile.avatar_url ||
+                  session.user.user_metadata?.avatar_url,
+              });
+            } else {
+              throw profileError;
+            }
+          } else {
+            setUser({
+              ...session.user,
+              ...profile,
+              avatar:
+                profile.avatar_url || session.user.user_metadata?.avatar_url,
+            });
+          }
+
+          // Fetch user's community (either owned or member of)
+          const { data: ownedCommunity, error: ownedError } = await supabase
+            .from('communities')
+            .select('*')
+            .eq('owner_id', session.user.id)
+            .single();
+
+          if (ownedError && ownedError.code === 'PGRST116') {
+            const { data: memberCommunity, error: memberError } = await supabase
+              .from('community_members')
+              .select('community:communities(*)')
+              .eq('user_id', session.user.id)
+              .single();
+
+            if (memberError && memberError.code !== 'PGRST116') {
+              throw memberError;
+            }
+
+            if (memberCommunity?.community) {
+              setUserCommunity(memberCommunity.community);
+              setCurrentCommunity(memberCommunity.community);
+            }
+          } else if (ownedError) {
+            throw ownedError;
+          } else if (ownedCommunity) {
+            setUserCommunity(ownedCommunity);
+            setCurrentCommunity(ownedCommunity);
+          }
+        } catch (error) {
+          console.error('Error in auth change:', error);
+        }
+      } else {
+        setUser(null);
+        setUserCommunity(null);
+        setCurrentCommunity(null);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [setUser, setUserCommunity, setCurrentCommunity]);
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
   return (
     <ErrorBoundary>
       <Router>
         <Routes>
           {/* Public routes */}
-          <Route path="/" element={<LandingPage />} />
+          <Route
+            path="/"
+            element={
+              user ? (
+                <ProtectedRoute>
+                  <Navigate
+                    to={
+                      user?.profile_complete
+                        ? user.role === 'community_admin'
+                          ? `/c/${userCommunity?.slug || ''}`
+                          : `/m/${userCommunity?.slug || ''}`
+                        : '/onboarding'
+                    }
+                    replace
+                  />
+                </ProtectedRoute>
+              ) : (
+                <LandingPage />
+              )
+            }
+          />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="/rbac-test" element={<RBACTest />} />
-          <Route path="/onboarding" element={<OnboardingFlow />} />
+          <Route
+            path="/onboarding"
+            element={
+              <ProtectedRoute>
+                <OnboardingFlow />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Protected community admin routes */}
           <Route
-            path="/c/:communitySlug"
+            path="/c/:slug/*"
             element={
               <ProtectedRoute>
                 <CommunityLayout />
@@ -46,6 +282,7 @@ export function App() {
             }
           >
             <Route index element={<Dashboard />} />
+            <Route path="dashboard" element={<Dashboard />} />
             <Route path="members" element={<Members />} />
             <Route path="jobs" element={<Jobs />} />
             <Route path="employers" element={<Employers />} />
@@ -59,7 +296,9 @@ export function App() {
             path="/m/:communitySlug"
             element={
               <ProtectedRoute>
-                <MemberLayout />
+                <CommunityAccessGuard>
+                  <MemberLayout />
+                </CommunityAccessGuard>
               </ProtectedRoute>
             }
           >

@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSetAtom } from 'jotai';
-import { userAtom } from '../lib/auth';
+import { userAtom } from '../lib/stores/auth';
 import { Navbar } from '../components/Navbar';
 import { Hero } from '../components/Hero';
 import { Features } from '../components/Features';
@@ -19,7 +19,8 @@ const mockUsers = {
     communities: ['women-in-fintech'],
     createdAt: new Date().toISOString(),
     profileComplete: 70,
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&h=120&fit=crop',
+    avatar:
+      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&h=120&fit=crop',
   },
   admin: {
     id: 'test-admin',
@@ -28,7 +29,7 @@ const mockUsers = {
     role: 'admin',
     communities: ['women-in-fintech'],
     createdAt: new Date().toISOString(),
-  }
+  },
 };
 
 export function LandingPage() {
@@ -39,9 +40,11 @@ export function LandingPage() {
     const user = mockUsers[role];
     setUser(user);
     localStorage.setItem('user', JSON.stringify(user));
-    
+
     if (role === 'member') {
-      navigate('/m/women-in-fintech');
+      // Get user's community
+      const community = user.communities[0];
+      navigate(`/m/${community}`);
     } else {
       navigate('/c/default');
     }

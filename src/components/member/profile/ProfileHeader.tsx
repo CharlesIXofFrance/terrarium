@@ -1,6 +1,6 @@
 import React from 'react';
 import { UserCircle, MapPin, Building2 } from 'lucide-react';
-import { ProgressBar } from '../../ui/ProgressBar';
+import { ProgressBar } from '../../../components/ui/atoms/ProgressBar';
 
 interface ProfileHeaderProps {
   user: {
@@ -34,8 +34,8 @@ export function ProfileHeader({ user }: ProfileHeaderProps) {
           {/* Avatar and Basic Info */}
           <div className="flex items-center gap-4">
             {user.avatar ? (
-              <img 
-                src={user.avatar} 
+              <img
+                src={user.avatar}
                 alt={user.name}
                 className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg"
               />
@@ -65,11 +65,15 @@ export function ProfileHeader({ user }: ProfileHeaderProps) {
           <div className="flex-1 w-full md:w-auto">
             <div className="bg-indigo-50 rounded-lg p-4">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-indigo-700">Profile Completion</span>
-                <span className="text-sm font-medium text-indigo-700">{user.completionPercentage}%</span>
+                <span className="text-sm font-medium text-indigo-700">
+                  Profile Completion
+                </span>
+                <span className="text-sm font-medium text-indigo-700">
+                  {user.completionPercentage}%
+                </span>
               </div>
-              <ProgressBar 
-                value={user.completionPercentage} 
+              <ProgressBar
+                value={user.completionPercentage}
                 className="bg-indigo-100/50"
                 barClassName="bg-gradient-to-r from-indigo-500 to-indigo-600"
               />
@@ -80,10 +84,12 @@ export function ProfileHeader({ user }: ProfileHeaderProps) {
         {/* Interests */}
         {user.interests && user.interests.length > 0 && (
           <div className="mt-6">
-            <h3 className="text-sm font-medium text-gray-700 mb-2">Interests</h3>
+            <h3 className="text-sm font-medium text-gray-700 mb-2">
+              Interests
+            </h3>
             <div className="flex flex-wrap gap-2">
               {user.interests.map((interest, index) => (
-                <span 
+                <span
                   key={index}
                   className="inline-flex items-center px-3 py-1.5 rounded-full text-sm bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors cursor-pointer"
                 >

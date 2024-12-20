@@ -1,5 +1,10 @@
 import React from 'react';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../ui/Tabs';
+import {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+} from '../../../components/ui/molecules/Tabs';
 import { BackgroundTab } from './tabs/BackgroundTab';
 import { CurrentStatusTab } from './tabs/CurrentStatusTab';
 import { CareerSettingsTab } from './tabs/CareerSettingsTab';

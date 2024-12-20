@@ -2,11 +2,18 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { RefreshCw, CheckCircle, XCircle, AlertCircle, Plus, Minus } from 'lucide-react';
-import { Button } from '../ui/Button';
-import { Input } from '../ui/Input';
+import {
+  RefreshCw,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  Plus,
+  Minus,
+} from 'lucide-react';
+import { Button } from '../ui/atoms/Button';
+import { Input } from '../ui/atoms/Input';
 import { useRecruitCRM } from '../../lib/hooks/useRecruitCRM';
-import { env } from '../../lib/env';
+import { env } from '../../lib/utils/env';
 
 const settingsSchema = z.object({
   enabled: z.boolean(),
@@ -29,7 +36,7 @@ export function RecruitCRMSettings({ communityId }: RecruitCRMSettingsProps) {
   const [isTestingApi, setIsTestingApi] = useState(false);
   const [testResult, setTestResult] = useState<boolean | null>(null);
   const [testError, setTestError] = useState<string | null>(null);
-  
+
   const {
     settings,
     updateSettings,
@@ -61,12 +68,12 @@ export function RecruitCRMSettings({ communityId }: RecruitCRMSettingsProps) {
       setTestResult(false);
       return;
     }
-    
+
     setIsTestingApi(true);
     setTestResult(null);
     setTestError(null);
     let timeoutHandle: number;
-    
+
     try {
       // Set a UI timeout that's longer than the API timeout
       timeoutHandle = window.setTimeout(() => {
@@ -163,11 +170,13 @@ export function RecruitCRMSettings({ communityId }: RecruitCRMSettingsProps) {
               <XCircle className="h-5 w-5 text-red-400" />
             </div>
             <div className="ml-3">
-              <h3 className="text-sm font-medium text-red-800">
-                Sync Failed
-              </h3>
+              <h3 className="text-sm font-medium text-red-800">Sync Failed</h3>
               <div className="mt-2 text-sm text-red-700">
-                <p>{syncError instanceof Error ? syncError.message : 'An error occurred during sync'}</p>
+                <p>
+                  {syncError instanceof Error
+                    ? syncError.message
+                    : 'An error occurred during sync'}
+                </p>
               </div>
             </div>
           </div>
@@ -185,8 +194,9 @@ export function RecruitCRMSettings({ communityId }: RecruitCRMSettingsProps) {
             </h3>
             <div className="mt-2 text-sm text-blue-700">
               <p>
-                This integration is currently in development mode. Use any non-empty API key
-                to test the functionality. The API key "invalid" will simulate an error.
+                This integration is currently in development mode. Use any
+                non-empty API key to test the functionality. The API key
+                "invalid" will simulate an error.
               </p>
             </div>
           </div>
@@ -201,7 +211,10 @@ export function RecruitCRMSettings({ communityId }: RecruitCRMSettingsProps) {
             {...register('enabled')}
             className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
           />
-          <label htmlFor="enabled" className="text-sm font-medium text-gray-700">
+          <label
+            htmlFor="enabled"
+            className="text-sm font-medium text-gray-700"
+          >
             Enable RecruitCRM Integration
           </label>
         </div>
@@ -337,7 +350,9 @@ export function RecruitCRMSettings({ communityId }: RecruitCRMSettingsProps) {
                           updateSettings({
                             filters: {
                               ...settings.filters,
-                              locations: currentLocations.filter(l => l !== location),
+                              locations: currentLocations.filter(
+                                (l) => l !== location
+                              ),
                             },
                           });
                         }}
@@ -362,9 +377,7 @@ export function RecruitCRMSettings({ communityId }: RecruitCRMSettingsProps) {
                 <span>Sync Now</span>
               </Button>
 
-              <Button type="submit">
-                Save Changes
-              </Button>
+              <Button type="submit">Save Changes</Button>
             </div>
           </>
         )}

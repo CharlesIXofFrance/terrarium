@@ -2,21 +2,17 @@ import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Plus, Search, Filter } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
-import { Input } from '../../components/ui/Input';
+import { Input } from '../../components/ui/atoms/Input';
 import { JobList } from '../../components/jobs/JobList';
 import { useJobs } from '../../lib/hooks/useJobs';
 
 export function Jobs() {
   const { communitySlug } = useParams();
   const [searchTerm, setSearchTerm] = useState('');
-  
-  const {
-    jobs,
-    isLoading,
-    error,
-    totalJobs,
-    syncedFromRecruitCRM,
-  } = useJobs(communitySlug!);
+
+  const { jobs, isLoading, error, totalJobs, syncedFromRecruitCRM } = useJobs(
+    communitySlug!
+  );
 
   if (isLoading) {
     return (
@@ -29,15 +25,17 @@ export function Jobs() {
   if (error) {
     return (
       <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
-        Failed to load jobs: {error instanceof Error ? error.message : 'Unknown error'}
+        Failed to load jobs:{' '}
+        {error instanceof Error ? error.message : 'Unknown error'}
       </div>
     );
   }
 
-  const filteredJobs = jobs?.filter(job => 
-    job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    job.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    job.location.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredJobs = jobs?.filter(
+    (job) =>
+      job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      job.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      job.location.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -73,15 +71,20 @@ export function Jobs() {
 
       {filteredJobs?.length === 0 ? (
         <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No jobs found</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">
+            No jobs found
+          </h3>
           <p className="text-gray-500">
-            {searchTerm 
+            {searchTerm
               ? 'Try adjusting your search terms'
               : 'Post your first job or sync with RecruitCRM to get started'}
           </p>
         </div>
       ) : (
-        <JobList jobs={filteredJobs || []} onApply={(jobId) => console.log('Apply to job:', jobId)} />
+        <JobList
+          jobs={filteredJobs || []}
+          onApply={(jobId) => console.log('Apply to job:', jobId)}
+        />
       )}
     </div>
   );

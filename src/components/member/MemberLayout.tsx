@@ -2,7 +2,7 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { Outlet, useLocation, useParams } from 'react-router-dom';
 import { Header } from '../member-hub/Header';
 import { useAtom } from 'jotai';
-import { userAtom } from '../../lib/auth';
+import { userAtom } from '../../lib/stores/auth';
 import { Home, Briefcase, Calendar, BookOpen } from 'lucide-react';
 
 interface MemberLayoutProps {
@@ -37,41 +37,67 @@ export const THEME = {
   borderRadius: '0.5rem',
 };
 
-export function MemberLayout({ children, mode = 'desktop', isPreview = false }: MemberLayoutProps) {
+export function MemberLayout({
+  children,
+  mode = 'desktop',
+  isPreview = false,
+}: MemberLayoutProps) {
   const [user] = useAtom(userAtom);
   const location = useLocation();
   const { communitySlug } = useParams();
   const [showNotifications, setShowNotifications] = useState(false);
 
-  const baseSlug = isPreview ? '#' : `/m/${communitySlug || 'women-in-fintech'}`;
+  const baseSlug = isPreview
+    ? '#'
+    : `/m/${communitySlug || 'women-in-fintech'}`;
 
-  const mockUser = useMemo(() => ({
-    name: 'Clara Johnson',
-    role: 'member',
-    profileComplete: 70,
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&h=120&fit=crop',
-    mentoring: true,
-    coaching: true,
-  }), []);
+  const mockUser = useMemo(
+    () => ({
+      name: 'Clara Johnson',
+      role: 'member',
+      profileComplete: 70,
+      avatar:
+        'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&h=120&fit=crop',
+      mentoring: true,
+      coaching: true,
+    }),
+    []
+  );
 
-  const navigation = useMemo(() => [
-    { name: 'Home', href: baseSlug, icon: Home },
-    { name: 'Jobs', href: `${baseSlug}/jobs`, icon: Briefcase },
-    { name: 'Events', href: `${baseSlug}/events`, icon: Calendar },
-    { name: 'Academy', href: `${baseSlug}/academy`, icon: BookOpen },
-  ], [baseSlug]);
+  const navigation = useMemo(
+    () => [
+      { name: 'Home', href: baseSlug, icon: Home },
+      { name: 'Jobs', href: `${baseSlug}/jobs`, icon: Briefcase },
+      { name: 'Events', href: `${baseSlug}/events`, icon: Calendar },
+      { name: 'Academy', href: `${baseSlug}/academy`, icon: BookOpen },
+    ],
+    [baseSlug]
+  );
 
-  const notifications = useMemo(() => [
-    { id: 1, title: 'New job match!', message: 'A new job matching your profile has been posted.' },
-    { id: 2, title: 'Upcoming event', message: 'Don\'t forget about the networking event tomorrow!' },
-  ], []);
+  const notifications = useMemo(
+    () => [
+      {
+        id: 1,
+        title: 'New job match!',
+        message: 'A new job matching your profile has been posted.',
+      },
+      {
+        id: 2,
+        title: 'Upcoming event',
+        message: "Don't forget about the networking event tomorrow!",
+      },
+    ],
+    []
+  );
 
   const toggleNotifications = useCallback(() => {
-    setShowNotifications(prev => !prev);
+    setShowNotifications((prev) => !prev);
   }, []);
 
   return (
-    <div className={`relative min-h-screen bg-gray-50 ${mode === 'mobile' ? 'max-w-sm mx-auto' : ''}`}>
+    <div
+      className={`relative min-h-screen bg-gray-50 ${mode === 'mobile' ? 'max-w-sm mx-auto' : ''}`}
+    >
       <div className="relative transition-all duration-200">
         <Header
           styles={THEME}
@@ -85,9 +111,7 @@ export function MemberLayout({ children, mode = 'desktop', isPreview = false }: 
           isPreview={isPreview}
         />
       </div>
-      <main className="pt-16">
-        {children || <Outlet />}
-      </main>
+      <main className="pt-16">{children || <Outlet />}</main>
     </div>
   );
 }

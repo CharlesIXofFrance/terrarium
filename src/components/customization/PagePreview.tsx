@@ -1,4 +1,6 @@
 import React from 'react';
+import { useAtom } from 'jotai';
+import { currentCommunityAtom } from '../../lib/stores/community';
 import { MemberHub } from '../member-hub/MemberHub';
 import { JobBoard } from '../../pages/member/JobBoard';
 import { Events } from '../../pages/member/Events';
@@ -25,21 +27,30 @@ interface PagePreviewProps {
   };
 }
 
-export function PagePreview({ pageId, styles, mode, testUser }: PagePreviewProps) {
+export function PagePreview({
+  pageId,
+  styles,
+  mode,
+  testUser,
+}: PagePreviewProps) {
+  const [currentCommunity] = useAtom(currentCommunityAtom);
+
   // Mock user for consistent preview
   const mockUser = {
     name: 'Clara Johnson',
     role: 'member',
     profileComplete: 70,
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&h=120&fit=crop',
+    avatar:
+      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&h=120&fit=crop',
     mentoring: true,
     coaching: true,
+    community: currentCommunity,
   };
 
   const getComponent = () => {
     switch (pageId) {
       case 'member-hub':
-        return <MemberHub styles={styles} testUser={mockUser} />;
+        return <MemberHub styles={styles} testUser={testUser || mockUser} />;
       case 'job-board':
         return <JobBoard />;
       case 'events':
@@ -54,7 +65,7 @@ export function PagePreview({ pageId, styles, mode, testUser }: PagePreviewProps
   };
 
   return (
-    <div 
+    <div
       className={`min-h-[600px] relative bg-gray-50 ${
         mode === 'mobile' ? 'max-w-sm mx-auto' : ''
       }`}

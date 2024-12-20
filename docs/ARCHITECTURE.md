@@ -91,10 +91,58 @@ src/
    - Consistent structure
 
 2. State Management
+
    - React Query for server state
    - Local state management
    - Error handling
    - Loading states
+
+   ### Authentication State
+
+   ```typescript
+   // Jotai atoms for global state
+   userAtom: UserProfile | null
+   userCommunityAtom: Community | null
+   currentCommunityAtom: Community | null
+
+   // State Flow
+   1. User logs in -> Session established in Supabase
+   2. Session triggers -> Profile fetched
+   3. Profile loaded -> Community data fetched if admin
+   4. Community loaded -> State synchronized across app
+   ```
+
+   ### Community Management
+
+   ```typescript
+   // Core Community Type
+   interface Community {
+     id: string;
+     name: string;
+     description: string;
+     owner_id: string;
+     slug: string;
+     created_at: string;
+     updated_at: string;
+   }
+
+   // Extended Community Settings
+   interface CommunitySettings {
+     branding?: Record<string, any>;
+     jobBoard?: {
+       requireApproval: boolean;
+       categories: string[];
+     };
+     members?: any[];
+     employers?: any[];
+   }
+
+   // State Flow
+   1. Community loaded from userCommunityAtom
+   2. Settings synchronized with currentCommunityAtom
+   3. Components access community data through atoms
+   4. Updates propagate through Jotai subscriptions
+   ```
 
 ## Performance Considerations
 
@@ -128,21 +176,36 @@ src/
 
 ## Security Architecture
 
-1. Authentication
+### Authentication Flow
+
+1. Supabase handles initial authentication
+2. Session persistence managed by Supabase client
+3. Protected routes validate user session
+4. Role-based access control enforces permissions
+5. Community access validated against user role
+
+### Data Access Control
+
+1. Row-level security in Supabase
+2. Role-based component rendering
+3. Protected route wrappers
+4. Community-specific data isolation
+
+5. Authentication
 
    - Role-based access control (RBAC)
    - JWT token management
    - Session handling
    - OAuth integration
 
-2. Data Protection
+6. Data Protection
 
    - Encrypted storage
    - Secure communication
    - Privacy controls
    - GDPR compliance
 
-3. API Security
+7. API Security
    - Rate limiting
    - Request validation
    - Error handling

@@ -1,6 +1,7 @@
 import React from 'react';
+import { useAtom } from 'jotai';
 import { UserCircle, MapPin, Building2 } from 'lucide-react';
-import { ProgressBar } from '../../ui/ProgressBar';
+import { ProgressBar } from '@/components/ui/atoms/ProgressBar';
 
 interface ProfileHeaderProps {
   user: {

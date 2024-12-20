@@ -9,7 +9,7 @@ import { useAtom } from 'jotai';
 import { userAtom, userCommunityAtom } from './lib/stores/auth';
 import { currentCommunityAtom } from './lib/stores/community';
 import { supabase } from './lib/supabase';
-import { ErrorBoundary } from './components/ui/molecules/ErrorBoundary';
+import { ErrorBoundary } from '@/components/layout/molecules/ErrorBoundary';
 import { LandingPage } from './pages/LandingPage';
 import { Login } from './pages/auth/Login';
 import { Register } from './pages/auth/Register';

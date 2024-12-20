@@ -1,12 +1,12 @@
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
-import { EventCard } from '../events/EventCard';
-import { useEvents } from '../../../lib/hooks/useEvents';
+import { EventCard } from '@/components/features/events/EventCard';
+import { useEvents } from '@/lib/hooks/useEvents';
 
 export function UpcomingEvents() {
   const { communitySlug } = useParams();
-  const { events } = useEvents();
+  const { events = [], isLoading, error } = useEvents();
 
   return (
     <section className="bg-white rounded-xl p-6 space-y-6">
@@ -22,9 +22,17 @@ export function UpcomingEvents() {
       </div>
 
       <div className="space-y-4">
-        {events.slice(0, 3).map((event) => (
-          <EventCard key={event.id} event={event} />
-        ))}
+        {isLoading ? (
+          <div className="text-gray-500">Loading events...</div>
+        ) : error ? (
+          <div className="text-red-500">Failed to load events</div>
+        ) : events.length === 0 ? (
+          <div className="text-gray-500">No upcoming events</div>
+        ) : (
+          events
+            .slice(0, 3)
+            .map((event) => <EventCard key={event.id} event={event} />)
+        )}
       </div>
     </section>
   );

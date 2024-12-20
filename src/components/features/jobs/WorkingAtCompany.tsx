@@ -1,6 +1,6 @@
-import React from 'react';
-import { JOB_TESTIMONIALS } from '../../../lib/data/mockJobs';
-import type { Job } from '../../../lib/types/jobs';
+import React, { useMemo } from 'react';
+import { JOB_TESTIMONIALS } from '@/lib/mocks/mockJobs';
+import type { Job } from '@/lib/types/jobs';
 
 interface WorkingAtCompanyProps {
   companyName: string;

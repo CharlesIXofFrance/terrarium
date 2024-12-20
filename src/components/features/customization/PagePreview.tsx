@@ -1,10 +1,10 @@
 import React from 'react';
-import { MemberHub } from '../member-hub/MemberHub';
-import { JobBoard } from '../../../pages/member/JobBoard';
-import { Events } from '../../../pages/member/Events';
-import { Feed } from '../../../pages/member/Feed';
-import { MemberProfile } from '../../../pages/member/MemberProfile';
-import { MemberLayout } from '../members/MemberLayout';
+import { MemberHub } from '@/components/features/member-hub/MemberHub';
+import { JobBoard } from '@/pages/member/JobBoard';
+import { Events } from '@/pages/member/Events';
+import { Feed } from '@/pages/member/Feed';
+import { MemberProfile } from '@/pages/member/MemberProfile';
+import { MemberLayout } from '@/components/features/members/MemberLayout';
 
 interface PagePreviewProps {
   pageId: string;

@@ -1,5 +1,5 @@
 import React from 'react';
-import { LiveFeed } from '../../components/member-hub/LiveFeed';
+import { LiveFeed } from '@/components/features/member-hub/LiveFeed';
 import { Search } from 'lucide-react';
 
 export function Feed() {

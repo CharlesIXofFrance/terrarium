@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { Outlet, useLocation, useParams } from 'react-router-dom';
-import { Header } from '../../member-hub/Header';
+import { Header } from '@/components/features/member-hub/Header';
 import { useAtom } from 'jotai';
 import { userAtom } from '../../../lib/stores/auth';
 import { currentCommunityAtom } from '../../../lib/stores/community';

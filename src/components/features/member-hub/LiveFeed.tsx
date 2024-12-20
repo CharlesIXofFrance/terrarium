@@ -1,8 +1,8 @@
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
-import { FeedItem } from '../feed/FeedItem';
-import { useFeed } from '../../../lib/hooks/useFeed';
+import { FeedItem } from '@/components/features/feed/FeedItem';
+import { useFeed } from '@/lib/hooks/useFeed';
 
 export function LiveFeed() {
   const { communitySlug } = useParams();

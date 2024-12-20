@@ -1,48 +1,78 @@
-import { Link } from 'react-router-dom';
-import { Menu, Bell, User } from 'lucide-react';
+import React from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Globe2 } from 'lucide-react';
+import { useAuth } from '@/lib/hooks/useAuth';
 
-export const Navbar = () => {
+export function Navbar() {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/');
+  };
+
   return (
-    <nav className="bg-white border-b border-gray-200">
-      <div className="max-w-7xl mx-auto px-container-sm md:px-container-md lg:px-container-lg">
-        <div className="flex justify-between h-16">
-          {/* Left section */}
-          <div className="flex items-center">
-            <button
-              type="button"
-              className="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary lg:hidden"
-            >
-              <span className="sr-only">Open sidebar</span>
-              <Menu className="h-6 w-6" />
-            </button>
-            <Link to="/" className="flex items-center">
-              <span className="text-xl font-bold text-primary">Terrarium</span>
-            </Link>
+    <nav className="fixed w-full bg-white/80 backdrop-blur-md z-50 border-b border-gray-100">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between h-16 items-center">
+          <div className="flex items-center space-x-2">
+            <Globe2 className="h-8 w-8 text-indigo-600" />
+            <span className="text-xl font-bold text-gray-900">Terrarium</span>
           </div>
 
-          {/* Right section */}
-          <div className="flex items-center space-x-4">
-            <button
-              type="button"
-              className="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary"
+          <div className="hidden md:flex space-x-8">
+            <a href="#features" className="text-gray-600 hover:text-gray-900">
+              Features
+            </a>
+            <a
+              href="#communities"
+              className="text-gray-600 hover:text-gray-900"
             >
-              <span className="sr-only">View notifications</span>
-              <Bell className="h-6 w-6" />
-            </button>
+              Communities
+            </a>
+            <a href="#employers" className="text-gray-600 hover:text-gray-900">
+              Employers
+            </a>
+          </div>
 
-            {/* Profile dropdown */}
-            <div className="relative">
-              <button
-                type="button"
-                className="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary"
-              >
-                <span className="sr-only">Open user menu</span>
-                <User className="h-6 w-6" />
-              </button>
-            </div>
+          <div className="flex items-center space-x-4">
+            {user ? (
+              <>
+                <Link
+                  to={
+                    user.role === 'admin' ? '/c/default' : '/m/women-in-fintech'
+                  }
+                  className="text-gray-600 hover:text-gray-900"
+                >
+                  Dashboard
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="text-gray-600 hover:text-gray-900"
+                >
+                  Sign Out
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  className="text-gray-600 hover:text-gray-900 px-3 py-2"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  to="/register"
+                  className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition"
+                >
+                  Get Started
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </div>
     </nav>
   );
-};
+}

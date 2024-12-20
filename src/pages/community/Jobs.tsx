@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Plus, Search, Filter } from 'lucide-react';
-import { Button } from '../../components/ui/Button';
-import { Input } from '../../components/ui/atoms/Input';
-import { JobList } from '../../components/jobs/JobList';
-import { useJobs } from '../../lib/hooks/useJobs';
+import { Button } from '@/components/ui/atoms/Button';
+import { Input } from '@/components/ui/atoms/Input';
+import { JobList } from '@/components/features/jobs/JobList';
+import { useJobs } from '@/lib/hooks/useJobs';
 
 export function Jobs() {
   const { communitySlug } = useParams();

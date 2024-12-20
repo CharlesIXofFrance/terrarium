@@ -1,10 +1,10 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { JobCard } from './JobCard';
-import { scrollToTop } from '../../lib/utils/scroll';
-import { useJobs } from '../../lib/hooks/useJobs';
-import { getRelatedJobs } from '../../lib/utils/jobs';
+import { JobCard } from '@/components/features/jobs/JobCard';
+import { scrollToTop } from '@/lib/utils/scroll';
+import { useJobs } from '@/lib/hooks/useJobs';
+import { getRelatedJobs } from '@/lib/utils/jobs';
 
 interface RelatedJobsProps {
   currentJobId: string;

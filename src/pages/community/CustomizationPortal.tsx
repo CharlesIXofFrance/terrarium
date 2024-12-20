@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAtom } from 'jotai';
-import { currentCommunityAtom } from '../../lib/stores/community';
+import { currentCommunityAtom } from '@/lib/stores/community';
 import {
   ArrowLeft,
   Monitor,
@@ -16,11 +16,11 @@ import {
   Moon,
   Grid,
 } from 'lucide-react';
-import { Button } from '../../components/ui/Button';
-import { Input } from '../../components/ui/atoms/Input';
-import { StyleEditor } from '../../components/customization/StyleEditor';
-import { PagePreview } from '../../components/customization/PagePreview';
-import { useStyles } from '../../lib/hooks/useStyles';
+import { Button } from '@/components/ui/atoms/Button';
+import { Input } from '@/components/ui/atoms/Input';
+import { StyleEditor } from '@/components/features/customization/StyleEditor';
+import { PagePreview } from '@/components/features/customization/PagePreview';
+import { useStyles } from '@/lib/hooks/useStyles';
 
 type PreviewMode = 'desktop' | 'mobile' | 'fullscreen';
 type PageType =

@@ -1,9 +1,9 @@
 import React from 'react';
 import { useAtom } from 'jotai';
-import { userAtom } from '../../lib/stores/auth';
-import { ProfileHeader } from '../../components/member/profile/ProfileHeader';
-import { ProfileSidebar } from '../../components/member/profile/ProfileSidebar';
-import { ProfileTabs } from '../../components/member/profile/ProfileTabs';
+import { userAtom } from '@/lib/stores/auth';
+import { ProfileHeader } from '@/components/features/members/profile/ProfileHeader';
+import { ProfileSidebar } from '@/components/features/members/profile/ProfileSidebar';
+import { ProfileTabs } from '@/components/features/members/profile/ProfileTabs';
 
 export function MemberProfile() {
   const [user] = useAtom(userAtom);

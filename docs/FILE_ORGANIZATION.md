@@ -1,4 +1,138 @@
-# File Organization
+# File Organization Guide
+
+## Directory Structure
+
+```
+src/
+├── pages/                    # Page components
+│   ├── auth/                # Authentication pages
+│   │   ├── Login.tsx
+│   │   └── Register.tsx
+│   ├── member/              # Member-specific pages
+│   │   ├── JobBoard.tsx
+│   │   └── Events.tsx
+│   └── community/           # Community admin pages
+│       ├── Dashboard.tsx
+│       └── Settings.tsx
+│
+├── components/
+│   ├── features/            # Feature-specific components
+│   │   ├── auth/           # Authentication components
+│   │   │   ├── LoginForm.tsx
+│   │   │   └── RegisterForm.tsx
+│   │   ├── jobs/          # Job-related components
+│   │   │   ├── JobList.tsx
+│   │   │   └── JobCard.tsx
+│   │   ├── events/        # Event-related components
+│   │   │   ├── Calendar.tsx
+│   │   │   └── EventList.tsx
+│   │   └── members/       # Member-related components
+│   │       ├── profile/
+│   │       └── settings/
+│   │
+│   ├── ui/                # Generic UI components
+│   │   ├── atoms/        # Basic UI elements
+│   │   │   ├── Button.tsx
+│   │   │   ├── Input.tsx
+│   │   │   └── ProgressBar.tsx
+│   │   └── molecules/    # Composed UI components
+│   │       ├── Card.tsx
+│   │       └── Modal.tsx
+│   │
+│   ├── charts/           # Chart components
+│   │   └── LineChart.tsx
+│   │
+│   └── layout/           # Layout components
+│       ├── molecules/    # Layout-specific molecules
+│       │   ├── Hero.tsx
+│       │   ├── Features.tsx
+│       │   ├── CTA.tsx
+│       │   ├── Tabs.tsx
+│       │   └── ErrorBoundary.tsx
+│       ├── Navbar.tsx
+│       ├── Footer.tsx
+│       └── Sidebar.tsx
+│
+└── lib/                  # Application logic
+    ├── hooks/           # Custom hooks
+    │   ├── useAuth.ts
+    │   └── useEvents.ts
+    ├── stores/          # State management
+    │   ├── auth.ts
+    │   └── community.ts
+    ├── types/           # TypeScript types
+    └── mocks/           # Mock data
+```
+
+## Import Rules
+
+1. Always use path aliases:
+
+   ```typescript
+   // ✅ Good
+   import { Button } from '@/components/ui/atoms/Button';
+   import { Hero } from '@/components/layout/molecules/Hero';
+   import { LineChart } from '@/components/charts/LineChart';
+   import { useAuth } from '@/lib/hooks/useAuth';
+
+   // ❌ Bad
+   import { Button } from '../../components/ui/Button';
+   import { Hero } from '../components/Hero';
+   import { LineChart } from '../../components/charts/LineChart';
+   import { useAuth } from '../lib/hooks/useAuth';
+   ```
+
+2. Component Categories:
+
+   - `features/`: Feature-specific components (e.g., auth, jobs, events)
+   - `ui/atoms/`: Basic UI elements (Button, Input, etc.)
+   - `ui/molecules/`: Generic composed UI components (Card, Modal, etc.)
+   - `charts/`: Data visualization components (LineChart, etc.)
+   - `layout/`: Layout components (Navbar, Footer, etc.)
+   - `layout/molecules/`: Layout-specific molecules (Hero, Features, CTA, Tabs, etc.)
+
+3. File Naming:
+   - Components: PascalCase (e.g., `Button.tsx`, `JobCard.tsx`)
+   - Hooks: camelCase with 'use' prefix (e.g., `useAuth.ts`, `useJobs.ts`)
+   - Types: PascalCase (e.g., `User.ts`, `Job.ts`)
+
+## Common Issues
+
+1. Import Resolution:
+
+   - Always use `@/` path alias instead of relative paths
+   - Check component category (ui/features/layout/charts) when importing
+   - Verify file exists in the correct directory
+
+2. Component Organization:
+
+   - Feature-specific components go in `features/[feature]/`
+   - Generic UI components go in `ui/atoms/` or `ui/molecules/`
+   - Chart components go in `charts/`
+   - Layout components go in `layout/`
+   - Layout-specific UI components go in `layout/molecules/`
+
+3. State Management:
+
+   - Global state: `lib/stores/`
+   - Component state: Use React hooks
+   - API state: Use React Query
+
+4. Type Safety:
+   - Define types in `lib/types/`
+   - Use TypeScript interfaces and types
+   - Avoid using `any`
+
+## Migration Process
+
+When moving a component:
+
+1. **Create the new directory** if it doesn't exist
+2. **Move the component** to its new location
+3. **Update imports** in the moved component to use path aliases
+4. **Update all references** to the component in other files
+5. **Test the component** in all its usage locations
+6. **Remove the old component** only after confirming everything works
 
 ## Component Structure
 
@@ -7,104 +141,20 @@
 - **Atoms**: Basic UI elements
 
   - Button
-  - Input (moved from /components/ui/)
-    - Updated imports in RecruitCRMSettings.tsx
+  - Input
   - Label
-  - CircularProgress (moved from /components/ui/)
-    - Updated imports in CompanyInsights.tsx
-  - ProgressBar (moved from /components/ui/)
-    - Updated imports in ProfileHeader.tsx
+  - CircularProgress
+  - ProgressBar
   - Icons and Loading States
-    - Icon Usage
-      - Using lucide-react for consistent icon set
-      - Icons imported directly from lucide-react
-      - Common icons:
-        - Loader2: Loading spinner
-        - Users: Member management
-        - TrendingUp: Analytics
-        - Eye: Visibility
-        - ArrowUpRight/ArrowDownRight: Trends
-    - Loading States
-      - Consistent loading UI across components
-      - Centered loading spinners
-      - Proper loading state management
-      - Fallback UI components
 
 - **Molecules**: Combined components
   - Card
-  - Tabs (moved from /components/ui/)
-    - Updated imports in ProfileTabs.tsx
+  - Modal
   - Toast system
   - CTA
   - ErrorBoundary
   - Features
   - Hero
-
-### Feature Components (`/components/features/`)
-
-- **Jobs**
-
-  - Benefits
-  - CareerConsult
-  - CompanyInsights
-  - EmployeesTake
-  - JobCard
-  - JobFilters
-  - JobHeader
-  - JobList
-  - JobPostingForm
-  - RelatedJobs
-  - RoleDetails
-  - SelectedFilters
-  - SisterScoreCard
-  - WorkingAtCompany
-
-- **Members**
-
-  - MemberLayout
-  - Profile components (in profile/ subdirectory)
-
-- **Settings**
-
-  - RecruitCRMSettings
-
-- **Auth**
-
-  - Auth (root component)
-  - AuthGuard
-  - EmailVerification
-  - LoginForm
-  - ProtectedRoute
-  - RBACRoute
-  - RegisterForm
-
-- **Events**
-
-  - Calendar
-  - EventList
-
-- **Communities**
-
-  - CommunityCard
-
-- **Customization**
-
-  - PagePreview
-  - StyleEditor
-  - Preview components
-
-- **Member Hub**
-
-  - CareerAcademy
-  - Header
-  - LiveFeed
-  - MemberHub
-  - OpportunitiesSection
-  - ProfileSection
-  - UpcomingEvents
-
-- **Onboarding**
-  - OnboardingFlow
 
 ### Layout Components (`/components/layout/`)
 
@@ -113,6 +163,101 @@
 - Navbar
 - Sidebar
 - Footer
+
+## Import Path Configuration
+
+### Path Aliases
+
+```typescript
+// tsconfig.json
+{
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["./src/*"],
+      "@components/*": ["./src/components/*"],
+      "@features/*": ["./src/components/features/*"],
+      "@ui/*": ["./src/components/ui/*"],
+      "@lib/*": ["./src/lib/*"],
+      "@utils/*": ["./src/lib/utils/*"],
+      "@stores/*": ["./src/lib/stores/*"],
+      "@types/*": ["./src/lib/types/*"]
+    }
+  }
+}
+```
+
+## Import Best Practices
+
+1. Use path aliases for imports:
+
+```typescript
+// Good
+import { JobCard } from '@features/jobs/JobCard';
+import { Button } from '@ui/atoms/Button';
+
+// Bad
+import { JobCard } from '../../components/features/jobs/JobCard';
+import { Button } from '../../../components/ui/atoms/Button';
+```
+
+2. Import order:
+
+```typescript
+// 1. External packages
+import React from 'react';
+import { useQuery } from '@tanstack/react-query';
+
+// 2. Internal utilities and stores
+import { useJobs } from '@lib/hooks/useJobs';
+import { jobsStore } from '@stores/jobs';
+
+// 3. Components
+import { JobCard } from '@features/jobs/JobCard';
+import { Button } from '@ui/atoms/Button';
+
+// 4. Types
+import type { Job } from '@types/jobs';
+```
+
+## Important: Path Aliases
+
+All imports MUST use path aliases instead of relative paths. This ensures imports continue to work when files are moved and prevents 404/500 errors.
+
+```typescript
+// ✅ CORRECT: Use path aliases
+import { JobHeader } from '@/components/features/jobs/JobHeader';
+import { useJobs } from '@/lib/hooks/useJobs';
+import type { Job } from '@/lib/types';
+
+// ❌ WRONG: Don't use relative paths
+import { JobHeader } from '../../components/jobs/JobHeader';
+import { useJobs } from '../../../lib/hooks/useJobs';
+import type { Job } from '../../lib/types';
+```
+
+## Files Requiring Import Updates
+
+The following files need their import paths updated to use the new feature component locations:
+
+1. Job-related imports:
+
+- `src/pages/jobs/JobBoard.tsx`
+- `src/pages/jobs/JobDetails.tsx`
+- `src/pages/jobs/Jobs.tsx`
+
+2. Member Hub imports:
+
+- `src/pages/member/Feed.tsx`
+- `src/pages/member/MemberHub.tsx`
+- `src/components/layout/MemberLayout.tsx`
+
+## Migration Steps
+
+1. Update all import paths to use the new feature component locations
+2. Use path aliases instead of relative paths
+3. Test each updated component to ensure proper rendering
+4. Update any dynamic imports to use the new paths
+5. Update any lazy-loaded component paths
 
 ## Core Functionality
 

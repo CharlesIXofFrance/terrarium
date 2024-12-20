@@ -9,17 +9,17 @@ import {
   X,
   ArrowUp,
 } from 'lucide-react';
-import { useJobs } from '../../lib/hooks/useJobs';
-import { JobList } from '../../components/jobs/JobList';
-import { JobFilters, filterLabels } from '../../components/jobs/JobFilters';
-import { SelectedFilters } from '../../components/jobs/SelectedFilters';
-import { useScrollRestoration } from '../../lib/hooks/useScrollRestoration';
-import { Button } from '../../components/ui/Button';
+import { useJobs } from '@/lib/hooks/useJobs';
+import { JobList } from '@/components/features/jobs/JobList';
+import { JobFilters } from '@/components/features/jobs/JobFilters';
+import { SelectedFilters } from '@/components/features/jobs/SelectedFilters';
+import { useScrollRestoration } from '@/lib/hooks/useScrollRestoration';
+import { Button } from '@/components/ui/atoms/Button';
 import {
   Tabs,
   TabsList,
   TabsTrigger,
-} from '../../components/ui/molecules/Tabs';
+} from '@/components/layout/molecules/Tabs';
 
 export function JobBoard() {
   useScrollRestoration();

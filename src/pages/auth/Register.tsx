@@ -1,5 +1,7 @@
+import React from 'react';
 import { Link } from 'react-router-dom';
-import { RegisterForm } from '../../components/auth/RegisterForm';
+import { Globe2 } from 'lucide-react';
+import { RegisterForm } from '@/components/features/auth/RegisterForm';
 
 export function Register() {
   return (
@@ -10,7 +12,10 @@ export function Register() {
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600">
           Already have an account?{' '}
-          <Link to="/login" className="font-medium text-blue-600 hover:text-blue-500">
+          <Link
+            to="/login"
+            className="font-medium text-blue-600 hover:text-blue-500"
+          >
             Sign in
           </Link>
         </p>

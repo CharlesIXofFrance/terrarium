@@ -1,13 +1,13 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSetAtom } from 'jotai';
-import { userAtom } from '../lib/stores/auth';
-import { Navbar } from '../components/Navbar';
-import { Hero } from '../components/Hero';
-import { Features } from '../components/Features';
-import { Benefits } from '../components/Benefits';
-import { CTA } from '../components/CTA';
-import { Footer } from '../components/Footer';
+import { userAtom } from '@/lib/stores/auth';
+import { Navbar } from '@/components/layout/Navbar';
+import { Hero } from '@/components/layout/molecules/Hero';
+import { Features } from '@/components/layout/molecules/Features';
+import { Benefits } from '@/components/features/jobs/Benefits';
+import { CTA } from '@/components/layout/molecules/CTA';
+import { Footer } from '@/components/layout/Footer';
 
 // Mock users for testing
 const mockUsers = {

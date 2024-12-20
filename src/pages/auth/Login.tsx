@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { Globe2 } from 'lucide-react';
-import { LoginForm } from '../../components/auth/LoginForm';
+import { LoginForm } from '@/components/features/auth/LoginForm';
 
 export function Login() {
   const [searchParams] = useSearchParams();

@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAtom } from 'jotai';
 import { userAtom } from '../../lib/stores/auth';
-import { MemberHub as MemberHubComponent } from '../../components/member-hub/MemberHub';
+import { MemberHub as MemberHubComponent } from '@/components/features/member-hub/MemberHub';
 
 export function MemberHub() {
   const [user] = useAtom(userAtom);

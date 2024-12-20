@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { useAtom } from 'jotai';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import {
   Users,
   TrendingUp,
@@ -11,10 +11,9 @@ import {
   ExternalLink,
   Loader2,
 } from 'lucide-react';
-import { communityStateAtom } from '../../lib/stores/community';
-import { Button } from '../../components/ui/Button';
-import { LineChart } from '../../components/charts/LineChart';
-import { Navigate } from 'react-router-dom';
+import { communityStateAtom } from '@/lib/stores/community';
+import { Button } from '@/components/ui/atoms/Button';
+import { LineChart } from '@/components/charts/LineChart';
 
 interface StatCardProps {
   title: string;

@@ -3,17 +3,17 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Loader2, AlertCircle, ArrowLeft, ArrowUp } from 'lucide-react';
 import { useAtom } from 'jotai';
 import { jobsAtom } from '../../lib/stores/jobs';
-import { JobHeader } from '../../components/jobs/JobHeader';
-import { SisterScoreCard } from '../../components/jobs/SisterScoreCard';
-import { RoleDetails } from '../../components/jobs/RoleDetails';
-import { EmployeesTake } from '../../components/jobs/EmployeesTake';
-import { CompanyInsights } from '../../components/jobs/CompanyInsights';
-import { RelatedJobs } from '../../components/jobs/RelatedJobs';
-import { Benefits } from '../../components/jobs/Benefits';
-import { WorkingAtCompany } from '../../components/jobs/WorkingAtCompany';
-import { CareerConsult } from '../../components/jobs/CareerConsult';
-import { getRelatedJobs } from '../../lib/utils/jobs';
-import { Button } from '../../components/ui/Button';
+import { JobHeader } from '@/components/features/jobs/JobHeader';
+import { SisterScoreCard } from '@/components/features/jobs/SisterScoreCard';
+import { RoleDetails } from '@/components/features/jobs/RoleDetails';
+import { EmployeesTake } from '@/components/features/jobs/EmployeesTake';
+import { CompanyInsights } from '@/components/features/jobs/CompanyInsights';
+import { RelatedJobs } from '@/components/features/jobs/RelatedJobs';
+import { Benefits } from '@/components/features/jobs/Benefits';
+import { WorkingAtCompany } from '@/components/features/jobs/WorkingAtCompany';
+import { CareerConsult } from '@/components/features/jobs/CareerConsult';
+import { getRelatedJobs } from '@/lib/utils/jobs';
+import { Button } from '@/components/ui/atoms/Button';
 
 export function JobDetails() {
   const { jobId, communitySlug } = useParams();

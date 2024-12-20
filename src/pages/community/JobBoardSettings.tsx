@@ -1,7 +1,7 @@
 import React from 'react';
 import { useParams } from 'react-router-dom';
-import { RecruitCRMSettings } from '../../components/settings/RecruitCRMSettings';
-import { Button } from '../../components/ui/Button';
+import { RecruitCRMSettings } from '@/components/features/settings/RecruitCRMSettings';
+import { Button } from '@/components/ui/atoms/Button';
 
 export function JobBoardSettings() {
   const { slug } = useParams();

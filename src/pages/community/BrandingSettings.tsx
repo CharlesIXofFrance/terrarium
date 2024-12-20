@@ -3,9 +3,9 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAtom } from 'jotai';
-import { currentCommunityAtom } from '../../stores/community';
-import { Button } from '../../components/ui/Button';
-import { Input } from '../../components/ui/atoms/Input';
+import { currentCommunityAtom } from '@/lib/stores/community';
+import { Button } from '@/components/ui/atoms/Button';
+import { Input } from '@/components/ui/atoms/Input';
 
 const brandingSchema = z.object({
   name: z.string().min(1, 'Community name is required'),

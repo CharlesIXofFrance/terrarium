@@ -1,8 +1,8 @@
 import React from 'react';
 import { MapPin, Building2, Clock, Euro } from 'lucide-react';
-import { useImageLoader } from '../../lib/hooks/useImageLoader';
-import { useCompanyColors } from '../../lib/hooks/useCompanyColors';
-import type { Job } from '../../lib/types';
+import { useImageLoader } from '@/lib/hooks/useImageLoader';
+import { useCompanyColors } from '@/lib/hooks/useCompanyColors';
+import type { Job } from '@/lib/types';
 
 interface JobHeaderProps {
   job: Job;

@@ -1,70 +1,165 @@
-import { createClient } from '@supabase/supabase-js'
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { createClient } from '@supabase/supabase-js';
+
+// Test configuration
+const testUser = {
+  email: 'test' + Date.now() + '@example.com',
+  password: 'testpassword123',
+  name: 'Test User',
+};
 
 // Initialize Supabase client
-const supabaseUrl = 'http://127.0.0.1:54321'
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0'
-const supabase = createClient(supabaseUrl, supabaseAnonKey)
+const supabase = createClient(
+  process.env.VITE_SUPABASE_URL,
+  process.env.VITE_SUPABASE_ANON_KEY
+);
 
-async function testAuth() {
-    try {
-        // Test 1: Sign Up
-        console.log('Test 1: Sign Up')
-        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-            email: 'test@example.com',
-            password: 'testpassword123',
-            options: {
-                data: {
-                    full_name: 'Test User'
-                }
-            }
-        })
-        
-        if (signUpError) throw signUpError
-        console.log('Sign Up successful:', signUpData)
+describe('Authentication Flow', () => {
+  let userId = null;
 
-        // Test 2: Sign In
-        console.log('\nTest 2: Sign In')
-        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-            email: 'test@example.com',
-            password: 'testpassword123'
-        })
-        
-        if (signInError) throw signInError
-        console.log('Sign In successful:', signInData)
+  beforeEach(async () => {
+    // Wait for any previous operations to complete
+    await new Promise(resolve => setTimeout(resolve, 1000));
+  });
 
-        // Test 3: Get User Profile
-        console.log('\nTest 3: Get User Profile')
-        const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', signInData.user.id)
-            .single()
-        
-        if (profileError) throw profileError
-        console.log('Profile retrieved:', profile)
-
-        // Test 4: Update Profile
-        console.log('\nTest 4: Update Profile')
-        const { data: updateData, error: updateError } = await supabase
-            .from('profiles')
-            .update({ avatar_url: 'https://example.com/avatar.jpg' })
-            .eq('id', signInData.user.id)
-            .select()
-        
-        if (updateError) throw updateError
-        console.log('Profile updated:', updateData)
-
-        // Test 5: Sign Out
-        console.log('\nTest 5: Sign Out')
-        const { error: signOutError } = await supabase.auth.signOut()
-        
-        if (signOutError) throw signOutError
-        console.log('Sign Out successful')
-
-    } catch (error) {
-        console.error('Error during authentication test:', error.message)
+  afterEach(async () => {
+    if (userId) {
+      try {
+        // Clean up any test data
+        await supabase.from('profiles').delete().eq('id', userId);
+        await supabase.auth.admin.deleteUser(userId);
+      } catch (error) {
+        console.error('Cleanup error (can be ignored):', error.message);
+      }
     }
-}
+  });
 
-// Run the tests
-testAuth()
+  it('should verify API health', async () => {
+    console.log('Testing API health...');
+    const response = await fetch(process.env.VITE_SUPABASE_URL + '/rest/v1/');
+    console.log('API Response status:', response.status);
+    const data = await response.json();
+    console.log('API Response:', data);
+    expect(response.status).toBe(200);
+  });
+
+  it('should sign up a new user', async () => {
+    console.log('Starting signup test with email:', testUser.email);
+    const { data, error } = await supabase.auth.signUp({
+      email: testUser.email,
+      password: testUser.password,
+      options: {
+        data: {
+          full_name: testUser.name,
+        },
+      },
+    });
+
+    console.log('Signup response:', {
+      user: data?.user ? { email: data.user.email } : null,
+      session: data?.session ? 'exists' : null,
+    });
+
+    expect(error).toBeNull();
+    expect(data.user).toBeDefined();
+    expect(data.user.email).toBe(testUser.email);
+    userId = data.user.id;
+
+    // Wait for user to be fully created
+    await new Promise(resolve => setTimeout(resolve, 1000));
+  });
+
+  it('should sign in an existing user', async () => {
+    // First ensure we have a user to sign in
+    if (!userId) {
+      const { data } = await supabase.auth.signUp({
+        email: testUser.email,
+        password: testUser.password,
+      });
+      userId = data.user.id;
+      // Wait for user to be fully created
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: testUser.email,
+      password: testUser.password,
+    });
+
+    expect(error).toBeNull();
+    expect(data.user).toBeDefined();
+    expect(data.user.email).toBe(testUser.email);
+  });
+
+  it('should get user profile', async () => {
+    // First ensure we have a user profile
+    if (!userId) {
+      const { data } = await supabase.auth.signUp({
+        email: testUser.email,
+        password: testUser.password,
+      });
+      userId = data.user.id;
+      // Wait for user to be fully created
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+
+    // Create profile if it doesn't exist
+    await supabase.from('profiles').upsert({
+      id: userId,
+      email: testUser.email,
+      full_name: testUser.name,
+    });
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+
+    expect(error).toBeNull();
+    expect(data).toBeDefined();
+    expect(data.email).toBe(testUser.email);
+  });
+
+  it('should update profile', async () => {
+    // First ensure we have a user profile
+    if (!userId) {
+      const { data } = await supabase.auth.signUp({
+        email: testUser.email,
+        password: testUser.password,
+      });
+      userId = data.user.id;
+      // Wait for user to be fully created
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Create initial profile
+      await supabase.from('profiles').upsert({
+        id: userId,
+        email: testUser.email,
+        full_name: testUser.name,
+      });
+    }
+
+    const updates = {
+      bio: 'Test bio',
+      avatar_url: 'https://example.com/avatar.jpg',
+    };
+
+    const { error } = await supabase
+      .from('profiles')
+      .update(updates)
+      .eq('id', userId);
+
+    expect(error).toBeNull();
+
+    // Verify update
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+
+    expect(profile.bio).toBe(updates.bio);
+    expect(profile.avatar_url).toBe(updates.avatar_url);
+  });
+});

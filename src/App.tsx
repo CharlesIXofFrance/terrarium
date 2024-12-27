@@ -15,6 +15,7 @@ import { Login } from './pages/auth/Login';
 import { Register } from './pages/auth/Register';
 import { ForgotPassword } from './pages/auth/ForgotPassword';
 import { ResetPassword } from './pages/auth/ResetPassword';
+import { ResetPasswordCallback } from './pages/auth/ResetPasswordCallback';
 import { AuthCallback } from './pages/auth/AuthCallback';
 import { ProtectedRoute } from './components/features/auth/ProtectedRoute';
 import { CommunityLayout } from './components/layout/CommunityLayout';
@@ -305,6 +306,7 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/auth/reset-password" element={<ResetPasswordCallback />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="/rbac-test" element={<RBACTest />} />
           <Route

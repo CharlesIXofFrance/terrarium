@@ -1,125 +1,150 @@
-import { useId } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { useAuth } from '../../../lib/hooks/useAuth';
-import { Button } from '../../ui/atoms/Button';
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { SupabaseClient } from '@supabase/supabase-js';
 import { Input } from '../../ui/atoms/Input';
+import { Button } from '../../ui/atoms/Button';
+import { Alert } from '../../ui/atoms/Alert';
+import { supabase } from '../../../lib/supabase';
 
 interface LoginFormProps {
-  onSuccess?: () => void;
+  onSuccess: (data: { user: any; session: any }) => void;
+  supabaseClient?: SupabaseClient;
 }
 
-const loginSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
-});
+interface LoginFormData {
+  email: string;
+  password: string;
+}
 
-type LoginFormData = z.infer<typeof loginSchema>;
-
-export function LoginForm({ onSuccess }: LoginFormProps) {
-  const formId = useId();
-  const { login, isLoggingIn, loginError } = useAuth();
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: {
-      email: '',
-      password: '',
-    },
-  });
+export const LoginForm: React.FC<LoginFormProps> = ({
+  onSuccess,
+  supabaseClient = supabase,
+}) => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async (data: LoginFormData) => {
+    setError(null);
+    setIsLoading(true);
+
     try {
-      await login(data);
-      // Call success callback if provided
-      onSuccess?.();
-    } catch (error) {
-      // Handle error
+      const { data: authData, error: authError } =
+        await supabaseClient!.auth.signInWithPassword({
+          email: data.email,
+          password: data.password,
+        });
+
+      if (authError) {
+        setError(authError.message);
+        return;
+      }
+
+      if (authData.user && authData.session) {
+        onSuccess({ user: authData.user, session: authData.session });
+      }
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('An unexpected error occurred');
+      }
+    } finally {
+      setIsLoading(false);
     }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await handleLogin({ email, password });
   };
 
   return (
     <form
-      id={formId}
-      onSubmit={handleSubmit(handleLogin)}
+      onSubmit={handleSubmit}
       className="space-y-6"
+      data-testid="login-form"
     >
-      <div>
-        <label
-          htmlFor={`${formId}-email`}
-          className="block text-sm font-medium text-gray-700"
-        >
-          Email Address
-        </label>
-        <div className="mt-1">
-          <Input
-            type="email"
-            id={`${formId}-email`}
-            autoComplete="email"
-            placeholder="you@example.com"
-            {...register('email')}
-            error={errors.email?.message}
-          />
-        </div>
-      </div>
-
-      <div>
-        <label
-          htmlFor={`${formId}-password`}
-          className="block text-sm font-medium text-gray-700"
-        >
-          Password
-        </label>
-        <div className="mt-1">
-          <Input
-            type="password"
-            id={`${formId}-password`}
-            autoComplete="current-password"
-            placeholder="••••••••"
-            {...register('password')}
-            error={errors.password?.message}
-          />
-        </div>
-      </div>
-
-      {loginError && (
-        <div className="rounded-md bg-red-50 p-4">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <svg
-                className="h-5 w-5 text-red-400"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-red-800">{loginError}</p>
-            </div>
-          </div>
-        </div>
+      {error && (
+        <Alert
+          message={error}
+          onRetry={() => setError(null)}
+          data-testid="error-message"
+        />
       )}
 
       <div>
-        <Button type="submit" className="w-full" disabled={isLoggingIn}>
-          {isLoggingIn ? 'Signing in...' : 'Sign in'}
+        <div className="relative">
+          <label
+            htmlFor="email"
+            className="block text-sm font-medium text-gray-700"
+          >
+            Email
+          </label>
+          <Input
+            id="email"
+            name="email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            data-testid="email-input"
+          />
+        </div>
+      </div>
+
+      <div>
+        <div className="relative">
+          <label
+            htmlFor="password"
+            className="block text-sm font-medium text-gray-700"
+          >
+            Password
+          </label>
+          <Input
+            id="password"
+            name="password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            data-testid="password-input"
+          />
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between">
+        <Link
+          to="/forgot-password"
+          className="text-sm font-medium text-indigo-600 hover:text-indigo-500"
+        >
+          Forgot password?
+        </Link>
+      </div>
+
+      <div>
+        <Button
+          type="submit"
+          disabled={isLoading}
+          className="inline-flex items-center justify-center rounded-[6px] font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-[#0F4C75] text-white hover:bg-[#0D3D5F] focus-visible:ring-[#0F4C75] h-10 px-6 py-3 w-full"
+          data-testid="submit-button"
+        >
+          {isLoading ? 'Signing in...' : 'Sign in'}
         </Button>
       </div>
-      <div className="text-sm text-gray-600 text-center space-y-1">
-        <p>Demo accounts (any password):</p>
-        <p>Member: member@test.com</p>
-        <p>Admin: admin@test.com</p>
+
+      <div className="text-center">
+        <span className="text-sm text-gray-600">
+          Don't have an account?{' '}
+          <Link
+            to="/register"
+            className="font-medium text-indigo-600 hover:text-indigo-500"
+          >
+            Sign up
+          </Link>
+        </span>
       </div>
     </form>
   );
-}
+};

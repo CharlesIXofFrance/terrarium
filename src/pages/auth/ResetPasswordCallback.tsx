@@ -3,8 +3,9 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { Alert } from '@/components/ui/atoms/Alert';
 import { Spinner } from '@/components/ui/atoms/Spinner';
+import { AuthErrorBoundary } from '@/components/features/auth/AuthErrorBoundary';
 
-export function ResetPasswordCallback() {
+export function ResetPasswordCallbackContent() {
   const location = useLocation();
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -90,4 +91,12 @@ export function ResetPasswordCallback() {
   }
 
   return null;
+}
+
+export function ResetPasswordCallback() {
+  return (
+    <AuthErrorBoundary>
+      <ResetPasswordCallbackContent />
+    </AuthErrorBoundary>
+  );
 }

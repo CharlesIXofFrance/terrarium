@@ -5,8 +5,9 @@ import { Button } from '@/components/ui/atoms/Button';
 import { Input } from '@/components/ui/atoms/Input';
 import { Alert } from '@/components/ui/atoms/Alert';
 import { supabase } from '@/lib/supabase';
+import { AuthErrorBoundary } from '@/components/features/auth/AuthErrorBoundary';
 
-export function ResetPassword() {
+export function ResetPasswordContent() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -16,12 +17,33 @@ export function ResetPassword() {
   // Check if user has a valid recovery session
   useEffect(() => {
     const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      console.log('Current session:', session);
-      
-      if (!session) {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        console.log('Current session:', session);
+        
+        if (!session) {
+          navigate('/login', {
+            replace: true,
+            state: { error: 'Invalid or expired reset link. Please request a new one.' }
+          });
+          return;
+        }
+
+        // Verify it's a recovery session
+        const type = new URLSearchParams(window.location.hash.replace('#', '?')).get('type');
+        console.log('Session type:', type);
+        
+        if (type !== 'recovery') {
+          navigate('/login', {
+            replace: true,
+            state: { error: 'Invalid session type. Please request a new password reset link.' }
+          });
+        }
+      } catch (err) {
+        console.error('Session check error:', err);
         navigate('/login', {
-          state: { error: 'Invalid or expired reset link. Please request a new one.' }
+          replace: true,
+          state: { error: 'Failed to verify session. Please try again.' }
         });
       }
     };
@@ -62,6 +84,7 @@ export function ResetPassword() {
 
       // Redirect to login with success message
       navigate('/login', {
+        replace: true,
         state: { message: 'Password updated successfully. Please log in with your new password.' }
       });
     } catch (err) {
@@ -157,5 +180,13 @@ export function ResetPassword() {
         </div>
       </div>
     </div>
+  );
+}
+
+export function ResetPassword() {
+  return (
+    <AuthErrorBoundary>
+      <ResetPasswordContent />
+    </AuthErrorBoundary>
   );
 }

@@ -1,18 +1,36 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Globe2 } from 'lucide-react';
 import { Button } from '@/components/ui/atoms/Button';
 import { Input } from '@/components/ui/atoms/Input';
 import { Alert } from '@/components/ui/atoms/Alert';
 import { supabase } from '@/lib/supabase';
-import { authService } from '@/backend/services/auth.service';
+import { useAtom } from 'jotai';
+import { userAtom } from '@/lib/stores/auth';
 
 export function ResetPassword() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [user] = useAtom(userAtom);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Check for reset password token
+    const token = sessionStorage.getItem('resetPasswordToken');
+    const type = sessionStorage.getItem('resetPasswordType');
+
+    if (!token || type !== 'recovery') {
+      navigate('/login', {
+        replace: true,
+        state: { 
+          message: 'Invalid or expired password reset link. Please request a new one.',
+          type: 'error'
+        }
+      });
+    }
+  }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,6 +49,20 @@ export function ResetPassword() {
     setIsLoading(true);
 
     try {
+      // Get the token from sessionStorage
+      const token = sessionStorage.getItem('resetPasswordToken');
+      
+      // First set up the session with the recovery token
+      const { error: sessionError } = await supabase.auth.setSession({
+        access_token: token!,
+        refresh_token: '',
+      });
+
+      if (sessionError) {
+        throw sessionError;
+      }
+
+      // Then update the password
       const { error: updateError } = await supabase.auth.updateUser({
         password: password,
       });
@@ -39,17 +71,18 @@ export function ResetPassword() {
         throw updateError;
       }
 
-      // Log out after password change to ensure clean state
-      await authService.logout();
+      // Clear the reset password tokens
+      sessionStorage.removeItem('resetPasswordToken');
+      sessionStorage.removeItem('resetPasswordType');
 
-      // Navigate to login with success message
-      navigate('/login', {
-        replace: true,
-        state: { 
-          message: 'Password updated successfully. Please log in with your new password.',
-          type: 'success'
-        },
-      });
+      // Navigate based on user state
+      if (user?.community_id) {
+        navigate(`/c/${user.community_id}/dashboard`, { replace: true });
+      } else if (!user?.onboarding_completed) {
+        navigate('/onboarding', { replace: true });
+      } else {
+        navigate('/dashboard', { replace: true });
+      }
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);

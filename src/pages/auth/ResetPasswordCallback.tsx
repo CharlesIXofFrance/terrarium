@@ -1,15 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAtom } from 'jotai';
-import { userAtom } from '@/lib/stores/auth';
-import { supabase } from '@/lib/supabase';
 import { Alert } from '@/components/ui/atoms/Alert';
 import { Spinner } from '@/components/ui/atoms/Spinner';
 
 export function ResetPasswordCallback() {
   const location = useLocation();
   const [error, setError] = useState<string | null>(null);
-  const [user] = useAtom(userAtom);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -20,29 +16,15 @@ export function ResetPasswordCallback() {
         
         // Get the access token and type from hash params
         const access_token = hashParams.get('access_token');
-        const refresh_token = hashParams.get('refresh_token');
         const type = hashParams.get('type');
 
         if (!access_token || type !== 'recovery') {
           throw new Error('Invalid or missing recovery token');
         }
 
-        // If user is already logged in and trying to reset password,
-        // we should redirect them to the reset password page directly
-        if (user) {
-          navigate('/reset-password', { replace: true });
-          return;
-        }
-
-        // Set the session with the recovery token
-        const { error: sessionError } = await supabase.auth.setSession({
-          access_token,
-          refresh_token: refresh_token || '',
-        });
-
-        if (sessionError) {
-          throw sessionError;
-        }
+        // Store the tokens in sessionStorage for the reset password page
+        sessionStorage.setItem('resetPasswordToken', access_token);
+        sessionStorage.setItem('resetPasswordType', type);
 
         // Navigate to the reset password form
         navigate('/reset-password', { replace: true });
@@ -53,7 +35,7 @@ export function ResetPasswordCallback() {
     };
 
     handlePasswordReset();
-  }, [location.hash, navigate, user]);
+  }, [location.hash, navigate]);
 
   if (error) {
     return (

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Globe2 } from 'lucide-react';
 import { Button } from '@/components/ui/atoms/Button';
@@ -12,6 +12,22 @@ export function ResetPassword() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+
+  // Check if user has a valid recovery session
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      console.log('Current session:', session);
+      
+      if (!session) {
+        navigate('/login', {
+          state: { error: 'Invalid or expired reset link. Please request a new one.' }
+        });
+      }
+    };
+
+    checkSession();
+  }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,6 +46,7 @@ export function ResetPassword() {
     setIsLoading(true);
 
     try {
+      console.log('Updating password...');
       const { error: updateError } = await supabase.auth.updateUser({
         password: password,
       });
@@ -38,11 +55,17 @@ export function ResetPassword() {
         throw updateError;
       }
 
-      // Password updated successfully
+      console.log('Password updated successfully');
+      
+      // Sign out after password change
+      await supabase.auth.signOut();
+
+      // Redirect to login with success message
       navigate('/login', {
-        state: { message: 'Password updated successfully. Please log in with your new password.' },
+        state: { message: 'Password updated successfully. Please log in with your new password.' }
       });
     } catch (err) {
+      console.error('Password update error:', err);
       if (err instanceof Error) {
         setError(err.message);
       } else {
@@ -122,6 +145,15 @@ export function ResetPassword() {
               </Button>
             </div>
           </form>
+
+          <div className="mt-4 text-center">
+            <button
+              onClick={() => navigate('/forgot-password')}
+              className="text-indigo-600 hover:text-indigo-500"
+            >
+              Request new reset link
+            </button>
+          </div>
         </div>
       </div>
     </div>

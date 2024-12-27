@@ -13,6 +13,8 @@ import { ErrorBoundary } from '@/components/layout/molecules/ErrorBoundary';
 import { LandingPage } from './pages/LandingPage';
 import { Login } from './pages/auth/Login';
 import { Register } from './pages/auth/Register';
+import { ForgotPassword } from './pages/auth/ForgotPassword';
+import { ResetPassword } from './pages/auth/ResetPassword';
 import { AuthCallback } from './pages/auth/AuthCallback';
 import { ProtectedRoute } from './components/features/auth/ProtectedRoute';
 import { CommunityLayout } from './components/layout/CommunityLayout';
@@ -301,6 +303,8 @@ function App() {
           />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="/rbac-test" element={<RBACTest />} />
           <Route

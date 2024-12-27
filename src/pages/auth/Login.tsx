@@ -25,6 +25,13 @@ export function Login() {
           >
             create a new account
           </Link>
+          {' or '}
+          <Link
+            to="/forgot-password"
+            className="text-indigo-600 hover:text-indigo-500"
+          >
+            reset your password
+          </Link>
         </p>
       </div>
 

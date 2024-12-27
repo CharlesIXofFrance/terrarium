@@ -1,20 +1,24 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { Alert } from '@/components/ui/atoms/Alert';
 import { Spinner } from '@/components/ui/atoms/Spinner';
 
 export function ResetPasswordCallback() {
-  const [searchParams] = useSearchParams();
+  const location = useLocation();
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     const handlePasswordReset = async () => {
       try {
-        // Get the access token and type from URL params
-        const access_token = searchParams.get('access_token');
-        const type = searchParams.get('type');
+        // Parse the hash parameters
+        const hashParams = new URLSearchParams(location.hash.substring(1));
+        
+        // Get the access token and type from hash params
+        const access_token = hashParams.get('access_token');
+        const refresh_token = hashParams.get('refresh_token');
+        const type = hashParams.get('type');
 
         if (!access_token || type !== 'recovery') {
           throw new Error('Invalid or missing recovery token');
@@ -23,7 +27,7 @@ export function ResetPasswordCallback() {
         // Set the session with the recovery token
         const { error: sessionError } = await supabase.auth.setSession({
           access_token,
-          refresh_token: searchParams.get('refresh_token') || '',
+          refresh_token: refresh_token || '',
         });
 
         if (sessionError) {
@@ -39,7 +43,7 @@ export function ResetPasswordCallback() {
     };
 
     handlePasswordReset();
-  }, [searchParams, navigate]);
+  }, [location.hash, navigate]);
 
   if (error) {
     return (

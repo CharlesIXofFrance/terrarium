@@ -1,16 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAtom } from 'jotai';
+import { userAtom } from '@/lib/stores/auth';
 import { supabase } from '@/lib/supabase';
 import { Alert } from '@/components/ui/atoms/Alert';
 import { Spinner } from '@/components/ui/atoms/Spinner';
-import { userAtom } from '@/lib/stores/auth';
 
 export function ResetPasswordCallback() {
   const location = useLocation();
   const [error, setError] = useState<string | null>(null);
+  const [user] = useAtom(userAtom);
   const navigate = useNavigate();
-  const [, setUser] = useAtom(userAtom);
 
   useEffect(() => {
     const handlePasswordReset = async () => {
@@ -27,32 +27,21 @@ export function ResetPasswordCallback() {
           throw new Error('Invalid or missing recovery token');
         }
 
+        // If user is already logged in and trying to reset password,
+        // we should redirect them to the reset password page directly
+        if (user) {
+          navigate('/reset-password', { replace: true });
+          return;
+        }
+
         // Set the session with the recovery token
-        const { data: { session, user }, error: sessionError } = await supabase.auth.setSession({
+        const { error: sessionError } = await supabase.auth.setSession({
           access_token,
           refresh_token: refresh_token || '',
         });
 
         if (sessionError) {
           throw sessionError;
-        }
-
-        if (!session || !user) {
-          throw new Error('Failed to establish session');
-        }
-
-        // Set the user in our global state
-        setUser(user);
-
-        // Get user's profile and community info
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
-
-        if (profileError) {
-          console.error('Error fetching profile:', profileError);
         }
 
         // Navigate to the reset password form
@@ -64,21 +53,13 @@ export function ResetPasswordCallback() {
     };
 
     handlePasswordReset();
-  }, [location.hash, navigate, setUser]);
+  }, [location.hash, navigate, user]);
 
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
         <div className="sm:mx-auto sm:w-full sm:max-w-md">
           <Alert type="error" message={error} />
-          <div className="mt-4 text-center">
-            <button
-              onClick={() => navigate('/forgot-password')}
-              className="text-indigo-600 hover:text-indigo-500"
-            >
-              Try again
-            </button>
-          </div>
         </div>
       </div>
     );

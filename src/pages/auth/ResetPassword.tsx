@@ -1,12 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAtom } from 'jotai';
 import { Globe2 } from 'lucide-react';
 import { Button } from '@/components/ui/atoms/Button';
 import { Input } from '@/components/ui/atoms/Input';
 import { Alert } from '@/components/ui/atoms/Alert';
 import { supabase } from '@/lib/supabase';
-import { userAtom } from '@/lib/stores/auth';
+import { authService } from '@/backend/services/auth.service';
 
 export function ResetPassword() {
   const [password, setPassword] = useState('');
@@ -14,24 +13,6 @@ export function ResetPassword() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
-  const [user] = useAtom(userAtom);
-
-  // Check if we have a valid session
-  useEffect(() => {
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        navigate('/login', { replace: true });
-      }
-    };
-
-    checkSession();
-  }, [navigate]);
-
-  // If no user is set in state, don't render the form
-  if (!user) {
-    return null;
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,10 +39,16 @@ export function ResetPassword() {
         throw updateError;
       }
 
-      // Password updated successfully
+      // Log out after password change to ensure clean state
+      await authService.logout();
+
+      // Navigate to login with success message
       navigate('/login', {
         replace: true,
-        state: { message: 'Password updated successfully. Please log in with your new password.' },
+        state: { 
+          message: 'Password updated successfully. Please log in with your new password.',
+          type: 'success'
+        },
       });
     } catch (err) {
       if (err instanceof Error) {
@@ -69,7 +56,6 @@ export function ResetPassword() {
       } else {
         setError('An unexpected error occurred');
       }
-    } finally {
       setIsLoading(false);
     }
   };

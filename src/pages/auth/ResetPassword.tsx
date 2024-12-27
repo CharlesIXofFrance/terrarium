@@ -1,55 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Globe2 } from 'lucide-react';
 import { Button } from '@/components/ui/atoms/Button';
 import { Input } from '@/components/ui/atoms/Input';
 import { Alert } from '@/components/ui/atoms/Alert';
 import { supabase } from '@/lib/supabase';
-import { AuthErrorBoundary } from '@/components/features/auth/AuthErrorBoundary';
 
-export function ResetPasswordContent() {
+export function ResetPassword() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
-
-  // Check if user has a valid recovery session
-  useEffect(() => {
-    const checkSession = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        console.log('Current session:', session);
-        
-        if (!session) {
-          navigate('/login', {
-            replace: true,
-            state: { error: 'Invalid or expired reset link. Please request a new one.' }
-          });
-          return;
-        }
-
-        // Verify it's a recovery session
-        const type = new URLSearchParams(window.location.hash.replace('#', '?')).get('type');
-        console.log('Session type:', type);
-        
-        if (type !== 'recovery') {
-          navigate('/login', {
-            replace: true,
-            state: { error: 'Invalid session type. Please request a new password reset link.' }
-          });
-        }
-      } catch (err) {
-        console.error('Session check error:', err);
-        navigate('/login', {
-          replace: true,
-          state: { error: 'Failed to verify session. Please try again.' }
-        });
-      }
-    };
-
-    checkSession();
-  }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,7 +30,6 @@ export function ResetPasswordContent() {
     setIsLoading(true);
 
     try {
-      console.log('Updating password...');
       const { error: updateError } = await supabase.auth.updateUser({
         password: password,
       });
@@ -77,18 +38,11 @@ export function ResetPasswordContent() {
         throw updateError;
       }
 
-      console.log('Password updated successfully');
-      
-      // Sign out after password change
-      await supabase.auth.signOut();
-
-      // Redirect to login with success message
+      // Password updated successfully
       navigate('/login', {
-        replace: true,
-        state: { message: 'Password updated successfully. Please log in with your new password.' }
+        state: { message: 'Password updated successfully. Please log in with your new password.' },
       });
     } catch (err) {
-      console.error('Password update error:', err);
       if (err instanceof Error) {
         setError(err.message);
       } else {
@@ -168,25 +122,8 @@ export function ResetPasswordContent() {
               </Button>
             </div>
           </form>
-
-          <div className="mt-4 text-center">
-            <button
-              onClick={() => navigate('/forgot-password')}
-              className="text-indigo-600 hover:text-indigo-500"
-            >
-              Request new reset link
-            </button>
-          </div>
         </div>
       </div>
     </div>
-  );
-}
-
-export function ResetPassword() {
-  return (
-    <AuthErrorBoundary>
-      <ResetPasswordContent />
-    </AuthErrorBoundary>
   );
 }

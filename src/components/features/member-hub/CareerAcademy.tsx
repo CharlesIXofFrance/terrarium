@@ -31,7 +31,7 @@ export function CareerAcademy({ styles }: CareerAcademyProps) {
   ];
 
   return (
-    <section>
+    <section className="min-w-0">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-xl font-semibold">WiF Career Academy</h2>
         <button className="text-sm" style={{ color: styles.colors.primary }}>
@@ -51,15 +51,15 @@ export function CareerAcademy({ styles }: CareerAcademyProps) {
               className="w-full h-32 object-cover"
             />
             <div className="p-4">
-              <h3 className="font-medium mb-2">{course.title}</h3>
-              <div className="flex items-center justify-between text-sm text-gray-500">
+              <h3 className="font-medium mb-2 line-clamp-2">{course.title}</h3>
+              <div className="flex items-center space-x-4 text-sm text-gray-500">
                 <div className="flex items-center">
-                  <Calendar className="h-4 w-4 mr-1" />
-                  <span>{course.date}</span>
+                  <Calendar className="w-4 h-4 mr-1" />
+                  {course.date}
                 </div>
                 <div className="flex items-center">
-                  <Users className="h-4 w-4 mr-1" />
-                  <span>{course.format}</span>
+                  <Users className="w-4 h-4 mr-1" />
+                  {course.format}
                 </div>
               </div>
             </div>

@@ -1,210 +1,184 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { LoginForm } from '../LoginForm';
-import { RegisterForm } from '../RegisterForm';
 import { BrowserRouter } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { RegisterForm } from '../RegisterForm';
+import { LoginForm } from '../LoginForm';
+import userEvent from '@testing-library/user-event';
 
-// Mock the supabase client
-vi.mock('@supabase/supabase-js', () => ({
-  createClient: () => ({
-    auth: {
-      signInWithPassword: vi.fn(),
-      signUp: vi.fn(),
-    },
-  }),
-}));
-
-// Mock the supabase instance
-vi.mock('../../../lib/supabase', () => ({
-  supabase: {
-    auth: {
-      signInWithPassword: vi.fn(),
-      signUp: vi.fn(),
-    },
+const mockSupabaseClient = {
+  auth: {
+    signUp: vi.fn(),
+    signInWithPassword: vi.fn(),
+    signOut: vi.fn(),
+    getSession: vi.fn(),
   },
-}));
-
-// Set up Query Client for tests
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: false,
-    },
-  },
-});
-
-const renderWithProviders = (ui: React.ReactElement) => {
-  return render(
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>{ui}</BrowserRouter>
-    </QueryClientProvider>
-  );
 };
 
-describe('LoginForm', () => {
+describe('Auth Components', () => {
   beforeEach(() => {
-    queryClient.clear();
     vi.clearAllMocks();
   });
 
-  it('renders login form elements', () => {
-    renderWithProviders(<LoginForm onSuccess={() => {}} />);
+  describe('RegisterForm', () => {
+    const mockOnSuccess = vi.fn();
 
-    expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: /sign in/i })
-    ).toBeInTheDocument();
-  });
+    it('should handle successful registration', async () => {
+      const user = userEvent.setup();
+      
+      mockSupabaseClient.auth.signUp.mockResolvedValueOnce({
+        data: {
+          user: { id: '123', email: 'test@example.com' },
+          session: null, // This indicates email confirmation is required
+        },
+        error: null,
+      });
 
-  it('calls onSuccess callback after successful login', async () => {
-    const onSuccess = vi.fn();
-    const mockSignInResponse = {
-      data: { user: { id: '123', email: 'test@example.com' } },
-      error: null,
-    };
+      render(
+        <BrowserRouter>
+          <RegisterForm onSuccess={mockOnSuccess} supabaseClient={mockSupabaseClient} />
+        </BrowserRouter>
+      );
 
-    vi.mocked(
-      vi.mocked(createClient)().auth.signInWithPassword
-    ).mockResolvedValueOnce(mockSignInResponse);
+      await act(async () => {
+        await user.type(screen.getByTestId('full-name-input'), 'John Doe');
+        await user.type(screen.getByTestId('email-input'), 'test@example.com');
+        await user.type(screen.getByTestId('password-input'), 'password123');
+        await user.type(screen.getByTestId('confirm-password-input'), 'password123');
+        await user.click(screen.getByTestId('submit-button'));
+      });
 
-    renderWithProviders(<LoginForm onSuccess={onSuccess} />);
+      await waitFor(() => {
+        expect(mockSupabaseClient.auth.signUp).toHaveBeenCalledWith({
+          email: 'test@example.com',
+          password: 'password123',
+          options: {
+            data: {
+              full_name: 'John Doe',
+            },
+          },
+        });
+      });
 
-    fireEvent.change(screen.getByLabelText(/email/i), {
-      target: { value: 'test@example.com' },
-    });
-    fireEvent.change(screen.getByLabelText(/password/i), {
-      target: { value: 'password123' },
-    });
-
-    fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
-
-    await waitFor(() => {
-      expect(onSuccess).toHaveBeenCalled();
-    });
-  });
-
-  it('displays error message on login failure', async () => {
-    const mockSignInResponse = {
-      data: { user: null },
-      error: { message: 'Invalid login credentials' },
-    };
-
-    vi.mocked(
-      vi.mocked(createClient)().auth.signInWithPassword
-    ).mockResolvedValueOnce(mockSignInResponse);
-
-    renderWithProviders(<LoginForm onSuccess={() => {}} />);
-
-    fireEvent.change(screen.getByLabelText(/email/i), {
-      target: { value: 'test@example.com' },
-    });
-    fireEvent.change(screen.getByLabelText(/password/i), {
-      target: { value: 'wrongpassword' },
+      await waitFor(() => {
+        const confirmationMessage = screen.getByTestId('confirmation-sent');
+        expect(confirmationMessage).toBeInTheDocument();
+        expect(confirmationMessage).toHaveTextContent('Please check your email to confirm your account');
+      });
     });
 
-    fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
+    it('should show error for password mismatch', async () => {
+      const user = userEvent.setup();
+      
+      render(
+        <BrowserRouter>
+          <RegisterForm onSuccess={mockOnSuccess} supabaseClient={mockSupabaseClient} />
+        </BrowserRouter>
+      );
 
-    await waitFor(() => {
-      expect(
-        screen.getByText(/invalid login credentials/i)
-      ).toBeInTheDocument();
+      await act(async () => {
+        await user.type(screen.getByTestId('full-name-input'), 'John Doe');
+        await user.type(screen.getByTestId('email-input'), 'test@example.com');
+        await user.type(screen.getByTestId('password-input'), 'password123');
+        await user.type(screen.getByTestId('confirm-password-input'), 'password456');
+        await user.click(screen.getByTestId('submit-button'));
+      });
+
+      await waitFor(() => {
+        expect(screen.getByText('Passwords do not match')).toBeInTheDocument();
+        expect(mockSupabaseClient.auth.signUp).not.toHaveBeenCalled();
+      });
     });
-  });
-});
 
-describe('RegisterForm', () => {
-  beforeEach(() => {
-    queryClient.clear();
-    vi.clearAllMocks();
-  });
+    it('should handle registration error', async () => {
+      const user = userEvent.setup();
+      mockSupabaseClient.auth.signUp.mockResolvedValueOnce({
+        data: { user: null, session: null },
+        error: { message: 'Email already registered' },
+      });
 
-  it('renders registration form elements', () => {
-    renderWithProviders(<RegisterForm onSuccess={() => {}} />);
+      render(
+        <BrowserRouter>
+          <RegisterForm onSuccess={mockOnSuccess} supabaseClient={mockSupabaseClient} />
+        </BrowserRouter>
+      );
 
-    expect(screen.getByLabelText(/full name/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/email address/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/^password$/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/confirm password/i)).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: /create account/i })
-    ).toBeInTheDocument();
-  });
+      await act(async () => {
+        await user.type(screen.getByTestId('full-name-input'), 'John Doe');
+        await user.type(screen.getByTestId('email-input'), 'test@example.com');
+        await user.type(screen.getByTestId('password-input'), 'password123');
+        await user.type(screen.getByTestId('confirm-password-input'), 'password123');
+        await user.click(screen.getByTestId('submit-button'));
+      });
 
-  it('displays validation errors for invalid inputs', async () => {
-    renderWithProviders(<RegisterForm onSuccess={() => {}} />);
-
-    // Submit empty form
-    fireEvent.click(screen.getByRole('button', { name: /create account/i }));
-
-    await waitFor(() => {
-      expect(
-        screen.getByText(/name must be at least 2 characters/i)
-      ).toBeInTheDocument();
-      expect(screen.getByText(/invalid email address/i)).toBeInTheDocument();
-      expect(
-        screen.getByText(/password must be at least 6 characters/i)
-      ).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText('Email already registered')).toBeInTheDocument();
+      });
     });
   });
 
-  it('displays error when passwords do not match', async () => {
-    renderWithProviders(<RegisterForm onSuccess={() => {}} />);
+  describe('LoginForm', () => {
+    const mockOnSuccess = vi.fn();
 
-    // Fill in form with mismatched passwords
-    fireEvent.change(screen.getByLabelText(/full name/i), {
-      target: { value: 'Test User' },
-    });
-    fireEvent.change(screen.getByLabelText(/email address/i), {
-      target: { value: 'test@example.com' },
-    });
-    fireEvent.change(screen.getByLabelText(/^password$/i), {
-      target: { value: 'password123' },
-    });
-    fireEvent.change(screen.getByLabelText(/confirm password/i), {
-      target: { value: 'differentpassword' },
-    });
+    it('should handle successful login', async () => {
+      const user = userEvent.setup();
+      mockSupabaseClient.auth.signInWithPassword.mockResolvedValueOnce({
+        data: {
+          user: { id: '123' },
+          session: { access_token: 'token' },
+        },
+        error: null,
+      });
 
-    fireEvent.click(screen.getByRole('button', { name: /create account/i }));
+      render(
+        <BrowserRouter>
+          <LoginForm onSuccess={mockOnSuccess} supabaseClient={mockSupabaseClient} />
+        </BrowserRouter>
+      );
 
-    await waitFor(() => {
-      expect(screen.getByText(/passwords do not match/i)).toBeInTheDocument();
-    });
-  });
+      await act(async () => {
+        await user.type(screen.getByTestId('email-input'), 'test@example.com');
+        await user.type(screen.getByTestId('password-input'), 'password123');
+        await user.click(screen.getByTestId('submit-button'));
+      });
 
-  it('calls onSuccess callback after successful registration', async () => {
-    const onSuccess = vi.fn();
-    const mockSignUpResponse = {
-      data: { user: { id: '123', email: 'test@example.com' } },
-      error: null,
-    };
+      await waitFor(() => {
+        expect(mockSupabaseClient.auth.signInWithPassword).toHaveBeenCalledWith({
+          email: 'test@example.com',
+          password: 'password123',
+        });
+      });
 
-    vi.mocked(vi.mocked(createClient)().auth.signUp).mockResolvedValueOnce(
-      mockSignUpResponse
-    );
-
-    renderWithProviders(<RegisterForm onSuccess={onSuccess} />);
-
-    // Fill in form with valid data
-    fireEvent.change(screen.getByLabelText(/full name/i), {
-      target: { value: 'Test User' },
-    });
-    fireEvent.change(screen.getByLabelText(/email address/i), {
-      target: { value: 'test@example.com' },
-    });
-    fireEvent.change(screen.getByLabelText(/^password$/i), {
-      target: { value: 'password123' },
-    });
-    fireEvent.change(screen.getByLabelText(/confirm password/i), {
-      target: { value: 'password123' },
+      await waitFor(() => {
+        expect(mockOnSuccess).toHaveBeenCalledWith({
+          user: { id: '123' },
+          session: { access_token: 'token' },
+        });
+      });
     });
 
-    fireEvent.click(screen.getByRole('button', { name: /create account/i }));
+    it('should handle login error', async () => {
+      const user = userEvent.setup();
+      mockSupabaseClient.auth.signInWithPassword.mockResolvedValueOnce({
+        data: { user: null, session: null },
+        error: { message: 'Invalid credentials' },
+      });
 
-    await waitFor(() => {
-      expect(onSuccess).toHaveBeenCalled();
+      render(
+        <BrowserRouter>
+          <LoginForm onSuccess={mockOnSuccess} supabaseClient={mockSupabaseClient} />
+        </BrowserRouter>
+      );
+
+      await act(async () => {
+        await user.type(screen.getByTestId('email-input'), 'test@example.com');
+        await user.type(screen.getByTestId('password-input'), 'password123');
+        await user.click(screen.getByTestId('submit-button'));
+      });
+
+      await waitFor(() => {
+        expect(screen.getByText('Invalid credentials')).toBeInTheDocument();
+      });
     });
   });
 });

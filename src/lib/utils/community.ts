@@ -1,4 +1,6 @@
 import { api } from './api';
+import { slugify } from 'slugify';
+import * as path from 'path';
 
 interface Community {
   id: string;
@@ -42,19 +44,42 @@ export const communityService = {
   },
 
   async createCommunity(data: CreateCommunityData): Promise<Community> {
-    const formData = new FormData();
-    Object.entries(data).forEach(([key, value]) => {
-      if (value !== undefined) {
-        formData.append(key, value);
-      }
-    });
+    // 1. Upload logo to temp directory if provided
+    let tempLogoPath: string | undefined;
+    if (data.logo) {
+      const formData = new FormData();
+      formData.append('file', data.logo);
+      const uploadResponse = await api.post('/storage/upload/temp', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      tempLogoPath = uploadResponse.data.path;
+    }
 
-    const response = await api.post('/communities', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-    return response.data;
+    // 2. Create community with basic info
+    const communityData = {
+      name: data.name,
+      description: data.description,
+      slug: slugify(data.name),
+    };
+    const createResponse = await api.post('/communities', communityData);
+    const community = createResponse.data;
+
+    // 3. If logo was uploaded, move it to community directory and update community
+    if (tempLogoPath) {
+      const finalLogoPath = `${community.slug}/logo${path.extname(tempLogoPath)}`;
+      await api.post('/storage/move', {
+        source: tempLogoPath,
+        destination: finalLogoPath,
+      });
+
+      // 4. Update community with final logo URL
+      const updateResponse = await api.patch(`/communities/${community.slug}`, {
+        logo: finalLogoPath,
+      });
+      return updateResponse.data;
+    }
+
+    return community;
   },
 
   async updateCommunity(

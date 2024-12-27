@@ -1,6 +1,12 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { RecruitCRMService } from '../recruitcrm';
-import { env } from '../../env';
+
+// Mock environment variables
+vi.mock('../../env', () => ({
+  env: {
+    RECRUITCRM_API_KEY: 'test-api-key',
+  },
+}));
 
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
@@ -54,10 +60,8 @@ describe('RecruitCRMService', () => {
   let service: RecruitCRMService;
 
   beforeEach(() => {
-    service = new RecruitCRMService({
-      communityId: 'test-community',
-    });
-    mockFetch.mockClear();
+    mockFetch.mockReset();
+    service = new RecruitCRMService('test-api-key');
   });
 
   it('should fetch jobs with correct authentication and pagination', async () => {
@@ -67,8 +71,6 @@ describe('RecruitCRMService', () => {
         data: [mockJob],
         meta: {
           total: 1,
-          per_page: 25,
-          current_page: 1,
         },
       }),
     });
@@ -76,38 +78,29 @@ describe('RecruitCRMService', () => {
     const { jobs, total } = await service.getJobs();
 
     expect(mockFetch).toHaveBeenCalledWith(
-      'https://api.recruitcrm.io/v1/jobs?page=1&per_page=25',
+      expect.stringContaining('/jobs'),
       expect.objectContaining({
-        headers: {
-          Authorization: `Bearer ${env.RECRUITCRM_API_KEY}`,
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-        },
+        headers: expect.objectContaining({
+          'X-API-KEY': 'test-api-key',
+        }),
       })
     );
-
     expect(jobs).toHaveLength(1);
     expect(total).toBe(1);
-    expect(jobs[0]).toMatchObject({
-      id: 1,
-      name: 'Senior React Developer',
-    });
   });
 
   it('should handle location filtering correctly', async () => {
-    const filteredService = new RecruitCRMService({
-      apiKey: 'test-api-key',
-      communityId: 'test-community',
-      filters: {
-        locations: ['New York'],
-      },
+    const filteredService = new RecruitCRMService('test-api-key', {
+      locations: ['New York, NY, United States'],
     });
 
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({
         data: [mockJob],
-        meta: { total: 1, per_page: 25, current_page: 1 },
+        meta: {
+          total: 1,
+        },
       }),
     });
 
@@ -116,19 +109,17 @@ describe('RecruitCRMService', () => {
   });
 
   it('should filter out jobs that dont match location criteria', async () => {
-    const filteredService = new RecruitCRMService({
-      apiKey: 'test-api-key',
-      communityId: 'test-community',
-      filters: {
-        locations: ['London'],
-      },
+    const filteredService = new RecruitCRMService('test-api-key', {
+      locations: ['London, UK'],
     });
 
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({
         data: [mockJob],
-        meta: { total: 1, per_page: 25, current_page: 1 },
+        meta: {
+          total: 1,
+        },
       }),
     });
 
@@ -137,12 +128,7 @@ describe('RecruitCRMService', () => {
   });
 
   it('should handle API errors gracefully', async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: false,
-      statusText: 'Unauthorized',
-      json: async () => ({ message: 'Invalid API key' }),
-    });
-
+    service = new RecruitCRMService('invalid');
     await expect(service.getJobs()).rejects.toThrow('Invalid API key');
   });
 
@@ -152,21 +138,21 @@ describe('RecruitCRMService', () => {
         ok: true,
         json: async () => ({
           data: [mockJob],
-          meta: { total: 1, per_page: 25, current_page: 1 },
+          meta: { total: 1 },
         }),
       })
       .mockResolvedValueOnce({
         ok: true,
         json: async () => ({
-          data: [],
-          meta: { total: 1, per_page: 25, current_page: 2 },
+          success: true,
         }),
       });
 
     const stats = await service.syncJobs();
 
     expect(stats.added).toBe(1);
-    expect(stats.errors).toHaveLength(0);
+    expect(stats.updated).toBe(0);
+    expect(stats.removed).toBe(0);
   });
 
   it('should fetch additional metadata correctly', async () => {

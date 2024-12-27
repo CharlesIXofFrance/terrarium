@@ -72,7 +72,7 @@ export function JobCard({
 
       <div className="p-6">
         {/* Company Logo and Job Type */}
-        <div className="flex items-center justify-between -mt-12 mb-4 relative z-10">
+        <div className="flex items-center justify-between -mt-12 mb-4 relative z-[5]">
           <div className="flex items-center space-x-3">
             <div className="w-16 h-16 bg-white rounded-lg flex items-center justify-center shadow-sm p-2">
               {job.companyLogo ? (

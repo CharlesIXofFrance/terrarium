@@ -12,6 +12,5 @@ export const queryClient = new QueryClient({
 });
 
 // Re-export API modules
-export * from './auth';
 export * from './recruitcrm';
 export * from './mockApi';

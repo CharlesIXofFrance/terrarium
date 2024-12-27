@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useAuth } from '../lib/hooks/useAuth';
 import { useRBAC } from '../lib/hooks/useRBAC';
-import { Role } from '../lib/types/rbac';
-import { authService } from '../services/auth';
+import { Role } from '../backend/types/rbac.types';
+import { authService } from '../backend/services/auth.service';
 
 export function RBACTest() {
   const { user } = useAuth();

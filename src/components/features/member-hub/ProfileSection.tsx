@@ -14,12 +14,12 @@ export function ProfileSection({
   styles,
 }: ProfileSectionProps) {
   return (
-    <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
-      <h2 className="font-semibold mb-4 md:mb-6">Your WiF Sister Profile</h2>
+    <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 relative min-w-0">
+      <h2 className="font-semibold mb-4 md:mb-6 truncate">Your WiF Sister Profile</h2>
 
       {/* Profile Picture with Circular Progress */}
-      <div className="flex items-center space-x-3 sm:space-x-4 mb-6">
-        <div className="relative">
+      <div className="flex items-center space-x-3 sm:space-x-4 mb-6 min-w-0">
+        <div className="relative flex-shrink-0">
           <div className="w-[60px] h-[60px] sm:w-[72px] sm:h-[72px] rounded-full overflow-hidden">
             <img
               src={avatar}
@@ -34,8 +34,8 @@ export function ProfileSection({
             {profileComplete}%
           </div>
         </div>
-        <div>
-          <div className="font-medium text-lg">{userName}</div>
+        <div className="min-w-0">
+          <div className="font-medium text-lg truncate">{userName}</div>
           <div className="text-sm text-gray-500">Member since 2024</div>
         </div>
       </div>
@@ -43,13 +43,13 @@ export function ProfileSection({
       {/* CTAs */}
       <div className="mt-4 sm:mt-6 space-y-4">
         <div
-          className="p-4 sm:p-5 rounded-lg"
+          className="p-4 sm:p-5 rounded-lg relative"
           style={{ backgroundColor: styles.colors.primary }}
         >
-          <h3 className="text-white font-semibold mb-2 text-base">
+          <h3 className="text-white font-semibold mb-2 text-base line-clamp-1">
             Be Mentored by an Industry Expert
           </h3>
-          <p className="text-white/80 text-sm mb-3">
+          <p className="text-white/80 text-sm mb-3 line-clamp-2">
             Book your free career consultation with one of our expert mentors.
           </p>
           <button
@@ -61,13 +61,13 @@ export function ProfileSection({
         </div>
 
         <div
-          className="p-4 sm:p-5 rounded-lg"
+          className="p-4 sm:p-5 rounded-lg relative"
           style={{ backgroundColor: styles.colors.primary }}
         >
-          <h3 className="text-white font-semibold mb-2 text-base">
+          <h3 className="text-white font-semibold mb-2 text-base line-clamp-1">
             Discover WiF Coaching Sessions
           </h3>
-          <p className="text-white/80 text-sm mb-2 sm:mb-3">
+          <p className="text-white/80 text-sm mb-2 sm:mb-3 line-clamp-2">
             Get personalized coaching to achieve your career goals.
           </p>
           <button

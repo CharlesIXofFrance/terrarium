@@ -8,7 +8,7 @@ import { Home, Briefcase, Calendar, BookOpen } from 'lucide-react';
 
 interface MemberLayoutProps {
   children?: React.ReactNode;
-  mode?: 'desktop' | 'mobile' | 'fullscreen';
+  mode?: 'desktop' | 'mobile' | 'tablet' | 'fullscreen';
   isPreview?: boolean;
 }
 
@@ -48,6 +48,9 @@ export function MemberLayout({
   const { communitySlug } = useParams();
   const [currentCommunity] = useAtom(currentCommunityAtom);
   const [showNotifications, setShowNotifications] = useState(false);
+
+  const layoutClasses = 'min-h-screen bg-gray-50 relative';
+  const contentClasses = 'flex-1 py-6 px-4 sm:px-6 lg:px-8 mt-[72px] relative';
 
   const baseSlug = isPreview ? '#' : `/m/${communitySlug}`;
 
@@ -96,23 +99,22 @@ export function MemberLayout({
   }, []);
 
   return (
-    <div
-      className={`relative min-h-screen bg-gray-50 ${mode === 'mobile' ? 'max-w-sm mx-auto' : ''}`}
-    >
-      <div className="relative transition-all duration-200">
-        <Header
-          styles={THEME}
-          communityName={currentCommunity?.name}
-          navigation={navigation}
-          currentPath={location.pathname}
-          notifications={notifications}
-          showNotifications={showNotifications}
-          onToggleNotifications={toggleNotifications}
-          user={isPreview ? mockUser : user}
-          isPreview={isPreview}
-        />
-      </div>
-      <main className="pt-16">{children || <Outlet />}</main>
+    <div className={layoutClasses}>
+      <Header
+        styles={THEME}
+        mode={mode}
+        communityName={currentCommunity?.name}
+        navigation={navigation}
+        currentPath={location.pathname}
+        notifications={notifications}
+        showNotifications={showNotifications}
+        onToggleNotifications={toggleNotifications}
+        user={isPreview ? mockUser : user}
+        isPreview={isPreview}
+      />
+      <main className={contentClasses}>
+        {children || <Outlet />}
+      </main>
     </div>
   );
 }

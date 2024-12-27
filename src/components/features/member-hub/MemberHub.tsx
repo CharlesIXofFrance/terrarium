@@ -36,7 +36,7 @@ export function MemberHub({ styles, testUser }: MemberHubProps) {
         color: styles.colors.text,
       }}
     >
-      <div className="min-h-screen overflow-x-hidden px-2 sm:px-4">
+      <div className="min-h-screen overflow-hidden">
         <div className="max-w-[1400px] mx-auto px-4 py-8">
           <h1 className="text-2xl md:text-3xl font-bold mb-6 md:mb-8">
             Hi, {testUser?.name}!
@@ -44,22 +44,30 @@ export function MemberHub({ styles, testUser }: MemberHubProps) {
 
           <div className="grid lg:grid-cols-9 gap-6 lg:gap-8">
             {/* Center Column - Main Content */}
-            <div className="lg:col-span-6 space-y-6">
-              <div className="bg-white rounded-lg p-4 sm:p-6">
+            <div className="lg:col-span-6 space-y-6 min-w-0">
+              <div className="bg-white rounded-lg p-4 sm:p-6 min-w-0">
                 <UpcomingEvents styles={styles} />
               </div>
-              <OpportunitiesSection styles={styles} />
-              <CareerAcademy styles={styles} />
+              <div className="min-w-0">
+                <OpportunitiesSection styles={styles} />
+              </div>
+              <div className="min-w-0">
+                <CareerAcademy styles={styles} />
+              </div>
             </div>
 
             {/* Right Column - Profile */}
-            <div className="lg:col-span-3 space-y-6 mt-6 lg:mt-0">
-              <ProfileSection
-                userName={userData.userName}
-                avatar={userData.userAvatar}
-                profileComplete={userData.profileComplete}
-                styles={styles}
-              />
+            <div className="lg:col-span-3 min-w-0">
+              <div className="sticky top-[88px]">
+                <div className="space-y-6">
+                  <ProfileSection
+                    userName={userData.userName}
+                    avatar={userData.userAvatar}
+                    profileComplete={userData.profileComplete}
+                    styles={styles}
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </div>

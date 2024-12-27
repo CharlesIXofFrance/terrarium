@@ -18,6 +18,11 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     detectSessionInUrl: false,
   },
+  headers: {
+    'Accept': 'application/json',
+    'Content-Type': 'application/json',
+    'Prefer': 'return=representation',
+  },
 });
 
 export type SupabaseClient = typeof supabase;

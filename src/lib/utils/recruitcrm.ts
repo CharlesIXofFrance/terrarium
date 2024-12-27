@@ -49,6 +49,7 @@ const jobSchema = z.object({
 });
 
 export class RecruitCRMService {
+  private baseUrl = 'https://api.recruitcrm.io/v1';
   private apiKey: string;
   private communityId: string;
   private filters?: {
@@ -73,6 +74,32 @@ export class RecruitCRMService {
     this.apiKey = apiKey || env.RECRUITCRM_API_KEY;
     this.communityId = communityId;
     this.filters = filters;
+  }
+
+  private async mockFetch(endpoint: string, options: RequestInit = {}) {
+    const headers = {
+      'Content-Type': 'application/json',
+      'X-API-KEY': this.apiKey,
+      ...options.headers,
+    };
+
+    try {
+      const response = await fetch(`${this.baseUrl}${endpoint}`, {
+        ...options,
+        headers,
+      });
+
+      if (!response.ok) {
+        throw new Error('API request failed');
+      }
+
+      return response;
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('API request failed');
+    }
   }
 
   async testConnection(): Promise<boolean> {
@@ -141,36 +168,28 @@ export class RecruitCRMService {
       ];
     }
 
-    const response = await fetch(`${API_BASE}/job-types`, {
-      headers: {
-        Authorization: `Bearer ${this.apiKey}`,
-        Accept: 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch job types');
+    try {
+      const response = await this.mockFetch('/job-types');
+      const data = await response.json();
+      return data.data;
+    } catch (error) {
+      throw error;
     }
-
-    const data = await response.json();
-    return data.data;
   }
 
   async getJobs() {
     if (IS_MOCK) {
-      const response = await this.mockFetch<{
-        data: z.infer<typeof jobSchema>[];
-        meta: {
-          total: number;
-          per_page: number;
-          current_page: number;
-          last_page: number;
-        };
-      }>('/jobs?page=1&per_page=25');
+      const response = await this.mockFetch('/jobs');
+      const data = await response.json();
+      let jobs = data.data.jobs;
+
+      if (this.filters?.location) {
+        jobs = jobs.filter((job) => job.locations.some((loc) => loc.city === this.filters.location));
+      }
 
       return {
-        jobs: response.data,
-        total: response.meta.total,
+        jobs: jobSchema.array().parse(jobs),
+        total: data.meta.total,
       };
     }
 
@@ -305,63 +324,6 @@ export class RecruitCRMService {
       console.error('❌ Job sync failed:', error);
       throw error;
     }
-  }
-
-  private async mockFetch<T>(endpoint: string): Promise<T> {
-    await new Promise((resolve) => setTimeout(resolve, 500));
-
-    if (!this.apiKey || this.apiKey === 'invalid') {
-      throw new Error('Invalid API key');
-    }
-
-    if (endpoint.startsWith('/job-types')) {
-      return {
-        data: [
-          { id: 1, name: 'Full Time' },
-          { id: 2, name: 'Part Time' },
-          { id: 3, name: 'Contract' },
-          { id: 4, name: 'Freelance' },
-        ],
-      } as T;
-    }
-
-    if (endpoint.startsWith('/jobs')) {
-      let filteredJobs = [...MOCK_JOBS];
-
-      if (this.filters) {
-        if (this.filters.status?.length) {
-          filteredJobs = filteredJobs.filter((job) =>
-            this.filters?.status?.includes(job.status)
-          );
-        }
-
-        if (this.filters.jobTypes?.length) {
-          filteredJobs = filteredJobs.filter((job) =>
-            this.filters?.jobTypes?.includes(job.job_type.name)
-          );
-        }
-
-        if (this.filters.locations?.length) {
-          filteredJobs = filteredJobs.filter((job) =>
-            job.locations.some((loc) =>
-              this.filters?.locations?.includes(loc.city)
-            )
-          );
-        }
-      }
-
-      return {
-        data: filteredJobs,
-        meta: {
-          total: filteredJobs.length,
-          per_page: 25,
-          current_page: 1,
-          last_page: 1,
-        },
-      } as T;
-    }
-
-    throw new Error('Mock endpoint not implemented');
   }
 }
 

@@ -1,8 +1,8 @@
 import { ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../../lib/hooks/useAuth';
-import { Permission } from '../../../types/domain/rbac';
-import { rbacService } from '../../../lib/api/rbac';
+import { Permission } from '../../../backend/types/rbac.types';
+import { rbacService } from '../../../backend/services/rbac.service';
 
 interface RBACRouteProps {
   children: ReactNode;

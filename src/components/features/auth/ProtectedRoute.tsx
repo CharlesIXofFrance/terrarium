@@ -1,15 +1,35 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAtom } from 'jotai';
 import { userAtom } from '../../../lib/stores/auth';
+import { supabase } from '../../../lib/supabase';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
 }
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const [user] = useAtom(userAtom);
+  const [user, setUser] = useAtom(userAtom);
   const location = useLocation();
+
+  // Effect to check and refresh session if needed
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session && user) {
+        // Session is invalid but we have a user, try to refresh
+        const { data: { session: newSession } } = await supabase.auth.refreshSession();
+        
+        if (!newSession) {
+          // If refresh failed, clear user state
+          setUser(null);
+        }
+      }
+    };
+
+    checkSession();
+  }, [user, setUser]);
 
   console.log('ProtectedRoute - Debug:', {
     user,

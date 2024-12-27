@@ -1,5 +1,11 @@
 import { supabase } from '../supabase';
-import type { Community } from '../../types/domain/auth';
+import type { Community } from '../../backend/types/auth.types';
+import { slugify } from 'slugify';
+
+interface CreateCommunityInput {
+  name: string;
+  description: string;
+}
 
 export async function getCommunity(slug: string): Promise<Community | null> {
   const { data, error } = await supabase
@@ -23,16 +29,52 @@ export async function updateCommunity(id: string, updates: Partial<Community>) {
   return data;
 }
 
-export async function createCommunity(
-  community: Omit<Community, 'id' | 'created_at' | 'updated_at'>
-) {
-  const { data, error } = await supabase
+export async function createCommunity(input: CreateCommunityInput) {
+  // Create slug from name
+  const slug = slugify(input.name.toLowerCase());
+
+  // Create community with basic info
+  const { data: community, error } = await supabase
     .from('communities')
-    .insert(community)
+    .insert({
+      name: input.name,
+      description: input.description,
+      slug,
+      owner_id: (await supabase.auth.getUser()).data.user?.id,
+    })
+    .select()
     .single();
 
   if (error) throw error;
-  return data;
+  return community;
+}
+
+export async function updateCommunityLogo(slug: string, logo: File) {
+  // Upload logo directly to community directory
+  const extension = logo.name.split('.').pop();
+  const logoPath = `${slug}/logo.${extension}`;
+  
+  const { data: uploadData, error: uploadError } = await supabase.storage
+    .from('community-assets')
+    .upload(logoPath, logo);
+
+  if (uploadError) throw uploadError;
+
+  // Get public URL
+  const { data: urlData } = supabase.storage
+    .from('community-assets')
+    .getPublicUrl(logoPath);
+
+  // Update community with logo URL
+  const { data: community, error: updateError } = await supabase
+    .from('communities')
+    .update({ logo_url: urlData.publicUrl })
+    .eq('slug', slug)
+    .select()
+    .single();
+
+  if (updateError) throw updateError;
+  return community;
 }
 
 export async function deleteCommunity(id: string) {

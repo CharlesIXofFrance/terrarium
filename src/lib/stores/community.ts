@@ -1,5 +1,5 @@
 import { atom } from 'jotai';
-import type { Community } from '../../types/domain/auth';
+import type { Community } from '../../backend/types/auth.types';
 
 // Base atoms
 const _currentCommunityAtom = atom<Community | null>(null);

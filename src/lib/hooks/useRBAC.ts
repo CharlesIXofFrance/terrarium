@@ -1,6 +1,6 @@
 import { useAuth } from './useAuth';
-import { Permission } from '../types/rbac';
-import { rbacService } from '../../services/rbac';
+import { Permission } from '../../backend/types/rbac.types';
+import { rbacService } from '../../backend/services/rbac.service';
 
 export function useRBAC() {
   const { user } = useAuth();

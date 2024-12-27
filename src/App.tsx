@@ -92,7 +92,7 @@ function App() {
             const { data: memberCommunity, error: memberError } = await supabase
               .from('community_members')
               .select('communities:communities(*)')
-              .eq('user_id', sessionUser.id)
+              .eq('profile_id', sessionUser.id)
               .single();
 
             if (!mounted) return;
@@ -154,27 +154,67 @@ function App() {
 
           if (profileError) {
             if (profileError.code === 'PGRST116') {
-              const { data: newProfile, error: createError } = await supabase
-                .from('profiles')
-                .upsert({
-                  id: session.user.id,
-                  email: session.user.email,
-                  full_name: session.user.email?.split('@')[0] || 'New User',
-                  role: 'community_admin',
-                  profile_complete: false,
-                })
-                .select()
-                .single();
+              // Wait for the trigger to create the profile
+              let retryCount = 0;
+              const maxRetries = 3;
+              let retryProfile = null;
+              let retryError = null;
 
-              if (createError) throw createError;
-              setUser({
-                ...session.user,
-                ...newProfile,
-                avatar:
-                  newProfile.avatar_url ||
-                  session.user.user_metadata?.avatar_url,
-              });
+              while (retryCount < maxRetries) {
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                const result = await supabase
+                  .from('profiles')
+                  .select('*')
+                  .eq('id', session.user.id)
+                  .single();
+
+                if (!result.error) {
+                  retryProfile = result.data;
+                  break;
+                }
+
+                retryError = result.error;
+                retryCount++;
+              }
+
+              if (retryProfile) {
+                setUser({
+                  ...session.user,
+                  ...retryProfile,
+                  avatar:
+                    retryProfile.avatar_url ||
+                    session.user.user_metadata?.avatar_url,
+                });
+              } else {
+                // If profile still doesn't exist after retries, create it manually
+                const { data: newProfile, error: createError } = await supabase
+                  .from('profiles')
+                  .upsert({
+                    id: session.user.id,
+                    email: session.user.email,
+                    full_name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'New User',
+                    role: 'community_admin',
+                    profile_complete: false,
+                  })
+                  .select()
+                  .single();
+
+                if (createError) {
+                  console.error('Error creating profile:', createError);
+                  throw createError;
+                }
+
+                setUser({
+                  ...session.user,
+                  ...newProfile,
+                  avatar:
+                    newProfile.avatar_url ||
+                    session.user.user_metadata?.avatar_url,
+                });
+              }
             } else {
+              console.error('Error fetching profile:', profileError);
               throw profileError;
             }
           } else {
@@ -197,7 +237,7 @@ function App() {
             const { data: memberCommunity, error: memberError } = await supabase
               .from('community_members')
               .select('community:communities(*)')
-              .eq('user_id', session.user.id)
+              .eq('profile_id', session.user.id)
               .single();
 
             if (memberError && memberError.code !== 'PGRST116') {

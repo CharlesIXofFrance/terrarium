@@ -3,12 +3,14 @@ import { z } from 'zod';
 const envSchema = z.object({
   SUPABASE_URL: z.string().min(1, 'Supabase URL is required'),
   SUPABASE_ANON_KEY: z.string().min(1, 'Supabase anonymous key is required'),
+  RECRUITCRM_API_KEY: z.string().optional(),
 });
 
 // Load and validate environment variables
 const processEnv = {
   SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL,
   SUPABASE_ANON_KEY: import.meta.env.VITE_SUPABASE_ANON_KEY,
+  RECRUITCRM_API_KEY: import.meta.env.VITE_RECRUITCRM_API_KEY,
 };
 
 // Validate environment variables

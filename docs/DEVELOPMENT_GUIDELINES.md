@@ -7,14 +7,30 @@
 ```
 src/
 ├── components/
-│   ├── common/          # Reusable UI components
-│   ├── features/        # Feature-specific components
-│   └── layouts/         # Layout components
-├── hooks/               # Custom React hooks
-├── services/           # API and external service integrations
-├── stores/             # State management
-├── types/              # TypeScript type definitions
-└── utils/              # Utility functions
+│   ├── ui/             # Generic UI components
+│   │   ├── atoms/     # Basic UI elements (Button, Input)
+│   │   └── molecules/ # Composed UI components (Card, Modal)
+│   ├── features/      # Feature-specific components
+│   │   ├── auth/     # Authentication components
+│   │   ├── jobs/     # Job-related components
+│   │   └── events/   # Event-related components
+│   ├── layout/        # Layout components
+│   │   ├── molecules/ # Layout-specific molecules
+│   │   ├── Navbar.tsx
+│   │   └── Footer.tsx
+│   ├── charts/        # Data visualization components
+│   └── admin/         # Admin-specific components
+├── pages/             # Route components
+│   ├── auth/         # Authentication pages
+│   ├── member/       # Member-specific pages
+│   └── community/    # Community admin pages
+├── lib/              # Application logic
+│   ├── hooks/        # Custom React hooks
+│   ├── stores/       # State management
+│   ├── types/        # TypeScript types
+│   ├── utils/        # Utility functions
+│   └── mocks/        # Mock data
+└── styles/           # Global styles and themes
 ```
 
 ### Backend Structure
@@ -545,27 +561,30 @@ const trackAPIMetrics = (req: Request, res: Response, next: NextFunction) => {
 ```
 src/
 ├── components/
-│   ├── ui/              # Design-locked UI components
-│   │   ├── atoms/       # Basic UI elements
-│   │   ├── molecules/   # Simple component combinations
-│   │   └── organisms/   # Complex UI components
-│   ├── features/        # Feature-specific components
-│   │   ├── jobs/        # Job-related features
-│   │   ├── members/     # Member-related features
-│   │   └── settings/    # Settings-related features
-│   └── layouts/         # Design-locked layouts
-├── styles/             # Design-locked styles
-│   ├── tailwind/       # Tailwind configuration
-│   └── theme/          # Theme variables
-├── lib/               # Core functionality
-│   ├── api/           # API integration
-│   ├── hooks/         # Custom hooks
-│   ├── stores/        # State management
-│   └── utils/         # Utility functions
-└── types/            # TypeScript types
-    ├── ui/           # UI-related types
-    ├── api/          # API-related types
-    └── domain/       # Domain-specific types
+│   ├── ui/             # Generic UI components
+│   │   ├── atoms/     # Basic UI elements (Button, Input)
+│   │   └── molecules/ # Composed UI components (Card, Modal)
+│   ├── features/      # Feature-specific components
+│   │   ├── auth/     # Authentication components
+│   │   ├── jobs/     # Job-related components
+│   │   └── events/   # Event-related components
+│   ├── layout/        # Layout components
+│   │   ├── molecules/ # Layout-specific molecules
+│   │   ├── Navbar.tsx
+│   │   └── Footer.tsx
+│   ├── charts/        # Data visualization components
+│   └── admin/         # Admin-specific components
+├── pages/             # Route components
+│   ├── auth/         # Authentication pages
+│   ├── member/       # Member-specific pages
+│   └── community/    # Community admin pages
+├── lib/              # Application logic
+│   ├── hooks/        # Custom React hooks
+│   ├── stores/       # State management
+│   ├── types/        # TypeScript types
+│   ├── utils/        # Utility functions
+│   └── mocks/        # Mock data
+└── styles/           # Global styles and themes
 ```
 
 ### Implementation Guidelines
@@ -660,4 +679,3 @@ function JobList() {
   if (isLoading) return <ExistingLoadingUI />;
   return <ExistingListComponent />;
 }
-```

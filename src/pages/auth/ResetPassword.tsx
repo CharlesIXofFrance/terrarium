@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { Globe2 } from 'lucide-react';
 import { Button } from '@/components/ui/atoms/Button';
 import { Input } from '@/components/ui/atoms/Input';
@@ -18,54 +18,77 @@ export function ResetPassword() {
   const [user] = useAtom(userAtom);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const location = useLocation();
 
   useEffect(() => {
     const setupSession = async () => {
       try {
-        // Get token from URL params (from Supabase redirect)
-        const token = searchParams.get('token');
-        const type = searchParams.get('type');
+        // Try to get token from URL search params first
+        let token = searchParams.get('token');
+        let type = searchParams.get('type');
+
+        // If not found, try to get from URL hash
+        if (!token && location.hash) {
+          const hashParams = new URLSearchParams(location.hash.substring(1));
+          token = hashParams.get('access_token');
+          type = hashParams.get('type');
+        }
 
         console.log('Reset Password - URL Parameters:', {
           token,
           type,
           fullUrl: window.location.href,
           searchParams: Object.fromEntries(searchParams.entries()),
+          hash: location.hash,
         });
 
-        if (!token || type !== 'recovery') {
-          throw new Error('Invalid or missing recovery token');
+        if (!token) {
+          throw new Error('No recovery token found in URL');
         }
 
-        // Exchange the token for a session
-        console.log('Reset Password - Exchanging token...');
-        const { data, error: exchangeError } = await supabase.auth.verifyOtp({
-          token,
-          type: 'recovery',
-        });
+        // If we got the token from hash, we already have a session
+        if (location.hash) {
+          console.log('Reset Password - Using hash token directly');
+          const { error: sessionError } = await supabase.auth.setSession({
+            access_token: token,
+            refresh_token: hashParams.get('refresh_token') || '',
+          });
 
-        if (exchangeError) {
-          console.error('Reset Password - Token exchange error:', exchangeError);
-          throw exchangeError;
-        }
+          if (sessionError) {
+            console.error('Reset Password - Session setup error:', sessionError);
+            throw sessionError;
+          }
+        } else {
+          // Exchange the token for a session
+          console.log('Reset Password - Exchanging token...');
+          const { data, error: exchangeError } = await supabase.auth.verifyOtp({
+            token,
+            type: 'recovery',
+          });
 
-        if (!data.session) {
-          console.error('Reset Password - No session returned');
-          throw new Error('No session returned from token exchange');
-        }
+          if (exchangeError) {
+            console.error('Reset Password - Token exchange error:', exchangeError);
+            throw exchangeError;
+          }
 
-        console.log('Reset Password - Token exchanged successfully');
+          if (!data.session) {
+            console.error('Reset Password - No session returned');
+            throw new Error('No session returned from token exchange');
+          }
 
-        // Set up the session
-        console.log('Reset Password - Setting up session...');
-        const { error: sessionError } = await supabase.auth.setSession({
-          access_token: data.session.access_token,
-          refresh_token: data.session.refresh_token,
-        });
+          console.log('Reset Password - Token exchanged successfully');
 
-        if (sessionError) {
-          console.error('Reset Password - Session setup error:', sessionError);
-          throw sessionError;
+          // Set up the session
+          console.log('Reset Password - Setting up session...');
+          const { error: sessionError } = await supabase.auth.setSession({
+            access_token: data.session.access_token,
+            refresh_token: data.session.refresh_token,
+          });
+
+          if (sessionError) {
+            console.error('Reset Password - Session setup error:', sessionError);
+            throw sessionError;
+          }
         }
 
         console.log('Reset Password - Session setup complete');
@@ -83,7 +106,7 @@ export function ResetPassword() {
     };
 
     setupSession();
-  }, [navigate, searchParams]);
+  }, [navigate, searchParams, location.hash]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

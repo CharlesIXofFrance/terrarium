@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Globe2 } from 'lucide-react';
 import { Button } from '@/components/ui/atoms/Button';
 import { Input } from '@/components/ui/atoms/Input';
 import { Alert } from '@/components/ui/atoms/Alert';
+import { Spinner } from '@/components/ui/atoms/Spinner';
 import { supabase } from '@/lib/supabase';
 import { useAtom } from 'jotai';
 import { userAtom } from '@/lib/stores/auth';
@@ -12,43 +13,47 @@ export function ResetPassword() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [user] = useAtom(userAtom);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   useEffect(() => {
-    // Check for reset password token
-    const token = sessionStorage.getItem('resetPasswordToken');
-    const type = sessionStorage.getItem('resetPasswordType');
-
-    if (!token || type !== 'recovery') {
-      navigate('/login', {
-        replace: true,
-        state: { 
-          message: 'Invalid or expired password reset link. Please request a new one.',
-          type: 'error'
-        }
-      });
-      return;
-    }
-
-    // Set up the session with the recovery token
     const setupSession = async () => {
       try {
-        const { error: sessionError } = await supabase.auth.setSession({
-          access_token: token,
-          refresh_token: '',
+        // Get token from URL params (from Supabase redirect)
+        const token = searchParams.get('token');
+        const type = searchParams.get('type');
+
+        if (!token || type !== 'recovery') {
+          throw new Error('Invalid or missing recovery token');
+        }
+
+        // Exchange the token for a session
+        const { data, error: exchangeError } = await supabase.auth.verifyOtp({
+          token,
+          type: 'recovery',
         });
 
-        if (sessionError) {
-          throw sessionError;
-        }
+        if (exchangeError) throw exchangeError;
+        if (!data.session) throw new Error('No session returned from token exchange');
+
+        // Set up the session
+        const { error: sessionError } = await supabase.auth.setSession({
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token,
+        });
+
+        if (sessionError) throw sessionError;
+
+        setIsProcessing(false);
       } catch (err) {
         console.error('Session setup error:', err);
         navigate('/login', {
           replace: true,
           state: { 
-            message: 'Failed to set up password reset session. Please try again.',
+            message: 'Invalid or expired password reset link. Please request a new one.',
             type: 'error'
           }
         });
@@ -56,7 +61,7 @@ export function ResetPassword() {
     };
 
     setupSession();
-  }, [navigate]);
+  }, [navigate, searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,13 +85,7 @@ export function ResetPassword() {
         password: password,
       });
 
-      if (updateError) {
-        throw updateError;
-      }
-
-      // Clear the reset password tokens
-      sessionStorage.removeItem('resetPasswordToken');
-      sessionStorage.removeItem('resetPasswordType');
+      if (updateError) throw updateError;
 
       // Navigate based on user state
       if (user?.community_id) {
@@ -105,6 +104,15 @@ export function ResetPassword() {
       setIsLoading(false);
     }
   };
+
+  if (isProcessing) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col justify-center items-center">
+        <Spinner size="lg" />
+        <p className="mt-4 text-gray-600">Setting up your password reset...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">

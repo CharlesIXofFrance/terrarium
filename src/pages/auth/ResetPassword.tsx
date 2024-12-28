@@ -26,30 +26,52 @@ export function ResetPassword() {
         const token = searchParams.get('token');
         const type = searchParams.get('type');
 
+        console.log('Reset Password - URL Parameters:', {
+          token,
+          type,
+          fullUrl: window.location.href,
+          searchParams: Object.fromEntries(searchParams.entries()),
+        });
+
         if (!token || type !== 'recovery') {
           throw new Error('Invalid or missing recovery token');
         }
 
         // Exchange the token for a session
+        console.log('Reset Password - Exchanging token...');
         const { data, error: exchangeError } = await supabase.auth.verifyOtp({
           token,
           type: 'recovery',
         });
 
-        if (exchangeError) throw exchangeError;
-        if (!data.session) throw new Error('No session returned from token exchange');
+        if (exchangeError) {
+          console.error('Reset Password - Token exchange error:', exchangeError);
+          throw exchangeError;
+        }
+
+        if (!data.session) {
+          console.error('Reset Password - No session returned');
+          throw new Error('No session returned from token exchange');
+        }
+
+        console.log('Reset Password - Token exchanged successfully');
 
         // Set up the session
+        console.log('Reset Password - Setting up session...');
         const { error: sessionError } = await supabase.auth.setSession({
           access_token: data.session.access_token,
           refresh_token: data.session.refresh_token,
         });
 
-        if (sessionError) throw sessionError;
+        if (sessionError) {
+          console.error('Reset Password - Session setup error:', sessionError);
+          throw sessionError;
+        }
 
+        console.log('Reset Password - Session setup complete');
         setIsProcessing(false);
       } catch (err) {
-        console.error('Session setup error:', err);
+        console.error('Reset Password - Setup error:', err);
         navigate('/login', {
           replace: true,
           state: { 

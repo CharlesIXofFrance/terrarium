@@ -10,17 +10,19 @@ interface PublicOnlyRouteProps {
 export function PublicOnlyRoute({ children }: PublicOnlyRouteProps) {
   const [user] = useAtom(userAtom);
 
-  // If user is logged in, redirect to their appropriate dashboard
+  // Allow access to reset-password even if user is logged in
+  if (window.location.pathname === '/reset-password') {
+    return <>{children}</>;
+  }
+
+  // Redirect authenticated users
   if (user) {
-    // If user has a community, redirect to community dashboard
     if (user.community_id) {
       return <Navigate to={`/c/${user.community_id}/dashboard`} replace />;
     }
-    // If user is in onboarding, redirect to onboarding
     if (!user.onboarding_completed) {
       return <Navigate to="/onboarding" replace />;
     }
-    // Otherwise, redirect to member dashboard
     return <Navigate to="/dashboard" replace />;
   }
 

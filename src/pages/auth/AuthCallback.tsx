@@ -1,66 +1,66 @@
-import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
+import { Spinner } from '../../components/ui/atoms/Spinner';
 
 export function AuthCallback() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   useEffect(() => {
     const handleCallback = async () => {
       try {
-        const {
-          data: { session },
-          error,
-        } = await supabase.auth.getSession();
+        // Get the next route from query params
+        const next = searchParams.get('next');
+        
+        // Get the token and type from URL
+        const token = searchParams.get('token');
+        const type = searchParams.get('type');
+
+        // If this is a recovery flow, store the token and redirect
+        if (token && type === 'recovery') {
+          sessionStorage.setItem('resetPasswordToken', token);
+          sessionStorage.setItem('resetPasswordType', type);
+          navigate('/reset-password', { replace: true });
+          return;
+        }
+
+        // For other auth flows, get the session
+        const { data: { session }, error } = await supabase.auth.getSession();
 
         if (error) throw error;
 
-        if (session) {
-          // Get user profile
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
+        if (session?.user) {
+          // If we have a next route, use it
+          if (next) {
+            navigate(next, { replace: true });
+            return;
+          }
 
-          if (profile?.profile_complete) {
-            // Get user's community
-            const { data: community } = await supabase
-              .from('communities')
-              .select('*')
-              .eq('owner_id', session.user.id)
-              .single();
-
-            if (community) {
-              navigate(`/c/${community.slug}`);
-            } else {
-              navigate('/onboarding');
-            }
+          // Otherwise, redirect based on user state
+          if (session.user.user_metadata?.community_id) {
+            navigate(`/c/${session.user.user_metadata.community_id}/dashboard`, { replace: true });
+          } else if (!session.user.user_metadata?.onboarding_completed) {
+            navigate('/onboarding', { replace: true });
           } else {
-            navigate('/onboarding');
+            navigate('/dashboard', { replace: true });
           }
         } else {
-          navigate('/login');
+          navigate('/login', { replace: true });
         }
-      } catch (err) {
-        console.error('Auth callback error:', err);
-        navigate('/login');
+      } catch (error) {
+        console.error('Auth callback error:', error);
+        navigate('/login', { replace: true });
       }
     };
 
     handleCallback();
-  }, [navigate]);
+  }, [navigate, searchParams]);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center">
-      <div className="text-center">
-        <h2 className="text-xl font-semibold text-gray-900">
-          Signing you in...
-        </h2>
-        <p className="mt-2 text-sm text-gray-600">
-          Please wait while we redirect you.
-        </p>
-      </div>
+    <div className="min-h-screen bg-gray-50 flex flex-col justify-center items-center">
+      <Spinner size="lg" />
+      <p className="mt-4 text-gray-600">Setting up your session...</p>
     </div>
   );
 }

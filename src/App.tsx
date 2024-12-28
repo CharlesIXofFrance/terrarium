@@ -340,6 +340,7 @@ function App() {
           />
           <Route path="/auth/reset-password" element={<ResetPasswordCallback />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
+          <Route path="/auth/v1/verify" element={<ResetPasswordCallback />} />
           <Route path="/logout" element={<Logout />} />
           <Route path="/rbac-test" element={<RBACTest />} />
           <Route

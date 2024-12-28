@@ -203,7 +203,7 @@ export const authService = {
   async resetPassword(email: string): Promise<void> {
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/reset-password`,
+        redirectTo: `${window.location.origin}/auth/v1/verify`,
       });
 
       if (error) {

@@ -29,7 +29,33 @@ export function ResetPassword() {
           type: 'error'
         }
       });
+      return;
     }
+
+    // Set up the session with the recovery token
+    const setupSession = async () => {
+      try {
+        const { error: sessionError } = await supabase.auth.setSession({
+          access_token: token,
+          refresh_token: '',
+        });
+
+        if (sessionError) {
+          throw sessionError;
+        }
+      } catch (err) {
+        console.error('Session setup error:', err);
+        navigate('/login', {
+          replace: true,
+          state: { 
+            message: 'Failed to set up password reset session. Please try again.',
+            type: 'error'
+          }
+        });
+      }
+    };
+
+    setupSession();
   }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -49,20 +75,7 @@ export function ResetPassword() {
     setIsLoading(true);
 
     try {
-      // Get the token from sessionStorage
-      const token = sessionStorage.getItem('resetPasswordToken');
-      
-      // First set up the session with the recovery token
-      const { error: sessionError } = await supabase.auth.setSession({
-        access_token: token!,
-        refresh_token: '',
-      });
-
-      if (sessionError) {
-        throw sessionError;
-      }
-
-      // Then update the password
+      // Update the password
       const { error: updateError } = await supabase.auth.updateUser({
         password: password,
       });

@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Alert } from '@/components/ui/atoms/Alert';
 import { Spinner } from '@/components/ui/atoms/Spinner';
 import { supabase } from '@/lib/supabase';
 
 export function ResetPasswordCallback() {
-  const location = useLocation();
   const [searchParams] = useSearchParams();
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -13,38 +12,26 @@ export function ResetPasswordCallback() {
   useEffect(() => {
     const handlePasswordReset = async () => {
       try {
-        // First try to get token from hash (Supabase client format)
-        const hashParams = new URLSearchParams(location.hash.substring(1));
-        let token = hashParams.get('access_token');
-        let type = hashParams.get('type');
-
-        // If not found, try to get from query params (email link format)
-        if (!token) {
-          token = searchParams.get('token');
-          type = searchParams.get('type');
-
-          if (token && type === 'recovery') {
-            // For email links, we need to exchange the token for a session
-            const { data, error: exchangeError } = await supabase.auth.verifyOtp({
-              token,
-              type: 'recovery',
-            });
-
-            if (exchangeError) throw exchangeError;
-            if (!data.session) throw new Error('No session returned from token exchange');
-
-            // Use the access token from the exchanged session
-            token = data.session.access_token;
-          }
-        }
+        // Get token and type from URL params (email link format)
+        const token = searchParams.get('token');
+        const type = searchParams.get('type');
 
         if (!token || type !== 'recovery') {
           throw new Error('Invalid or missing recovery token');
         }
 
-        // Store the token for the reset password page
-        sessionStorage.setItem('resetPasswordToken', token);
-        sessionStorage.setItem('resetPasswordType', type);
+        // Exchange the token for a session
+        const { data, error: exchangeError } = await supabase.auth.verifyOtp({
+          token,
+          type: 'recovery',
+        });
+
+        if (exchangeError) throw exchangeError;
+        if (!data.session) throw new Error('No session returned from token exchange');
+
+        // Store the access token for the reset password page
+        sessionStorage.setItem('resetPasswordToken', data.session.access_token);
+        sessionStorage.setItem('resetPasswordType', 'recovery');
 
         // Navigate to the reset password form
         navigate('/reset-password', { replace: true });
@@ -55,7 +42,7 @@ export function ResetPasswordCallback() {
     };
 
     handlePasswordReset();
-  }, [location.hash, searchParams, navigate]);
+  }, [searchParams, navigate]);
 
   if (error) {
     return (

@@ -12,25 +12,41 @@ export function ResetPasswordCallback() {
   useEffect(() => {
     const handlePasswordReset = async () => {
       try {
-        // Get token and type from URL params (email link format)
-        const token = searchParams.get('token');
-        const type = searchParams.get('type');
+        // Log URL parameters for debugging
+        console.log('URL Parameters:', Object.fromEntries(searchParams.entries()));
+        console.log('Full URL:', window.location.href);
 
-        if (!token || type !== 'recovery') {
+        // Get token from various possible locations
+        let token = searchParams.get('token') || searchParams.get('access_token');
+        let type = searchParams.get('type') || 'recovery';
+
+        if (!token) {
+          // Try to get from hash if not in search params
+          const hashParams = new URLSearchParams(window.location.hash.replace('#', ''));
+          token = hashParams.get('access_token');
+          type = hashParams.get('type') || type;
+        }
+
+        if (!token) {
           throw new Error('Invalid or missing recovery token');
         }
 
-        // Exchange the token for a session
-        const { data, error: exchangeError } = await supabase.auth.verifyOtp({
-          token,
-          type: 'recovery',
-        });
+        // Exchange the token for a session if it's not an access token
+        if (type === 'recovery' && !token.startsWith('ey')) {
+          const { data, error: exchangeError } = await supabase.auth.verifyOtp({
+            token,
+            type: 'recovery',
+          });
 
-        if (exchangeError) throw exchangeError;
-        if (!data.session) throw new Error('No session returned from token exchange');
+          if (exchangeError) throw exchangeError;
+          if (!data.session) throw new Error('No session returned from token exchange');
+
+          // Use the session token
+          token = data.session.access_token;
+        }
 
         // Store the access token for the reset password page
-        sessionStorage.setItem('resetPasswordToken', data.session.access_token);
+        sessionStorage.setItem('resetPasswordToken', token);
         sessionStorage.setItem('resetPasswordType', 'recovery');
 
         // Navigate to the reset password form
@@ -49,6 +65,14 @@ export function ResetPasswordCallback() {
       <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
         <div className="sm:mx-auto sm:w-full sm:max-w-md">
           <Alert type="error" message={error} />
+          <div className="mt-4 text-center">
+            <button
+              onClick={() => navigate('/forgot-password')}
+              className="text-sm text-indigo-600 hover:text-indigo-500"
+            >
+              Try again
+            </button>
+          </div>
         </div>
       </div>
     );

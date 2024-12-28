@@ -26,12 +26,15 @@ export function ResetPassword() {
         // Try to get token from URL search params first
         let token = searchParams.get('token');
         let type = searchParams.get('type');
+        let refreshToken = '';
 
         // If not found, try to get from URL hash
+        let hashParams: URLSearchParams | null = null;
         if (!token && location.hash) {
-          const hashParams = new URLSearchParams(location.hash.substring(1));
+          hashParams = new URLSearchParams(location.hash.substring(1));
           token = hashParams.get('access_token');
           type = hashParams.get('type');
+          refreshToken = hashParams.get('refresh_token') || '';
         }
 
         console.log('Reset Password - URL Parameters:', {
@@ -47,11 +50,11 @@ export function ResetPassword() {
         }
 
         // If we got the token from hash, we already have a session
-        if (location.hash) {
+        if (hashParams) {
           console.log('Reset Password - Using hash token directly');
           const { error: sessionError } = await supabase.auth.setSession({
             access_token: token,
-            refresh_token: hashParams.get('refresh_token') || '',
+            refresh_token: refreshToken,
           });
 
           if (sessionError) {

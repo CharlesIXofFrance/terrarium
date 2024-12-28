@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { supabase } from '../../lib/supabase';
-import { Spinner } from '../../components/ui/atoms/Spinner';
+import { supabase } from '@/lib/supabase';
+import { Spinner } from '@/components/ui/atoms/Spinner';
 
 export function AuthCallback() {
   const navigate = useNavigate();
@@ -12,20 +12,8 @@ export function AuthCallback() {
       try {
         // Get the next route from query params
         const next = searchParams.get('next');
-        
-        // Get the token and type from URL
-        const token = searchParams.get('token');
-        const type = searchParams.get('type');
 
-        // If this is a recovery flow, store the token and redirect
-        if (token && type === 'recovery') {
-          sessionStorage.setItem('resetPasswordToken', token);
-          sessionStorage.setItem('resetPasswordType', type);
-          navigate('/reset-password', { replace: true });
-          return;
-        }
-
-        // For other auth flows, get the session
+        // Get the session
         const { data: { session }, error } = await supabase.auth.getSession();
 
         if (error) throw error;

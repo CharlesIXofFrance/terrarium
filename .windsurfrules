@@ -4,9 +4,29 @@ You are an AI assistant helping with the Terrarium project, a multi-tenant commu
 
 ## Project Context
 
-- Tech Stack: React (TypeScript), Node.js, PostgreSQL
+- Tech Stack:
+  - Frontend: React 18+ with TypeScript, Vite, TailwindCSS
+  - State: Jotai (global), React Query (server)
+  - Backend: Supabase (auth, database)
+  - Forms: React Hook Form + Zod
+  - UI: Radix UI components
+  - Analytics: Chart.js
 - Architecture: Multi-tenant SaaS platform
 - Current Phase: Setting up development environment and infrastructure
+
+### User Types
+
+- Platform Owners: Full platform administration
+- Community Owners: Community management and customization
+- Members: Job discovery and community engagement
+- Employers: Job posting and talent access
+
+### Key Features
+
+- Custom Job Boards
+- Community Management
+- Analytics Dashboard
+- Branding Controls
 
 ## Code Generation Rules
 
@@ -138,6 +158,209 @@ import { useUser } from '../hooks';
 // random/profile.js
 import { User } from '../../../somewhere';
 ```
+
+## Project Structure Overview
+
+```
+terrarium/
+├── src/
+│   ├── api/                # API client configurations and endpoints
+│   │   └── routes/        # API route definitions
+│   ├── components/
+│   │   ├── platform/      # Platform owner dashboard components
+│   │   ├── charts/        # Data visualization components
+│   │   ├── features/      # Feature-specific components
+│   │   │   ├── platform/  # Platform owner features
+│   │   │   ├── auth/      # Authentication components
+│   │   │   ├── communities/ # Community management
+│   │   │   ├── customization/ # UI customization
+│   │   │   ├── events/    # Event management
+│   │   │   ├── feed/      # Activity feed
+│   │   │   ├── jobs/      # Job board components
+│   │   │   │   ├── JobList.tsx
+│   │   │   │   ├── JobFilters.tsx
+│   │   │   │   └── SelectedFilters.tsx
+│   │   │   ├── member-hub/ # Member hub components
+│   │   │   ├── members/   # Member management
+│   │   │   ├── onboarding/ # User onboarding
+│   │   │   ├── profile/   # User profile
+│   │   │   └── settings/  # App settings
+│   │   ├── layout/       # Layout components
+│   │   │   ├── MainLayout.tsx
+│   │   │   └── CommunityLayout.tsx
+│   │   ├── onboarding/   # Onboarding flows
+│   │   └── ui/           # Reusable UI components
+│   │       ├── atoms/    # Basic UI elements
+│   │       └── molecules/ # Composite components
+│   ├── lib/              # Core library code
+│   │   ├── api/          # API utilities
+│   │   ├── atoms/        # Atomic state primitives
+│   │   ├── constants/    # Application constants
+│   │   ├── data/         # Data utilities
+│   │   ├── hooks/        # Custom React hooks
+│   │   │   ├── useJobs.ts
+│   │   │   ├── useScrollSync.ts
+│   │   │   └── useScrollEnd.ts
+│   │   ├── mocks/        # Test mocks
+│   │   ├── stores/       # State management
+│   │   ├── types/        # TypeScript types
+│   │   └── utils/        # Utility functions
+│   ├── pages/            # Page components
+│   │   ├── platform/     # Platform owner pages
+│   │   ├── auth/         # Authentication pages
+│   │   ├── community/    # Community pages
+│   │   ├── member/       # Member pages
+│   │   ├── Communities.tsx
+│   │   ├── JobBoard.tsx
+│   │   └── LandingPage.tsx
+│   ├── services/         # Service layer
+│   ├── stores/           # Global state
+│   ├── styles/           # Global styles
+│   └── utils/            # Utility functions
+├── docs/                 # Documentation
+└── public/              # Static assets
+```
+
+## Component Organization
+
+### Features
+
+Feature-specific components are organized by domain:
+
+#### Platform
+
+- Platform owner dashboard components
+- Community oversight tools
+- User management interfaces
+
+#### Authentication
+
+- Login/Register forms
+- Authentication flows
+- Password reset
+
+#### Communities
+
+- Community creation
+- Community settings
+- Member management
+
+#### Jobs
+
+- `JobList.tsx`: Job card grid with infinite scroll
+- `JobFilters.tsx`: Filter sidebar
+- `SelectedFilters.tsx`: Active filter display
+
+#### Member Hub
+
+- `Header.tsx`: Navigation header
+- `MemberFooter.tsx`: Footer component
+- Profile management
+- Activity feeds
+
+### Layout
+
+- `MainLayout.tsx`: Application shell
+- `CommunityLayout.tsx`: Community-specific layout
+
+### UI Components
+
+- **Atoms**: Buttons, inputs, icons
+- **Molecules**: Forms, cards, modals
+
+## Core Libraries
+
+### Hooks
+
+- Authentication hooks
+- Data fetching hooks
+- UI utility hooks
+- Scroll management hooks
+
+### State Management
+
+- Jotai atoms for global state
+- Community state
+- User state
+- UI state
+
+### Services
+
+- API services
+- Authentication services
+- Data services
+- File upload services
+
+## Pages
+
+### Platform
+
+- Dashboard
+- User management
+- Settings
+
+### Auth
+
+- Login
+- Register
+- Password reset
+
+### Community
+
+- Community home
+- Member management
+- Events
+- Jobs
+
+### Member
+
+- Profile
+- Settings
+- Activity
+
+## Best Practices
+
+1. **Component Organization**
+
+   - Feature-first architecture
+   - Clear separation of concerns
+   - Reusable UI components
+
+2. **State Management**
+
+   - Jotai for global state
+   - React Query for server state
+   - Local state when appropriate
+
+3. **Type Safety**
+
+   - Comprehensive type definitions
+   - Strict type checking
+   - Interface-first development
+
+4. **Code Style**
+   - Consistent file naming
+   - Clear component structure
+   - Proper documentation
+
+## Future Considerations
+
+1. **Scalability**
+
+   - Code splitting strategies
+   - Performance optimization
+   - Caching strategies
+
+2. **Maintainability**
+
+   - Testing strategy
+   - Documentation updates
+   - Code review process
+
+3. **Feature Expansion**
+   - New feature integration
+   - State management scaling
+   - Component reusability
 
 ### 6. Documentation
 
@@ -400,6 +623,95 @@ Example Documentation:
  */
 ```
 
+### AI Context Documentation
+
+Every file must include an AI Context comment block that explains:
+
+1. Purpose and Responsibility
+
+   - What the file does
+   - Its role in the system
+   - Key features or functions
+
+2. Location Justification
+
+   - Why it's in this directory
+   - Relationship to nearby files
+   - Alternative locations considered
+
+3. Design Constraints
+   - UI/UX limitations
+   - Performance requirements
+   - Security considerations
+
+Example:
+
+````typescript
+/**
+ * AI Context:
+ * This component implements the community-specific login page. It's in the pages
+ * directory because it represents a full page with its own route (/c/:slug/login).
+ *
+ * Responsibilities:
+ * - Loads community branding (logo, colors, text)
+ * - Handles user authentication
+ * - Manages form state and validation
+ *
+ * Design Constraints:
+ * - Must use existing UI components
+ * - Must preserve Tailwind classes
+ * - Must maintain accessibility
+ *
+ * Future Considerations:
+ * - Login form could be extracted to features/
+ * - Could add SSO providers
+ */
+
+When to Add:
+
+All new files or older files without it must include AI Context
+When substantially modifying existing files
+When moving or renaming files
+When changing file responsibilities
+
+
+## Multi-Tenant Architecture Rules
+
+### 1. Data Isolation
+- Use RLS policies for tenant isolation
+- Include community_id in relevant tables
+- Validate tenant context in queries
+
+### 2. Feature Customization
+- Store community settings in JSONB
+- Use feature flags for tenant features
+- Implement proper caching strategies
+
+### 3. Security
+- Validate tenant access in middleware
+- Implement proper role checks
+- Handle cross-tenant requests carefully
+
+Example:
+
+```typescript
+// ✅ Good: Proper tenant isolation
+const getCommunityMembers = async (communityId: string) => {
+  const { data, error } = await supabase
+    .from('members')
+    .select('*')
+    .eq('community_id', communityId);
+  // RLS will automatically filter by community_id
+};
+
+// ❌ Bad: No tenant isolation
+const getAllMembers = async () => {
+  const { data } = await supabase
+    .from('members')
+    .select('*');
+  // This could leak data across communities
+};
+
 ## Implementation Guidelines
 
 When implementing new features:
@@ -430,6 +742,8 @@ For Testing:
 
 ## Code Review Checklist
 
+## Code Review Checklist
+
 Before submitting code:
 
 1. Types are properly defined
@@ -437,9 +751,16 @@ Before submitting code:
 3. Error handling is implemented
 4. Tests are included
 5. Documentation is updated
+   - AI Context is included
+   - JSDoc comments are present
+   - Design constraints are documented
 6. Performance is considered
 7. Security is implemented
+   - Tenant isolation is enforced
+   - RLS policies are in place
 8. Code is properly formatted
+9. UI preservation rules are followed
+10. Multi-tenant rules are followed
 
 ## Getting Help
 
@@ -449,3 +770,4 @@ When stuck:
 2. Look for similar implementations in the codebase
 3. Ask for help in code reviews
 4. Use the learning resources provided
+````

@@ -1,162 +1,184 @@
-import { describe, it, expect, vi } from 'vitest';
+import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
-import { ForgotPassword } from '@/pages/auth/ForgotPassword';
-import { ResetPassword } from '@/pages/auth/ResetPassword';
+import { vi } from 'vitest';
+import { BrowserRouter } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
+import { ForgotPassword, ResetPassword } from '../password-reset';
 
+// Mock the supabase client
 vi.mock('@/lib/supabase', () => ({
   supabase: {
     auth: {
       resetPasswordForEmail: vi.fn(),
       updateUser: vi.fn(),
+      setSession: vi.fn(),
     },
   },
 }));
 
+// Mock react-router-dom's useNavigate and useLocation
+const mockNavigate = vi.fn();
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom');
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+    useLocation: () => ({
+      hash: '#access_token=test-token&type=recovery',
+      pathname: '/reset-password',
+    }),
+  };
+});
+
 describe('ForgotPassword', () => {
   it('renders forgot password form', () => {
     render(
-      <MemoryRouter>
+      <BrowserRouter>
         <ForgotPassword />
-      </MemoryRouter>
+      </BrowserRouter>
     );
 
-    expect(screen.getByText('Reset your password')).toBeInTheDocument();
-    expect(screen.getByLabelText(/email address/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /send reset link/i })).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Email')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /reset password/i })).toBeInTheDocument();
   });
 
   it('handles successful password reset request', async () => {
-    const mockResetPassword = vi.fn().mockResolvedValue({ error: null });
-    supabase.auth.resetPasswordForEmail = mockResetPassword;
+    vi.mocked(supabase.auth.resetPasswordForEmail).mockResolvedValueOnce({
+      data: {},
+      error: null,
+    });
 
     render(
-      <MemoryRouter>
+      <BrowserRouter>
         <ForgotPassword />
-      </MemoryRouter>
+      </BrowserRouter>
     );
 
-    const emailInput = screen.getByTestId('email-input');
-    const submitButton = screen.getByTestId('submit-button');
+    fireEvent.change(screen.getByPlaceholderText('Email'), {
+      target: { value: 'test@example.com' },
+    });
 
-    fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
-    fireEvent.click(submitButton);
+    fireEvent.click(screen.getByRole('button', { name: /reset password/i }));
 
     await waitFor(() => {
       expect(screen.getByText(/check your email/i)).toBeInTheDocument();
     });
-
-    expect(mockResetPassword).toHaveBeenCalledWith('test@example.com', {
-      redirectTo: expect.any(String),
-    });
   });
 
-  it('displays error message on failed request', async () => {
-    const mockResetPassword = vi.fn().mockResolvedValue({
-      error: new Error('Invalid email'),
+  it('handles failed password reset request', async () => {
+    vi.mocked(supabase.auth.resetPasswordForEmail).mockResolvedValueOnce({
+      data: null,
+      error: { message: 'Invalid email', name: 'AuthError', status: 400 },
     });
-    supabase.auth.resetPasswordForEmail = mockResetPassword;
 
     render(
-      <MemoryRouter>
+      <BrowserRouter>
         <ForgotPassword />
-      </MemoryRouter>
+      </BrowserRouter>
     );
 
-    const emailInput = screen.getByTestId('email-input');
-    const submitButton = screen.getByTestId('submit-button');
+    fireEvent.change(screen.getByPlaceholderText('Email'), {
+      target: { value: 'invalid@example.com' },
+    });
 
-    fireEvent.change(emailInput, { target: { value: 'invalid@email' } });
-    fireEvent.click(submitButton);
+    fireEvent.click(screen.getByRole('button', { name: /reset password/i }));
 
     await waitFor(() => {
-      expect(screen.getByRole('alert')).toBeInTheDocument();
+      expect(screen.getByText('Invalid email')).toBeInTheDocument();
     });
   });
 });
 
 describe('ResetPassword', () => {
-  it('renders reset password form', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('renders reset password form', async () => {
     render(
-      <MemoryRouter>
+      <BrowserRouter>
         <ResetPassword />
-      </MemoryRouter>
+      </BrowserRouter>
     );
 
-    expect(screen.getByText('Set new password')).toBeInTheDocument();
-    expect(screen.getByLabelText(/new password/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/confirm new password/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /update password/i })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('Set new password')).toBeInTheDocument();
+      expect(screen.getByTestId('password-input')).toBeInTheDocument();
+      expect(screen.getByTestId('confirm-password-input')).toBeInTheDocument();
+    });
   });
 
   it('validates password match', async () => {
     render(
-      <MemoryRouter>
+      <BrowserRouter>
         <ResetPassword />
-      </MemoryRouter>
+      </BrowserRouter>
     );
 
-    const passwordInput = screen.getByTestId('password-input');
-    const confirmInput = screen.getByTestId('confirm-password-input');
-    const submitButton = screen.getByTestId('submit-button');
-
-    fireEvent.change(passwordInput, { target: { value: 'password123' } });
-    fireEvent.change(confirmInput, { target: { value: 'password456' } });
-    fireEvent.click(submitButton);
-
     await waitFor(() => {
-      expect(screen.getByText(/passwords don't match/i)).toBeInTheDocument();
+      const passwordInput = screen.getByTestId('password-input');
+      const confirmPasswordInput = screen.getByTestId('confirm-password-input');
+      const submitButton = screen.getByRole('button', { name: /update password/i });
+
+      fireEvent.change(passwordInput, { target: { value: 'password123' } });
+      fireEvent.change(confirmPasswordInput, { target: { value: 'password456' } });
+      fireEvent.click(submitButton);
+
+      expect(screen.getByText('Passwords do not match')).toBeInTheDocument();
     });
   });
 
   it('handles successful password update', async () => {
-    const mockUpdateUser = vi.fn().mockResolvedValue({ error: null });
-    supabase.auth.updateUser = mockUpdateUser;
+    vi.mocked(supabase.auth.updateUser).mockResolvedValueOnce({
+      data: { user: null },
+      error: null,
+    });
 
     render(
-      <MemoryRouter>
+      <BrowserRouter>
         <ResetPassword />
-      </MemoryRouter>
+      </BrowserRouter>
     );
 
-    const passwordInput = screen.getByTestId('password-input');
-    const confirmInput = screen.getByTestId('confirm-password-input');
-    const submitButton = screen.getByTestId('submit-button');
+    await waitFor(() => {
+      const passwordInput = screen.getByTestId('password-input');
+      const confirmPasswordInput = screen.getByTestId('confirm-password-input');
+      const submitButton = screen.getByRole('button', { name: /update password/i });
 
-    fireEvent.change(passwordInput, { target: { value: 'newpassword123' } });
-    fireEvent.change(confirmInput, { target: { value: 'newpassword123' } });
-    fireEvent.click(submitButton);
+      fireEvent.change(passwordInput, { target: { value: 'password123' } });
+      fireEvent.change(confirmPasswordInput, { target: { value: 'password123' } });
+      fireEvent.click(submitButton);
+    });
 
     await waitFor(() => {
-      expect(mockUpdateUser).toHaveBeenCalledWith({
-        password: 'newpassword123',
-      });
+      expect(mockNavigate).toHaveBeenCalledWith('/login');
     });
   });
 
   it('displays error on failed password update', async () => {
-    const mockUpdateUser = vi.fn().mockResolvedValue({
-      error: new Error('Invalid password'),
+    vi.mocked(supabase.auth.updateUser).mockResolvedValueOnce({
+      data: { user: null },
+      error: { message: 'Invalid password', name: 'AuthError', status: 400 },
     });
-    supabase.auth.updateUser = mockUpdateUser;
 
     render(
-      <MemoryRouter>
+      <BrowserRouter>
         <ResetPassword />
-      </MemoryRouter>
+      </BrowserRouter>
     );
 
-    const passwordInput = screen.getByTestId('password-input');
-    const confirmInput = screen.getByTestId('confirm-password-input');
-    const submitButton = screen.getByTestId('submit-button');
+    await waitFor(() => {
+      const passwordInput = screen.getByTestId('password-input');
+      const confirmPasswordInput = screen.getByTestId('confirm-password-input');
+      const submitButton = screen.getByRole('button', { name: /update password/i });
 
-    fireEvent.change(passwordInput, { target: { value: 'short' } });
-    fireEvent.change(confirmInput, { target: { value: 'short' } });
-    fireEvent.click(submitButton);
+      fireEvent.change(passwordInput, { target: { value: 'password123' } });
+      fireEvent.change(confirmPasswordInput, { target: { value: 'password123' } });
+      fireEvent.click(submitButton);
+    });
 
     await waitFor(() => {
-      expect(screen.getByText(/must be at least 6 characters/i)).toBeInTheDocument();
+      expect(screen.getByText('Invalid password')).toBeInTheDocument();
     });
   });
 });

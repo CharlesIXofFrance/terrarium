@@ -30,7 +30,7 @@ type PageType =
   | 'job-listing'
   | 'member-profile'
   | 'live-feed';
-type TestUserType = 'member' | 'employer' | 'admin';
+type TestUserType = 'member' | 'employer' | 'platform_owner';
 
 const sections = [
   { id: 'colors', name: 'Global Colors', icon: Palette },
@@ -112,7 +112,7 @@ export function CustomizationPortal() {
                 >
                   <option value="member">Test Member</option>
                   <option value="employer">Test Employer</option>
-                  <option value="admin">Test Admin</option>
+                  <option value="platform_owner">Test Platform Owner</option>
                 </select>
               )}
             </div>

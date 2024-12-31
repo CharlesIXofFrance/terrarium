@@ -66,15 +66,16 @@ export function OpportunitiesSection({ styles }: OpportunitiesProps) {
 
         <div
           ref={containerRef}
-          className="flex gap-4 overflow-x-auto scrollbar-hide scroll-smooth pb-6"
-          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          className="flex gap-4 overflow-x-auto scrollbar-hide scroll-smooth pb-6 md:grid md:overflow-visible"
+          style={{
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(286px, 1fr))',
+          }}
           onScroll={handleScroll}
         >
           {jobs.slice(0, 4).map((opportunity) => (
-            <div
-              key={opportunity.id}
-              className="flex-none w-[85vw] sm:w-[calc(100%-2rem)] md:w-[calc(50%-0.5rem)]"
-            >
+            <div key={opportunity.id}>
               <JobCard
                 job={opportunity}
                 onApply={() => {}}

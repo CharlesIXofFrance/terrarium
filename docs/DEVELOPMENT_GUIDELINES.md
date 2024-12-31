@@ -19,11 +19,11 @@ src/
 │   │   ├── Navbar.tsx
 │   │   └── Footer.tsx
 │   ├── charts/        # Data visualization components
-│   └── admin/         # Admin-specific components
+│   └── platform/      # Platform owner components
 ├── pages/             # Route components
 │   ├── auth/         # Authentication pages
 │   ├── member/       # Member-specific pages
-│   └── community/    # Community admin pages
+│   └── community/    # Community owner pages
 ├── lib/              # Application logic
 │   ├── hooks/        # Custom React hooks
 │   ├── stores/       # State management
@@ -59,7 +59,8 @@ interface User {
 
 // Use enums for fixed values
 enum UserRole {
-  ADMIN = 'ADMIN',
+  PLATFORM_OWNER = 'PLATFORM_OWNER',
+  COMMUNITY_OWNER = 'COMMUNITY_OWNER',
   MEMBER = 'MEMBER',
   EMPLOYER = 'EMPLOYER',
 }
@@ -137,7 +138,7 @@ function MyComponent() {
 />
 
 // Validate community access
-if (!user || user.role !== 'community_admin' || !userCommunity || userCommunity.slug !== slug) {
+if (!user || user.role !== 'community_owner' || !userCommunity || userCommunity.slug !== slug) {
   return <Navigate to="/login" replace />;
 }
 ```
@@ -187,19 +188,19 @@ CREATE TABLE community_settings (
 -- Enable RLS
 ALTER TABLE communities ENABLE ROW LEVEL SECURITY;
 
--- Admin access policy
-CREATE POLICY "Community admins can access their communities"
+-- Platform owner access policy
+CREATE POLICY "Platform owners can access all communities"
 ON communities
 FOR ALL
-USING (owner_id = auth.uid());
+USING (auth.uid() = 'PLATFORM_OWNER');
 
--- Member access policy
-CREATE POLICY "Members can view their communities"
+-- Community owner access policy
+CREATE POLICY "Community owners can access their communities"
 ON communities
 FOR SELECT
 USING (id IN (
   SELECT community_id
-  FROM community_members
+  FROM community_owners
   WHERE user_id = auth.uid()
 ));
 ```
@@ -277,10 +278,10 @@ describe('Job API', () => {
 ```typescript
 // Role definitions
 enum UserRole {
-  APP_ADMIN = 'app_admin', // Global application administrator
-  COMMUNITY_ADMIN = 'community_admin', // Administrator of specific communities
-  MEMBER = 'member', // Regular community member
-  EMPLOYER = 'employer', // Employer with job posting privileges
+  PLATFORM_OWNER = 'PLATFORM_OWNER', // Global platform owner
+  COMMUNITY_OWNER = 'COMMUNITY_OWNER', // Owner of specific communities
+  MEMBER = 'MEMBER', // Regular community member
+  EMPLOYER = 'EMPLOYER', // Employer with job posting privileges
 }
 ```
 
@@ -290,14 +291,13 @@ enum UserRole {
 -- Core tables
 profiles          -- User profiles with role information
 communities       -- Community information
-community_members -- User-community relationships
-community_admins  -- Community administrator assignments
+community_owners  -- Community owner assignments
 
 -- Row-Level Security (RLS)
-- App admins: Full access to all tables
-- Community admins:
+- Platform owners: Full access to all tables
+- Community owners:
   * Read access to all profiles
-  * Write access to community members' profiles
+  * Write access to community owners' profiles
   * Full access to their communities
 - Members:
   * Read access to all profiles
@@ -309,8 +309,8 @@ community_admins  -- Community administrator assignments
 ```sql
 -- Role check functions
 auth.has_role(role)              -- Check if user has specific role
-auth.is_app_admin()              -- Check if user is app admin
-auth.is_community_admin(comm_id) -- Check if user is admin of specific community
+auth.is_platform_owner()              -- Check if user is platform owner
+auth.is_community_owner(comm_id) -- Check if user is owner of specific community
 ```
 
 ## 8. Environment Setup
@@ -419,7 +419,113 @@ class JobService {
 3. Optimize API responses
 4. Handle N+1 query problems
 
-## 11. Error Handling
+## 11. AI Context Documentation
+
+Every file in the codebase must include an AI Context comment block at the top that explains:
+
+1. The purpose and responsibility of the file
+2. Why it's located in its current directory
+3. How it fits into the larger system architecture
+4. Any important design decisions or constraints
+
+Example:
+
+```typescript
+/**
+ * AI Context:
+ * This component implements the community-specific login page. It's located in the pages directory
+ * because it represents a full page that's directly tied to a route (/c/:slug/login).
+ * 
+ * The page:
+ * 1. Loads community-specific branding (logo, colors, text)
+ * 2. Provides a login form with validation
+ * 3. Handles authentication through Supabase
+ * 
+ * It's placed in pages/ rather than features/ because it's a complete, routable page.
+ * The actual login form could be extracted into features/ if needed for reuse.
+ */
+```
+
+### When to Add AI Context
+
+- All new files must include AI Context
+- When substantially modifying existing files, add AI Context
+- When moving or renaming files, update AI Context
+- When changing a file's responsibilities, update AI Context
+
+### AI Context Guidelines
+
+1. **Be Specific**
+   - Explain exact responsibilities
+   - List key features or functions
+   - Mention important dependencies
+
+2. **Explain Location**
+   - Justify directory placement
+   - Mention alternative locations considered
+   - Explain relationship to nearby files
+
+3. **Document Constraints**
+   - Note any design locks
+   - List immutable aspects
+   - Explain security considerations
+
+4. **Future Considerations**
+   - Note potential refactoring opportunities
+   - Mention planned extensions
+   - List known limitations
+
+## 12. Frontend Preservation Rules
+
+### Design Lock
+
+- Never modify existing UI/UX design without explicit request
+- Preserve all Tailwind CSS classes exactly as they are
+- Keep component structure and hierarchy unchanged
+- Maintain existing animations and transitions
+- Preserve all accessibility attributes
+
+### Component Modification
+
+- Only modify component logic, not presentation
+- Keep all existing props and their types
+- Maintain current component file structure
+- Don't change component naming conventions
+- Preserve all comments about design decisions
+
+### File Organization
+
+```
+src/
+├── components/
+│   ├── ui/           # Locked UI components
+│   │   └── [...]     # Don't modify without request
+│   ├── features/     # Feature components
+│   │   └── [...]     # Can add logic, not design
+│   └── layouts/      # Layout components
+│       └── [...]     # Don't modify without request
+├── styles/          # Locked styles
+└── theme/           # Locked theme configuration
+```
+
+## 13. Implementation Order
+
+When implementing new features:
+
+1. First implement all backend functionality
+2. Then add state management and data flow
+3. Finally, connect to existing UI components
+4. Never modify UI during steps 1-3
+
+### Review Process
+
+- Review all proposed changes for UI modifications
+- Verify no design classes were altered
+- Check component structure preservation
+- Ensure accessibility features remain intact
+- Confirm animations and transitions are preserved
+
+## 14. Error Handling
 
 ### Frontend Error Boundaries
 
@@ -465,7 +571,7 @@ const errorHandler = (
 };
 ```
 
-## 12. Deployment and CI/CD
+## 15. Deployment and CI/CD
 
 ### Build Process
 
@@ -482,7 +588,7 @@ const errorHandler = (
 4. SSL certificates
 5. Monitoring setup
 
-## 13. Monitoring and Logging
+## 16. Monitoring and Logging
 
 ### Application Monitoring
 
@@ -516,7 +622,7 @@ const trackAPIMetrics = (req: Request, res: Response, next: NextFunction) => {
 };
 ```
 
-## 14. Code Review Guidelines
+## 17. Code Review Guidelines
 
 ### Pull Request Template
 
@@ -573,11 +679,11 @@ src/
 │   │   ├── Navbar.tsx
 │   │   └── Footer.tsx
 │   ├── charts/        # Data visualization components
-│   └── admin/         # Admin-specific components
+│   └── platform/      # Platform owner components
 ├── pages/             # Route components
 │   ├── auth/         # Authentication pages
 │   ├── member/       # Member-specific pages
-│   └── community/    # Community admin pages
+│   └── community/    # Community owner pages
 ├── lib/              # Application logic
 │   ├── hooks/        # Custom React hooks
 │   ├── stores/       # State management

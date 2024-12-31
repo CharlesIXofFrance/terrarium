@@ -108,24 +108,65 @@ export function CommunityLayout() {
     return <Navigate to="/" replace />;
   }
 
-  // Verify user is admin and has access to this community
+  // Verify user is owner and has access to this community
   if (
     !user ||
-    user.role !== 'community_admin' ||
     !userCommunity ||
-    userCommunity.slug !== slug
+    (user.role !== 'platform_owner' &&
+      user.role !== 'community_owner' &&
+      userCommunity.community_id !== currentCommunity?.id)
   ) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/unauthorized" />;
   }
 
-  const navigation = [
-    { name: 'Dashboard', href: `/c/${slug}`, icon: LayoutDashboard },
-    { name: 'Members', href: `/c/${slug}/members`, icon: Users },
-    { name: 'Jobs', href: `/c/${slug}/jobs`, icon: Briefcase },
-    { name: 'Employers', href: `/c/${slug}/employers`, icon: Building2 },
-    { name: 'Settings', href: `/c/${slug}/settings/job-board`, icon: Settings },
-    { name: 'Customize', href: `/c/${slug}/customize`, icon: Palette },
+  const isOwner = user.role === 'platform_owner' || user.role === 'community_owner';
+
+  // Navigation items for the sidebar
+  const navigationItems = [
+    {
+      name: 'Dashboard',
+      href: `/?subdomain=${currentCommunity?.slug}/settings/dashboard`,
+      icon: LayoutDashboard,
+    },
+    {
+      name: 'Members',
+      href: `/?subdomain=${currentCommunity?.slug}/settings/members`,
+      icon: Users,
+    },
+    {
+      name: 'Jobs',
+      href: `/?subdomain=${currentCommunity?.slug}/settings/jobs`,
+      icon: Briefcase,
+    },
+    {
+      name: 'Employers',
+      href: `/?subdomain=${currentCommunity?.slug}/settings/employers`,
+      icon: Building2,
+    },
+    {
+      name: 'Job Board',
+      href: `/?subdomain=${currentCommunity?.slug}/settings/job-board`,
+      icon: Globe2,
+    },
+    {
+      name: 'Branding',
+      href: `/?subdomain=${currentCommunity?.slug}/settings/branding`,
+      icon: Palette,
+    },
+    {
+      name: 'Customize',
+      href: `/?subdomain=${currentCommunity?.slug}/settings/customize`,
+      icon: Settings,
+    },
   ];
+
+  // Get the current active route
+  const getCurrentRoute = () => {
+    const path = location.search.split('?subdomain=')[1]?.split('/')[1] || '';
+    return `/${path}`;
+  };
+
+  const currentRoute = getCurrentRoute();
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -148,7 +189,7 @@ export function CommunityLayout() {
               <span className="text-xl font-bold text-gray-900">Terrarium</span>
             </Link>
             <span className="ml-4 text-gray-400">|</span>
-            <span className="ml-4 text-gray-600">Community Admin</span>
+            <span className="ml-4 text-gray-600">Community Owner</span>
           </div>
         </div>
       </nav>
@@ -162,8 +203,8 @@ export function CommunityLayout() {
           }`}
         >
           <nav className="p-4 space-y-2">
-            {navigation.map((item) => {
-              const isActive = location.pathname === item.href;
+            {navigationItems.map((item) => {
+              const isActive = currentRoute === item.href.split('?subdomain=')[1];
               const Icon = item.icon;
 
               return (

@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useLocation } from 'react-router-dom';
 import { Bell, Globe, Menu } from 'lucide-react';
 import { useAtom } from 'jotai';
 import { currentCommunityAtom } from '@/lib/stores/community';
 import { supabase } from '@/lib/supabase';
+import { parseDomain } from '@/lib/utils/subdomain';
 
 interface HeaderProps {
   styles: any;
@@ -29,10 +30,21 @@ export function Header({
   isPreview = false,
 }: HeaderProps) {
   const { communitySlug } = useParams();
+  const { subdomain } = parseDomain();
+  const location = useLocation();
   const [currentCommunity, setCurrentCommunity] = useAtom(currentCommunityAtom);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const NavLink = isPreview ? 'div' : Link;
+
+  // Function to create URLs with subdomain parameter
+  const createUrl = (path: string) => {
+    const baseSubdomain = subdomain || communitySlug;
+    return baseSubdomain ? `/?subdomain=${baseSubdomain}${path}` : path;
+  };
+
+  // Get the current URL from the location
+  const currentUrl = location.search ? location.search : createUrl('/');
 
   // Subscribe to community changes
   useEffect(() => {
@@ -55,7 +67,7 @@ export function Header({
             .select('*')
             .eq('slug', communitySlug)
             .single();
-          
+
           if (community) {
             setCurrentCommunity(community);
           }
@@ -73,11 +85,16 @@ export function Header({
     const updateLogoUrl = async () => {
       if (currentCommunity?.logo_url) {
         try {
-          const { data: { signedUrl }, error } = await supabase
-            .storage
+          const {
+            data: { signedUrl },
+            error,
+          } = await supabase.storage
             .from('community-assets')
-            .createSignedUrl(currentCommunity.logo_url.replace(/^.*community-assets\//, ''), 3600);
-          
+            .createSignedUrl(
+              currentCommunity.logo_url.replace(/^.*community-assets\//, ''),
+              3600
+            );
+
           if (!error && signedUrl) {
             setLogoUrl(signedUrl);
           } else {
@@ -101,7 +118,7 @@ export function Header({
 
   return (
     <header
-      className="fixed top-0 left-0 right-0 z-10 h-[72px]"
+      className="fixed top-0 left-0 right-0 z-10 h-[72px] border-none"
       style={{ backgroundColor: primaryColor }}
     >
       <div className="h-full flex items-center justify-between px-4 md:px-6 lg:px-8 max-w-7xl mx-auto">
@@ -116,7 +133,7 @@ export function Header({
 
           {/* Logo */}
           <NavLink
-            to={isPreview ? '#' : `/c/${communitySlug}/member-hub`}
+            to={isPreview ? '#' : createUrl('/')}
             className="flex items-center"
           >
             {logoUrl ? (
@@ -133,17 +150,19 @@ export function Header({
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex flex-1 justify-center space-x-8 ml-8">
-          {navigation.filter(item => item.name !== 'Home').map((item) => (
-            <NavLink
-              key={item.name}
-              to={item.href}
-              className={`text-white hover:text-white/80 ${
-                currentPath === item.href ? 'font-semibold' : ''
-              }`}
-            >
-              {item.name}
-            </NavLink>
-          ))}
+          {navigation
+            .filter((item) => item.name !== 'Home')
+            .map((item) => (
+              <NavLink
+                key={item.name}
+                to={createUrl(item.href)}
+                className={`text-white hover:text-white/80 ${
+                  location.pathname === createUrl(item.href) ? 'font-semibold' : ''
+                }`}
+              >
+                {item.name}
+              </NavLink>
+            ))}
         </nav>
 
         {/* Right section */}
@@ -176,18 +195,20 @@ export function Header({
       {isMobileMenuOpen && (
         <div className="absolute top-[72px] left-0 right-0 bg-white shadow-lg md:hidden">
           <nav className="px-4 py-2">
-            {navigation.filter(item => item.name !== 'Home').map((item) => (
-              <NavLink
-                key={item.name}
-                to={item.href}
-                className={`block py-2 text-gray-800 hover:text-gray-600 ${
-                  currentPath === item.href ? 'font-semibold' : ''
-                }`}
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                {item.name}
-              </NavLink>
-            ))}
+            {navigation
+              .filter((item) => item.name !== 'Home')
+              .map((item) => (
+                <NavLink
+                  key={item.name}
+                  to={createUrl(item.href)}
+                  className={`block py-2 text-gray-800 hover:text-gray-600 ${
+                    location.pathname === createUrl(item.href) ? 'font-semibold' : ''
+                  }`}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  {item.name}
+                </NavLink>
+              ))}
           </nav>
         </div>
       )}

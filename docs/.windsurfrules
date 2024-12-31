@@ -3,13 +3,36 @@
 You are an AI assistant helping with the Terrarium project, a multi-tenant community platform.
 
 ## Project Context
-- Tech Stack: React (TypeScript), Node.js, PostgreSQL
-- Architecture: Multi-tenant SaaS platform
+
+- Tech Stack:
+  - Frontend: React 18+ with TypeScript, Vite, TailwindCSS
+  - State: Jotai (global), React Query (server)
+  - Backend: Supabase (auth, database)
+  - Forms: React Hook Form + Zod
+  - UI: Radix UI components
+  - Analytics: Chart.js
+- Architecture: Multi-tenant SaaS platform with subdomain-based routing
 - Current Phase: Setting up development environment and infrastructure
+
+### User Types
+
+- Platform Owners: Full platform administration
+- Community Owners: Community management and customization
+- Members: Job discovery and community engagement
+- Employers: Job posting and talent access
+
+### Key Features
+
+- Custom Job Boards
+- Community Management
+- Analytics Dashboard
+- Branding Controls
+- Multi-tenant Routing
 
 ## Code Generation Rules
 
 ### 1. TypeScript Best Practices
+
 - Always use TypeScript for type safety
 - Use interfaces for object shapes
 - Use proper type annotations
@@ -17,6 +40,7 @@ You are an AI assistant helping with the Terrarium project, a multi-tenant commu
 - Use enums for fixed values
 
 Example:
+
 ```typescript
 // ✅ Good
 interface User {
@@ -27,384 +51,11 @@ interface User {
 
 enum UserRole {
   ADMIN = 'ADMIN',
-  MEMBER = 'MEMBER'
+  MEMBER = 'MEMBER',
 }
 
 // ❌ Bad
-const user: any = { /* ... */ };
-```
-
-### 2. React Component Structure
-- Use functional components with hooks
-- Implement proper prop typing
-- Use proper file naming (PascalCase for components)
-- Keep components focused and small
-- Implement error boundaries
-
-Example:
-```typescript
-// ✅ Good
-interface ProfileCardProps {
-  user: User;
-  onEdit?: (user: User) => void;
-}
-
-const ProfileCard: React.FC<ProfileCardProps> = ({ user, onEdit }) => {
-  return (/* ... */);
-};
-
-// ❌ Bad
-function profile(p) {
-  return (/* ... */);
-}
-```
-
-### 3. State Management
-- Use React Query for server state
-- Use Zustand for client state
-- Keep state logic separated
-- Implement proper loading states
-- Handle errors gracefully
-
-Example:
-```typescript
-// ✅ Good
-const useUsers = () => {
-  return useQuery({
-    queryKey: ['users'],
-    queryFn: fetchUsers,
-  });
-};
-
-// ❌ Bad
-const [users, setUsers] = useState([]);
-useEffect(() => {
-  fetch('/users').then(setUsers);
-}, []);
-```
-
-### 4. API and Data Handling
-- Use repository pattern
-- Implement proper error handling
-- Use data validation
-- Include proper typing
-- Handle loading states
-
-Example:
-```typescript
-// ✅ Good
-class APIError extends Error {
-  constructor(
-    public statusCode: number,
-    public code: string,
-    message: string
-  ) {
-    super(message);
-  }
-}
-
-// ❌ Bad
-throw new Error('Something went wrong');
-```
-
-### 5. File Structure
-- Follow project structure guidelines
-- Use proper file naming conventions
-- Keep related files together
-- Implement proper imports
-- Use index files for exports
-
-Example:
-```typescript
-// ✅ Good
-// src/features/users/components/UserProfile.tsx
-import { User } from '../types';
-import { useUser } from '../hooks';
-
-// ❌ Bad
-// random/profile.js
-import { User } from '../../../somewhere';
-```
-
-### 6. Documentation
-- Add JSDoc comments for functions
-- Document complex logic
-- Include usage examples
-- Document props and types
-- Keep documentation up to date
-
-Example:
-```typescript
-// ✅ Good
-/**
- * Fetches user profile data
- * @param userId - The user's unique identifier
- * @returns User profile data
- * @throws {APIError} If user not found
- */
-const fetchUserProfile = async (userId: string): Promise<UserProfile> => {
-  // ...
-};
-
-// ❌ Bad
-const getUser = (id) => {
-  // ...
+const user: any = {
+  /* ... */
 };
 ```
-
-### 7. Testing
-- Write unit tests for logic
-- Test components with React Testing Library
-- Include error cases
-- Test loading states
-- Mock external dependencies
-
-Example:
-```typescript
-// ✅ Good
-describe('UserProfile', () => {
-  it('should display loading state', () => {
-    render(<UserProfile userId="123" />);
-    expect(screen.getByRole('progressbar')).toBeInTheDocument();
-  });
-});
-
-// ❌ Bad
-test('it works', () => {
-  expect(true).toBe(true);
-});
-```
-
-### 8. Error Handling
-- Use proper error boundaries
-- Implement proper error types
-- Handle async errors
-- Show user-friendly messages
-- Log errors properly
-
-Example:
-```typescript
-// ✅ Good
-try {
-  await api.createUser(userData);
-} catch (error) {
-  if (error instanceof APIError) {
-    logger.error('API Error:', { error, userData });
-    throw error;
-  }
-  throw new APIError(500, 'UNKNOWN_ERROR', 'An unexpected error occurred');
-}
-
-// ❌ Bad
-try {
-  await api.createUser(userData);
-} catch (e) {
-  console.log(e);
-}
-```
-
-### 9. Security
-- Validate all inputs
-- Sanitize outputs
-- Use proper authentication
-- Implement proper authorization
-- Handle sensitive data carefully
-
-Example:
-```typescript
-// ✅ Good
-const createUser = async (data: CreateUserDTO) => {
-  const validated = UserSchema.parse(data);
-  return await userRepository.create(validated);
-};
-
-// ❌ Bad
-const createUser = async (data) => {
-  return await db.users.create(data);
-};
-```
-
-### 10. Performance
-- Implement proper memoization
-- Use proper loading strategies
-- Optimize renders
-- Handle large lists properly
-- Implement proper caching
-
-Example:
-```typescript
-// ✅ Good
-const MemoizedComponent = React.memo(({ data }) => {
-  return <div>{data.map(renderItem)}</div>;
-});
-
-// ❌ Bad
-const Component = ({ data }) => {
-  return <div>{data.map(item => <span>{item}</span>)}</div>;
-};
-```
-
-## Frontend Preservation Rules
-
-### 1. Design Lock
-- Never modify existing UI/UX design without explicit request
-- Preserve all Tailwind CSS classes exactly as they are
-- Keep component structure and hierarchy unchanged
-- Maintain existing animations and transitions
-- Preserve all accessibility attributes
-
-Example:
-```typescript
-// ✅ Good: Add functionality while preserving design
-function JobCard({ job }: JobCardProps) {
-  const existingComponent = (
-    <div className="existing-classes">
-      {/* Existing UI structure */}
-    </div>
-  );
-  
-  return existingComponent;
-}
-
-// ❌ Bad: Modifying existing design
-function JobCard({ job }: JobCardProps) {
-  return (
-    <div className="different-classes">
-      {/* Modified UI structure */}
-    </div>
-  );
-}
-```
-
-### 2. Component Modification Rules
-- Only modify component logic, not presentation
-- Keep all existing props and their types
-- Maintain current component file structure
-- Don't change component naming conventions
-- Preserve all comments about design decisions
-
-Example:
-```typescript
-// ✅ Good: Adding functionality without changing design
-interface JobCardProps {
-  job: Job;
-  onApply: (jobId: string) => void; // New prop
-}
-
-// ❌ Bad: Changing existing component structure
-interface JobCardProps {
-  jobData: Job; // Changed prop name
-  layout: 'grid' | 'list'; // New visual prop
-}
-```
-
-### 3. File Organization
-```
-src/
-├── components/
-│   ├── ui/           # Locked UI components
-│   │   └── [...]     # Don't modify without request
-│   ├── features/     # Feature components
-│   │   └── [...]     # Can add logic, not design
-│   └── layouts/      # Layout components
-│       └── [...]     # Don't modify without request
-├── styles/          # Locked styles
-└── theme/           # Locked theme configuration
-```
-
-## AI Interaction Strategy
-
-### 1. Task Separation
-- Clearly separate frontend and backend tasks
-- Specify if a task requires UI changes
-- Use explicit "preserve design" flags in requests
-- Indicate which components are design-locked
-
-Example Request Format:
-```markdown
-Task: Implement job application logic
-Type: Backend Implementation
-Design Status: Locked
-Affected Components:
-- JobCard (logic only)
-- JobList (logic only)
-UI Changes Required: No
-```
-
-### 2. Implementation Order
-1. First implement all backend functionality
-2. Then add state management and data flow
-3. Finally, connect to existing UI components
-4. Never modify UI during steps 1-3
-
-### 3. Review Process
-- Review all proposed changes for UI modifications
-- Verify no design classes were altered
-- Check component structure preservation
-- Ensure accessibility features remain intact
-- Confirm animations and transitions are preserved
-
-### 4. Documentation Requirements
-- Document all backend changes separately
-- Mark frontend components as "design-locked"
-- Keep separate changelogs for UI and logic
-- Include "preserve-design" tags in comments
-
-Example Documentation:
-```typescript
-/**
- * @component JobCard
- * @preserve-design
- * @last-design-update 2024-12-20
- * 
- * This component's UI/UX is locked.
- * Only modify the following:
- * - Data fetching
- * - Event handlers
- * - State management
- */
-```
-
-## Implementation Guidelines
-
-When implementing new features:
-1. Start with types and interfaces
-2. Implement data layer (API, repositories)
-3. Create React components
-4. Add proper error handling
-5. Include tests
-6. Add documentation
-
-## Learning Resources
-
-For TypeScript:
-- TypeScript Handbook: https://www.typescriptlang.org/docs/handbook/intro.html
-- React TypeScript Cheatsheet: https://react-typescript-cheatsheet.netlify.app/
-
-For React:
-- React Documentation: https://react.dev/
-- React Query Documentation: https://tanstack.com/query/latest/
-
-For Testing:
-- React Testing Library: https://testing-library.com/docs/react-testing-library/intro/
-- Jest Documentation: https://jestjs.io/docs/getting-started
-
-## Code Review Checklist
-
-Before submitting code:
-1. Types are properly defined
-2. Components are properly typed
-3. Error handling is implemented
-4. Tests are included
-5. Documentation is updated
-6. Performance is considered
-7. Security is implemented
-8. Code is properly formatted
-
-## Getting Help
-
-When stuck:
-1. Check documentation first
-2. Look for similar implementations in the codebase
-3. Ask for help in code reviews
-4. Use the learning resources provided

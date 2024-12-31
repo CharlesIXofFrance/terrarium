@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Globe2 } from 'lucide-react';
 import { Button } from '@/components/ui/atoms/Button';
 import { Input } from '@/components/ui/atoms/Input';
@@ -16,140 +16,87 @@ export function ResetPassword() {
   const [isProcessing, setIsProcessing] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [user] = useAtom(userAtom);
+  const [recoveryToken, setRecoveryToken] = useState<string | null>(null);
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const location = useLocation();
 
   useEffect(() => {
-    const setupSession = async () => {
+    const setupRecovery = async () => {
       try {
-        // Try to get token from URL search params first
-        let token = searchParams.get('token');
-        let type = searchParams.get('type');
-        let refreshToken = '';
+        console.log('Reset Password - Full URL:', window.location.href);
+        
+        // Get recovery token from URL hash
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const token = hashParams.get('access_token');
+        const type = hashParams.get('type');
+        
+        console.log('Reset Password - Hash Params:', Object.fromEntries(hashParams.entries()));
 
-        // If not found, try to get from URL hash
-        let hashParams: URLSearchParams | null = null;
-        if (!token && location.hash) {
-          hashParams = new URLSearchParams(location.hash.substring(1));
-          token = hashParams.get('access_token');
-          type = hashParams.get('type');
-          refreshToken = hashParams.get('refresh_token') || '';
+        if (!token || type !== 'recovery') {
+          throw new Error('Invalid reset password link');
         }
 
-        console.log('Reset Password - URL Parameters:', {
-          token,
-          type,
-          fullUrl: window.location.href,
-          searchParams: Object.fromEntries(searchParams.entries()),
-          hash: location.hash,
-        });
-
-        if (!token) {
-          throw new Error('No recovery token found in URL');
-        }
-
-        // If we got the token from hash, we already have a session
-        if (hashParams) {
-          console.log('Reset Password - Using hash token directly');
-          const { error: sessionError } = await supabase.auth.setSession({
-            access_token: token,
-            refresh_token: refreshToken,
-          });
-
-          if (sessionError) {
-            console.error('Reset Password - Session setup error:', sessionError);
-            throw sessionError;
-          }
-        } else {
-          // Exchange the token for a session
-          console.log('Reset Password - Exchanging token...');
-          const { data, error: exchangeError } = await supabase.auth.verifyOtp({
-            token,
-            type: 'recovery',
-          });
-
-          if (exchangeError) {
-            console.error('Reset Password - Token exchange error:', exchangeError);
-            throw exchangeError;
-          }
-
-          if (!data.session) {
-            console.error('Reset Password - No session returned');
-            throw new Error('No session returned from token exchange');
-          }
-
-          console.log('Reset Password - Token exchanged successfully');
-
-          // Set up the session
-          console.log('Reset Password - Setting up session...');
-          const { error: sessionError } = await supabase.auth.setSession({
-            access_token: data.session.access_token,
-            refresh_token: data.session.refresh_token,
-          });
-
-          if (sessionError) {
-            console.error('Reset Password - Session setup error:', sessionError);
-            throw sessionError;
-          }
-        }
-
-        console.log('Reset Password - Session setup complete');
+        setRecoveryToken(token);
         setIsProcessing(false);
-      } catch (err) {
-        console.error('Reset Password - Setup error:', err);
+      } catch (error) {
+        console.error('Reset Password - Setup error:', error);
         navigate('/login', {
           replace: true,
-          state: { 
-            message: 'Invalid or expired password reset link. Please request a new one.',
+          state: {
+            message: 'Please use the password reset link from your email.',
             type: 'error'
           }
         });
       }
     };
 
-    setupSession();
-  }, [navigate, searchParams, location.hash]);
+    setupRecovery();
+  }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-
+    
     if (password !== confirmPassword) {
-      setError("Passwords don't match");
+      setError('Passwords do not match');
       return;
     }
 
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters long');
+    if (!recoveryToken) {
+      setError('Reset session expired. Please request a new reset link.');
       return;
     }
-
-    setIsLoading(true);
 
     try {
+      setIsProcessing(true);
+      setError(null);
+
+      // Exchange the recovery token for a session
+      const { data: sessionData, error: sessionError } = await supabase.auth.exchangeCodeForSession(recoveryToken);
+
+      if (sessionError) throw sessionError;
+
       // Update the password
       const { error: updateError } = await supabase.auth.updateUser({
-        password: password,
+        password: password
       });
 
       if (updateError) throw updateError;
 
-      // Navigate based on user state
-      if (user?.community_id) {
-        navigate(`/c/${user.community_id}/dashboard`, { replace: true });
-      } else if (!user?.onboarding_completed) {
-        navigate('/onboarding', { replace: true });
-      } else {
-        navigate('/dashboard', { replace: true });
-      }
-    } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError('An unexpected error occurred');
-      }
-      setIsLoading(false);
+      // Sign out after password update
+      await supabase.auth.signOut();
+
+      // After successful password update, redirect to login
+      navigate('/login', {
+        replace: true,
+        state: {
+          message: 'Password updated successfully. Please log in with your new password.',
+          type: 'success'
+        }
+      });
+    } catch (error) {
+      console.error('Reset Password - Update error:', error);
+      setError('Failed to update password. Please try again.');
+      setIsProcessing(false);
     }
   };
 
@@ -224,7 +171,7 @@ export function ResetPassword() {
               <Button
                 type="submit"
                 className="w-full"
-                isLoading={isLoading}
+                isLoading={isProcessing}
                 data-testid="submit-button"
               >
                 Update password

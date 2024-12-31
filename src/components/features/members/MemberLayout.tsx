@@ -1,10 +1,12 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { Outlet, useLocation, useParams } from 'react-router-dom';
 import { Header } from '@/components/features/member-hub/Header';
+import { MemberFooter } from '@/components/features/member-hub/MemberFooter';
 import { useAtom } from 'jotai';
 import { userAtom } from '../../../lib/stores/auth';
 import { currentCommunityAtom } from '../../../lib/stores/community';
 import { Home, Briefcase, Calendar, BookOpen } from 'lucide-react';
+import { parseDomain } from '@/lib/utils/subdomain';
 
 interface MemberLayoutProps {
   children?: React.ReactNode;
@@ -45,14 +47,34 @@ export function MemberLayout({
 }: MemberLayoutProps) {
   const [user] = useAtom(userAtom);
   const location = useLocation();
+  const { subdomain } = parseDomain();
   const { communitySlug } = useParams();
   const [currentCommunity] = useAtom(currentCommunityAtom);
   const [showNotifications, setShowNotifications] = useState(false);
 
+  // Get the current path from the subdomain parameter
+  const params = new URLSearchParams(window.location.search);
+  const subdomainParam = params.get('subdomain') || '';
+  const [community, ...pathParts] = subdomainParam.split('/');
+  const currentPath = pathParts.length > 0 ? `/${pathParts.join('/')}` : '/';
+
+  // Function to create URLs with subdomain parameter
+  const createUrl = (path: string) => {
+    const baseSubdomain = subdomain || community || currentCommunity?.slug;
+    const targetPath = path === '/' ? '' : path;
+    return baseSubdomain ? `/?subdomain=${baseSubdomain}${targetPath}` : targetPath;
+  };
+
+  console.log('MemberLayout - Debug:', {
+    location,
+    subdomain,
+    currentCommunity,
+    currentPath,
+    user,
+  });
+
   const layoutClasses = 'min-h-screen bg-gray-50 relative';
   const contentClasses = 'flex-1 py-6 px-4 sm:px-6 lg:px-8 mt-[72px] relative';
-
-  const baseSlug = isPreview ? '#' : `/m/${communitySlug}`;
 
   const mockUser = useMemo(
     () => ({
@@ -70,12 +92,12 @@ export function MemberLayout({
 
   const navigation = useMemo(
     () => [
-      { name: 'Home', href: baseSlug, icon: Home },
-      { name: 'Jobs', href: `${baseSlug}/jobs`, icon: Briefcase },
-      { name: 'Events', href: `${baseSlug}/events`, icon: Calendar },
-      { name: 'Academy', href: `${baseSlug}/academy`, icon: BookOpen },
+      { name: 'Home', href: '/', icon: Home },
+      { name: 'Jobs', href: '/jobs', icon: Briefcase },
+      { name: 'Events', href: '/events', icon: Calendar },
+      { name: 'Academy', href: '/academy', icon: BookOpen },
     ],
-    [baseSlug]
+    []
   );
 
   const notifications = useMemo(
@@ -105,7 +127,7 @@ export function MemberLayout({
         mode={mode}
         communityName={currentCommunity?.name}
         navigation={navigation}
-        currentPath={location.pathname}
+        currentPath={currentPath}
         notifications={notifications}
         showNotifications={showNotifications}
         onToggleNotifications={toggleNotifications}
@@ -115,6 +137,7 @@ export function MemberLayout({
       <main className={contentClasses}>
         {children || <Outlet />}
       </main>
+      <MemberFooter />
     </div>
   );
 }

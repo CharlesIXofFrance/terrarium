@@ -23,7 +23,7 @@ const brandingSchema = z.object({
 const invitationSchema = z.object({
   emails: z.array(z.string().email()),
   message: z.string(),
-  role: z.enum(['admin', 'member']),
+  role: z.enum(['platform_owner', 'member']),
 });
 
 type Step = 'community' | 'branding' | 'invitation' | 'complete';

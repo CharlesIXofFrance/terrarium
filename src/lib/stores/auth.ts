@@ -126,8 +126,8 @@ export async function initAuth() {
         // Start session checking
         startSessionCheck();
 
-        // Get user's community if they're an admin
-        if (profile.role === 'community_admin') {
+        // Get user's community if they're a community owner
+        if (profile.role === 'community_owner') {
           const { data: community, error: communityError } = await supabase
             .from('communities')
             .select('*')

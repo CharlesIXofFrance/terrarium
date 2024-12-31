@@ -81,13 +81,16 @@ export function RelatedJobs({ currentJobId, limit = 3 }: RelatedJobsProps) {
 
         <div
           ref={scrollContainerRef}
-          className="flex gap-4 overflow-x-auto scrollbar-hide scroll-smooth pb-4 md:grid md:grid-cols-3 md:overflow-visible"
-          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          className="flex gap-4 overflow-x-auto scrollbar-hide scroll-smooth pb-4 md:grid md:overflow-visible"
+          style={{
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(286px, 1fr))'
+          }}
         >
           {relatedJobs.map((job) => (
             <div
               key={job.id}
-              className="flex-none w-[85vw] md:w-auto"
               onClick={() => handleJobClick(job.id)}
             >
               <JobCard

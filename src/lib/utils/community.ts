@@ -19,6 +19,18 @@ interface Community {
       secondaryColor: string;
       fontFamily: string;
     };
+    login_customization?: {
+      logoUrl?: string;
+      colorScheme?: {
+        primary: string;
+        secondary: string;
+        background: string;
+      };
+      customText?: {
+        headline: string;
+        subHeadline: string;
+      };
+    };
   };
 }
 

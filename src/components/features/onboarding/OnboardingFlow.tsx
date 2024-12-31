@@ -156,8 +156,8 @@ export function OnboardingFlow() {
     const initializeFormData = async () => {
       if (!user) return;
 
-      // Only check for existing community if user is a community admin
-      if (user.role === 'community_admin') {
+      // Only check for existing community if user is a community owner
+      if (user.role === 'community_owner') {
         const { data: existingCommunity } = await supabase
           .from('communities')
           .select('*, settings')
@@ -681,7 +681,7 @@ export function OnboardingFlow() {
                 mode={previewMode}
                 testUser={{
                   name: user?.full_name || 'Test User',
-                  role: 'admin',
+                  role: 'platform_owner',
                   profileComplete: 1,
                   avatar: user?.avatar_url || '',
                 }}

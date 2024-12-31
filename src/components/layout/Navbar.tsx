@@ -41,7 +41,7 @@ export function Navbar() {
               <>
                 <Link
                   to={
-                    user.role === 'admin' ? '/c/default' : '/m/women-in-fintech'
+                    user.role === 'platform_owner' ? '/platform' : '/m/dashboard'
                   }
                   className="text-gray-600 hover:text-gray-900"
                 >

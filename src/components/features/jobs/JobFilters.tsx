@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   Check,
   Star,
@@ -29,6 +29,7 @@ interface JobFiltersProps {
   selectedFilters: string[];
   onFilterChange: (filterId: string) => void;
   onClearFilters: () => void;
+  primaryColor?: string;
 }
 
 const filterGroups = [
@@ -104,29 +105,33 @@ export function JobFilters({
   selectedFilters,
   onFilterChange,
   onClearFilters,
-}: JobFiltersProps) {
+  isMobile,
+  primaryColor = '#E86C3A',
+}: JobFiltersProps & { isMobile?: boolean }) {
   const [showAllBenefits, setShowAllBenefits] = useState(false);
+  const filtersRef = useRef<HTMLDivElement>(null);
 
   const visibleBenefits = showAllBenefits
     ? benefitsGroup.options
     : benefitsGroup.options.slice(0, 4);
 
   return (
-    <aside className="fixed left-0 top-[120px] bottom-0 w-64 bg-white border-r border-gray-200 flex flex-col">
-      {/* Scrollable Filter Options */}
-      <div className="flex-1 overflow-y-auto pt-4">
-        <div className="p-6 space-y-8">
-          {/* Regular filter groups */}
+    <div className="h-full flex flex-col">
+      {/* Scrollable Filters Area */}
+      <div className="filters-scroll-area flex-1 overflow-y-auto pt-6">
+        <div className="space-y-6 divide-y divide-gray-200 pb-32">
           {filterGroups.map((group) => (
-            <div key={group.title} className="pb-6 border-b border-gray-100">
-              <h3 className="text-base font-semibold text-gray-900 mb-4">
-                {group.title}
-              </h3>
-              {group.description && (
-                <p className="text-sm text-gray-500 mb-4">
-                  {group.description}
-                </p>
-              )}
+            <div key={group.title} className="pt-6 first:pt-0 px-4 last:pb-0">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  {group.title}
+                </h3>
+                {group.description && (
+                  <p className="text-sm text-gray-500 mt-1">
+                    {group.description}
+                  </p>
+                )}
+              </div>
               <div className="space-y-2">
                 {group.options.map((option) => {
                   const Icon = option.icon;
@@ -136,22 +141,24 @@ export function JobFilters({
                     <button
                       key={option.id}
                       onClick={() => onFilterChange(option.id)}
-                      className={`w-full flex items-center justify-between p-3 rounded-lg text-sm transition-all duration-200 border ${
+                      className={`w-full flex items-center justify-between p-4 rounded-lg text-sm transition-all duration-200 ${
                         isSelected
-                          ? 'bg-indigo-50 border-indigo-200 text-indigo-700'
-                          : 'border-gray-100 hover:border-gray-200 hover:bg-gray-50 text-gray-700'
+                          ? 'bg-white shadow-sm'
+                          : 'bg-gray-50 hover:bg-gray-100'
                       }`}
+                      style={isSelected ? { borderColor: primaryColor, borderWidth: '1px', borderStyle: 'solid' } : undefined}
                     >
                       <div className="flex items-center space-x-3">
                         <Icon
-                          className={`h-5 w-5 ${
-                            isSelected ? 'text-indigo-600' : 'text-gray-400'
-                          }`}
+                          className="h-5 w-5"
+                          style={{ color: isSelected ? primaryColor : '#9CA3AF' }}
                         />
-                        <span>{option.label}</span>
+                        <span style={{ color: isSelected ? primaryColor : '#4B5563' }}>
+                          {option.label}
+                        </span>
                       </div>
                       {isSelected && (
-                        <Check className="h-4 w-4 text-indigo-600" />
+                        <Check className="h-4 w-4" style={{ color: primaryColor }} />
                       )}
                     </button>
                   );
@@ -159,17 +166,18 @@ export function JobFilters({
               </div>
             </div>
           ))}
-
-          {/* Benefits filter group with show more/less */}
-          <div className="pb-6">
-            <h3 className="text-base font-semibold text-gray-900 mb-4">
-              {benefitsGroup.title}
-            </h3>
-            {benefitsGroup.description && (
-              <p className="text-sm text-gray-500 mb-4">
-                {benefitsGroup.description}
-              </p>
-            )}
+          {/* Benefits filter group */}
+          <div className="space-y-4 pt-6 px-4">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">
+                {benefitsGroup.title}
+              </h3>
+              {benefitsGroup.description && (
+                <p className="text-sm text-gray-500 mt-1">
+                  {benefitsGroup.description}
+                </p>
+              )}
+            </div>
             <div className="space-y-2">
               {visibleBenefits.map((option) => {
                 const Icon = option.icon;
@@ -179,60 +187,62 @@ export function JobFilters({
                   <button
                     key={option.id}
                     onClick={() => onFilterChange(option.id)}
-                    className={`w-full flex items-center justify-between p-3 rounded-lg text-sm transition-all duration-200 border ${
+                    className={`w-full flex items-center justify-between p-4 rounded-lg text-sm transition-all duration-200 ${
                       isSelected
-                        ? 'bg-indigo-50 border-indigo-200 text-indigo-700'
-                        : 'border-gray-100 hover:border-gray-200 hover:bg-gray-50 text-gray-700'
+                        ? 'bg-white shadow-sm'
+                        : 'bg-gray-50 hover:bg-gray-100'
                     }`}
+                    style={isSelected ? { borderColor: primaryColor, borderWidth: '1px', borderStyle: 'solid' } : undefined}
                   >
                     <div className="flex items-center space-x-3">
                       <Icon
-                        className={`h-5 w-5 ${
-                          isSelected ? 'text-indigo-600' : 'text-gray-400'
-                        }`}
+                        className="h-5 w-5"
+                        style={{ color: isSelected ? primaryColor : '#9CA3AF' }}
                       />
-                      <span>{option.label}</span>
+                      <span style={{ color: isSelected ? primaryColor : '#4B5563' }}>
+                        {option.label}
+                      </span>
                     </div>
                     {isSelected && (
-                      <Check className="h-4 w-4 text-indigo-600" />
+                      <Check className="h-4 w-4" style={{ color: primaryColor }} />
                     )}
                   </button>
                 );
               })}
-
-              {benefitsGroup.options.length > 4 && (
-                <button
-                  onClick={() => setShowAllBenefits(!showAllBenefits)}
-                  className="w-full flex items-center justify-center p-3 text-sm text-indigo-600 hover:text-indigo-700 transition-colors"
-                >
-                  {showAllBenefits ? (
-                    <>
-                      <span>Show Less</span>
-                      <ChevronUp className="h-4 w-4 ml-1" />
-                    </>
-                  ) : (
-                    <>
-                      <span>Show More</span>
-                      <ChevronDown className="h-4 w-4 ml-1" />
-                    </>
-                  )}
-                </button>
-              )}
             </div>
+
+            {benefitsGroup.options.length > 4 && (
+              <button
+                onClick={() => setShowAllBenefits(!showAllBenefits)}
+                className="flex items-center space-x-2 text-sm font-medium mt-2"
+                style={{ color: primaryColor }}
+              >
+                <span>{showAllBenefits ? 'Show Less' : 'Show All'}</span>
+                {showAllBenefits ? (
+                  <ChevronUp className="h-4 w-4" />
+                ) : (
+                  <ChevronDown className="h-4 w-4" />
+                )}
+              </button>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Fixed Clear Filters Button */}
-      <div className="p-6 border-t border-gray-200 bg-white">
+      {/* Bottom Buttons */}
+      <div className="sticky bottom-0 bg-white border-t border-gray-200 p-4">
         <Button
-          variant="outline"
-          className="w-full justify-center"
           onClick={onClearFilters}
+          variant="outline"
+          className="w-full"
+          style={{ 
+            borderColor: primaryColor,
+            color: primaryColor,
+          }}
         >
           Clear All Filters
         </Button>
       </div>
-    </aside>
+    </div>
   );
 }

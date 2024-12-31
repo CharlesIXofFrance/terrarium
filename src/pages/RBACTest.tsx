@@ -11,7 +11,7 @@ export function RBACTest() {
   const [selectedCommunityId, setSelectedCommunityId] =
     useState<string>('community1');
 
-  // Platform-wide permissions (App Admin only)
+  // Platform-wide permissions (Platform Owner only)
   const canManagePlatform = hasPermission({
     action: 'manage',
     resource: 'platform',
@@ -89,35 +89,35 @@ export function RBACTest() {
             Employer Role
           </button>
           <button
-            onClick={() => changeRole('community_admin')}
+            onClick={() => changeRole('community_owner')}
             className={`px-4 py-2 rounded ${
-              testRole === 'community_admin'
+              testRole === 'community_owner'
                 ? 'bg-blue-600 text-white'
                 : 'bg-gray-200'
             }`}
           >
-            Community Admin Role
+            Community Owner Role
           </button>
           <button
-            onClick={() => changeRole('app_admin')}
+            onClick={() => changeRole('platform_owner')}
             className={`px-4 py-2 rounded ${
-              testRole === 'app_admin'
+              testRole === 'platform_owner'
                 ? 'bg-blue-600 text-white'
                 : 'bg-gray-200'
             }`}
           >
-            App Admin Role
+            Platform Owner Role
           </button>
         </div>
       </div>
 
-      {/* Community Selector (for Community Admin testing) */}
+      {/* Community Selector (for Community Owner testing) */}
       <div className="mb-8">
         <h2 className="text-xl font-semibold mb-4">Test Community Selection</h2>
         <select
           value={selectedCommunityId}
           onChange={(e) => setSelectedCommunityId(e.target.value)}
-          className="border rounded p-2"
+          className="p-2 border rounded"
         >
           {testCommunities.map((community) => (
             <option key={community.id} value={community.id}>
@@ -127,153 +127,99 @@ export function RBACTest() {
         </select>
       </div>
 
-      {/* Permission Tests */}
+      {/* Platform-wide Permissions (Platform Owner) */}
       <div className="mb-8">
-        <h2 className="text-xl font-semibold mb-4">Permission Tests</h2>
-
-        {/* Platform-wide Permissions (App Admin) */}
-        <div className="mb-6">
-          <h3 className="font-semibold text-lg mb-2">
-            Platform-wide Permissions
-          </h3>
-          <div className="space-y-2 ml-4">
-            <div className="flex items-center gap-2">
-              <span
-                className={
-                  canManagePlatform ? 'text-green-600' : 'text-red-600'
-                }
-              >
-                ●
-              </span>
-              Can Manage Platform: {canManagePlatform ? 'Yes' : 'No'}
-            </div>
-            <div className="flex items-center gap-2">
-              <span
-                className={
-                  canManageAllCommunities ? 'text-green-600' : 'text-red-600'
-                }
-              >
-                ●
-              </span>
-              Can Manage All Communities:{' '}
-              {canManageAllCommunities ? 'Yes' : 'No'}
-            </div>
+        <h2 className="text-xl font-semibold mb-4">Platform-wide Permissions</h2>
+        <div className="space-y-4">
+          <div
+            className={`p-4 rounded ${
+              canManagePlatform ? 'bg-green-100' : 'bg-red-100'
+            }`}
+          >
+            <p>Can Manage Platform: {canManagePlatform ? 'Yes' : 'No'}</p>
           </div>
-        </div>
-
-        {/* Community-specific Permissions */}
-        <div className="mb-6">
-          <h3 className="font-semibold text-lg mb-2">
-            Community Permissions (for {selectedCommunityId})
-          </h3>
-          <div className="space-y-2 ml-4">
-            <div className="flex items-center gap-2">
-              <span
-                className={
-                  canManageCommunity ? 'text-green-600' : 'text-red-600'
-                }
-              >
-                ●
-              </span>
-              Can Manage Community: {canManageCommunity ? 'Yes' : 'No'}
-            </div>
-          </div>
-        </div>
-
-        {/* Regular Permissions */}
-        <div className="mb-6">
-          <h3 className="font-semibold text-lg mb-2">Regular Permissions</h3>
-          <div className="space-y-2 ml-4">
-            <div className="flex items-center gap-2">
-              <span className={canReadJobs ? 'text-green-600' : 'text-red-600'}>
-                ●
-              </span>
-              Can Read Jobs: {canReadJobs ? 'Yes' : 'No'}
-            </div>
-            <div className="flex items-center gap-2">
-              <span
-                className={canCreateJobs ? 'text-green-600' : 'text-red-600'}
-              >
-                ●
-              </span>
-              Can Create Jobs: {canCreateJobs ? 'Yes' : 'No'}
-            </div>
-            <div className="flex items-center gap-2">
-              <span
-                className={
-                  canManageSettings ? 'text-green-600' : 'text-red-600'
-                }
-              >
-                ●
-              </span>
-              Can Manage Settings: {canManageSettings ? 'Yes' : 'No'}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Protected Content Examples */}
-      <div className="space-y-4">
-        <h2 className="text-xl font-semibold">Protected Content Examples</h2>
-
-        {/* App Admin Only */}
-        {canManagePlatform && (
-          <div className="p-4 bg-purple-100 rounded">
-            <h3 className="font-semibold">App Admin Dashboard</h3>
-            <p>This content is only visible to app admins.</p>
-            <div className="mt-2">
-              <button className="bg-purple-500 text-white px-3 py-1 rounded text-sm">
-                Manage Platform Settings
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Community Admin Only */}
-        {canManageCommunity && (
-          <div className="p-4 bg-indigo-100 rounded">
-            <h3 className="font-semibold">Community Admin Dashboard</h3>
-            <p>This content is visible to community admins and app admins.</p>
-            <p className="text-sm text-gray-600">
-              Managing: {selectedCommunityId}
-            </p>
-            <div className="mt-2">
-              <button className="bg-indigo-500 text-white px-3 py-1 rounded text-sm">
-                Manage Community
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Employer Only */}
-        {hasPermission({ action: 'create', resource: 'jobs' }) && (
-          <div className="p-4 bg-green-100 rounded">
-            <h3 className="font-semibold">Employer Dashboard</h3>
+          <div
+            className={`p-4 rounded ${
+              canManageAllCommunities ? 'bg-green-100' : 'bg-red-100'
+            }`}
+          >
             <p>
-              This content is visible to employers, community admins, and app
-              admins.
+              Can Manage All Communities: {canManageAllCommunities ? 'Yes' : 'No'}
             </p>
-            <div className="mt-2">
-              <button className="bg-green-500 text-white px-3 py-1 rounded text-sm">
-                Post New Job
-              </button>
-            </div>
           </div>
-        )}
-
-        {/* Member Only */}
-        {hasPermission({ action: 'read', resource: 'jobs' }) && (
-          <div className="p-4 bg-blue-100 rounded">
-            <h3 className="font-semibold">Member Dashboard</h3>
-            <p>This content is visible to all authenticated users.</p>
-            <div className="mt-2">
-              <button className="bg-blue-500 text-white px-3 py-1 rounded text-sm">
-                View Jobs
-              </button>
-            </div>
-          </div>
-        )}
+        </div>
       </div>
+
+      {/* Community-specific Permissions */}
+      <div className="mb-8">
+        <h2 className="text-xl font-semibold mb-4">
+          Community-specific Permissions
+        </h2>
+        <div className="space-y-4">
+          <div
+            className={`p-4 rounded ${
+              canManageCommunity ? 'bg-green-100' : 'bg-red-100'
+            }`}
+          >
+            <p>Can Manage Community: {canManageCommunity ? 'Yes' : 'No'}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Regular Permissions */}
+      <div className="mb-8">
+        <h2 className="text-xl font-semibold mb-4">Regular Permissions</h2>
+        <div className="space-y-4">
+          <div
+            className={`p-4 rounded ${
+              canReadJobs ? 'bg-green-100' : 'bg-red-100'
+            }`}
+          >
+            <p>Can Read Jobs: {canReadJobs ? 'Yes' : 'No'}</p>
+          </div>
+          <div
+            className={`p-4 rounded ${
+              canCreateJobs ? 'bg-green-100' : 'bg-red-100'
+            }`}
+          >
+            <p>Can Create Jobs: {canCreateJobs ? 'Yes' : 'No'}</p>
+          </div>
+          <div
+            className={`p-4 rounded ${
+              canManageSettings ? 'bg-green-100' : 'bg-red-100'
+            }`}
+          >
+            <p>Can Manage Settings: {canManageSettings ? 'Yes' : 'No'}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Platform Owner Only */}
+      {canManagePlatform && (
+        <div className="mb-8 p-4 bg-blue-100 rounded">
+          <h3 className="font-semibold">Platform Owner Dashboard</h3>
+          <p>This content is only visible to platform owners.</p>
+        </div>
+      )}
+
+      {/* Community Owner Only */}
+      {canManageCommunity && (
+        <div className="mb-8 p-4 bg-green-100 rounded">
+          <h3 className="font-semibold">Community Owner Dashboard</h3>
+          <p>This content is visible to community owners and platform owners.</p>
+        </div>
+      )}
+
+      {/* Employer Only */}
+      {canCreateJobs && (
+        <div className="mb-8 p-4 bg-yellow-100 rounded">
+          <h3 className="font-semibold">Employer Dashboard</h3>
+          <p>
+            This content is visible to employers, community owners, and platform
+            owners.
+          </p>
+        </div>
+      )}
     </div>
   );
 }

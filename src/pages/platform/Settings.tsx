@@ -1,7 +1,7 @@
 import { RBACRoute } from '../../components/auth/RBACRoute';
 import { useRBAC } from '../../lib/hooks/useRBAC';
 
-export function AdminSettings() {
+export function PlatformSettings() {
   const { hasPermission } = useRBAC();
 
   return (
@@ -12,7 +12,7 @@ export function AdminSettings() {
       ]}
     >
       <div className="p-6">
-        <h1 className="text-2xl font-bold mb-4">Admin Settings</h1>
+        <h1 className="text-2xl font-bold mb-4">Platform Settings</h1>
         
         {/* Example of conditional rendering based on permissions */}
         {hasPermission({ action: 'update', resource: 'settings' }) && (
@@ -23,7 +23,7 @@ export function AdminSettings() {
 
         {/* Settings content */}
         <div className="mt-6">
-          <h2 className="text-xl font-semibold mb-4">Community Settings</h2>
+          <h2 className="text-xl font-semibold mb-4">Global Settings</h2>
           {/* Add your settings form here */}
         </div>
       </div>

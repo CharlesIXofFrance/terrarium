@@ -1,172 +1,217 @@
-# File Organization Guide
+# Terrarium Project File Organization
 
-## Directory Structure
+## Project Structure Overview
 
 ```
-src/
-├── backend/               # Backend-specific modules
-│   ├── services/          # Business logic services
-│   │   ├── auth/         # Authentication services
-│   │   │   ├── index.ts
-│   │   │   └── auth.service.ts
-│   │   └── user/         # User management services
-│   │       ├── index.ts
-│   │       └── user.service.ts
-│   └── types/            # Backend type definitions
-│       ├── auth/         # Auth-related types
-│       │   ├── index.ts
-│       │   └── auth.types.ts
-│       └── user/         # User-related types
-│           ├── index.ts
-│           └── user.types.ts
-├── lib/                  # Shared utilities and hooks
-│   ├── stores/           # State management
-│   │   ├── auth.ts      # Authentication store
-│   │   └── community.ts # Community store
-│   ├── hooks/           # React hooks
-│   │   ├── useAuth.ts
-│   │   └── useProfile.ts
-│   └── supabase.ts      # Supabase client configuration
-├── api/                  # API routes and controllers
-│   └── routes/          # Route definitions
-│       ├── auth.routes.ts
-│       └── user.routes.ts
-└── components/          # React components
-    ├── features/        # Feature-specific components
-    │   └── auth/       # Authentication components
-    │       ├── LoginForm.tsx
-    │       └── RegisterForm.tsx
-    └── ui/             # Shared UI components
-        ├── atoms/      # Basic UI elements
-        └── molecules/  # Composite components
+terrarium/
+├── src/
+│   ├── api/                # API client configurations and endpoints
+│   │   └── routes/        # API route definitions
+│   ├── components/
+│   │   ├── platform/      # Platform owner dashboard components
+│   │   ├── charts/        # Data visualization components
+│   │   ├── features/      # Feature-specific components
+│   │   │   ├── platform/  # Platform owner features
+│   │   │   ├── auth/      # Authentication components
+│   │   │   ├── communities/ # Community management
+│   │   │   ├── customization/ # UI customization
+│   │   │   ├── events/    # Event management
+│   │   │   ├── feed/      # Activity feed
+│   │   │   ├── jobs/      # Job board components
+│   │   │   │   ├── JobList.tsx
+│   │   │   │   ├── JobFilters.tsx
+│   │   │   │   └── SelectedFilters.tsx
+│   │   │   ├── member-hub/ # Member hub components
+│   │   │   ├── members/   # Member management
+│   │   │   ├── onboarding/ # User onboarding
+│   │   │   ├── profile/   # User profile
+│   │   │   └── settings/  # App settings
+│   │   ├── layout/       # Layout components
+│   │   │   ├── MainLayout.tsx
+│   │   │   └── CommunityLayout.tsx
+│   │   ├── onboarding/   # Onboarding flows
+│   │   ├── routing/           # Routing components
+│   │   │   ├── SubdomainRouter.tsx    # Main subdomain-based router
+│   │   │   ├── CommunityRoutes.tsx    # Community-specific routes
+│   │   │   └── PlatformRoutes.tsx     # Platform admin routes
+│   │   └── ui/           # Reusable UI components
+│   │       ├── atoms/    # Basic UI elements
+│   │       └── molecules/ # Composite components
+│   ├── lib/              # Core library code
+│   │   ├── api/          # API utilities
+│   │   ├── atoms/        # Atomic state primitives
+│   │   ├── constants/    # Application constants
+│   │   ├── data/         # Data utilities
+│   │   ├── hooks/        # Custom React hooks
+│   │   │   ├── useJobs.ts
+│   │   │   ├── useScrollSync.ts
+│   │   │   └── useScrollEnd.ts
+│   │   ├── mocks/        # Test mocks
+│   │   ├── stores/       # State management
+│   │   ├── types/        # TypeScript types
+│   │   ├── utils/        # Utility functions
+│   │   │   └── subdomain.ts   # Subdomain handling utilities
+│   │   └── ...
+│   ├── pages/            # Page components
+│   │   ├── platform/     # Platform owner pages
+│   │   ├── auth/         # Authentication pages
+│   │   ├── community/    # Community pages
+│   │   ├── member/       # Member pages
+│   │   ├── Communities.tsx
+│   │   ├── JobBoard.tsx
+│   │   └── LandingPage.tsx
+│   ├── services/         # Service layer
+│   ├── stores/           # Global state
+│   ├── styles/           # Global styles
+│   └── utils/            # Utility functions
+├── docs/                 # Documentation
+└── public/              # Static assets
 ```
 
-## Module Organization
+## Routing Architecture
 
-### Authentication System
+The application uses a subdomain-based routing structure for multi-tenant separation:
 
-The authentication system is organized across several directories for clear separation of concerns:
+- **Main Domain** (`terrarium.dev`):
+  - Landing page
+  - Main authentication
+  - Marketing pages
 
-1. **Backend Layer** (`src/backend/`)
-   - `services/auth/auth.service.ts`: Core authentication logic
-   - `types/auth/auth.types.ts`: Type definitions for auth entities
+- **Platform Subdomain** (`platform.terrarium.dev`):
+  - Platform admin dashboard
+  - Community management
+  - User management
 
-2. **State Management** (`src/lib/stores/`)
-   - `auth.ts`: Jotai-based auth store
-   - Handles user state and persistence
-   - Manages loading and error states
+- **Community Subdomains** (`[community-slug].terrarium.dev`):
+  - Community dashboard
+  - Member area
+  - Community settings
 
-3. **API Layer** (`src/api/routes/`)
-   - `auth.routes.ts`: Authentication endpoints
-   - Handles request/response for auth operations
+### Local Development
 
-4. **React Integration** (`src/lib/hooks/`)
-   - `useAuth.ts`: Authentication hook
-   - Provides auth state and methods to components
+For local development, subdomains are simulated using URL parameters:
+- Main app: `http://localhost:3000`
+- Platform: `http://localhost:3000?subdomain=platform`
+- Community: `http://localhost:3000?subdomain=community-slug`
 
-5. **UI Components** (`src/components/features/auth/`)
-   - Authentication-specific components
-   - Forms and user interfaces
+## Component Organization
 
-## File Naming Conventions
+### Features
 
-1. **TypeScript Files:**
-   - Services: `*.service.ts`
-   - Types: `*.types.ts`
-   - Routes: `*.routes.ts`
-   - Components: `*.tsx`
-   - Tests: `*.test.ts(x)`
+Feature-specific components are organized by domain:
 
-2. **Component Organization:**
-   - Feature-specific components go in `features/[feature]/`
-   - Generic UI components go in `ui/atoms/` or `ui/molecules/`
-   - Each feature folder should have its own index.ts
+#### Platform
+- Platform owner dashboard components
+- Community oversight tools
+- User management interfaces
 
-## Import Guidelines
+#### Authentication
+- Login/Register forms
+- Authentication flows
+- Password reset
 
-1. **Absolute Imports:**
-   ```typescript
-   import { User } from '@backend/types/auth.types';
-   import { useAuth } from '@lib/hooks/useAuth';
-   ```
+#### Communities
+- Community creation
+- Community settings
+- Member management
 
-2. **Relative Imports:**
-   ```typescript
-   import { LoginForm } from './components/LoginForm';
-   import { authService } from '../services/auth.service';
-   ```
+#### Jobs
+- `JobList.tsx`: Job card grid with infinite scroll
+- `JobFilters.tsx`: Filter sidebar
+- `SelectedFilters.tsx`: Active filter display
+
+#### Member Hub
+- `Header.tsx`: Navigation header
+- `MemberFooter.tsx`: Footer component
+- Profile management
+- Activity feeds
+
+### Layout
+- `MainLayout.tsx`: Application shell
+- `CommunityLayout.tsx`: Community-specific layout
+
+### UI Components
+- **Atoms**: Buttons, inputs, icons
+- **Molecules**: Forms, cards, modals
+
+## Core Libraries
+
+### Hooks
+- Authentication hooks
+- Data fetching hooks
+- UI utility hooks
+- Scroll management hooks
+
+### State Management
+- Jotai atoms for global state
+- Community state
+- User state
+- UI state
+
+### Services
+- API services
+- Authentication services
+- Data services
+- File upload services
+
+## Pages
+
+### Platform
+- Dashboard
+- User management
+- Settings
+
+### Auth
+- Login
+- Register
+- Password reset
+
+### Community
+- Community home
+- Member management
+- Events
+- Jobs
+
+### Member
+- Profile
+- Settings
+- Activity
 
 ## Best Practices
 
-1. **Type Safety:**
-   - Use TypeScript for all new files
-   - Define interfaces in appropriate type files
-   - Avoid using `any` type
+1. **Component Organization**
+   - Feature-first architecture
+   - Clear separation of concerns
+   - Reusable UI components
 
-2. **State Management:**
-   - Use Jotai for global state
-   - Keep atoms in dedicated store files
-   - Implement proper persistence when needed
+2. **State Management**
+   - Jotai for global state
+   - React Query for server state
+   - Local state when appropriate
 
-3. **Component Structure:**
-   - Use functional components
-   - Implement proper prop typing
-   - Keep components focused and small
+3. **Type Safety**
+   - Comprehensive type definitions
+   - Strict type checking
+   - Interface-first development
 
-4. **Testing:**
-   - Place tests next to implementation files
-   - Use proper naming for test files
-   - Implement comprehensive test coverage
+4. **Code Style**
+   - Consistent file naming
+   - Clear component structure
+   - Proper documentation
 
-## Documentation
+## Future Considerations
 
-1. **Code Comments:**
-   - Add JSDoc comments for functions
-   - Document complex logic
-   - Include usage examples
+1. **Scalability**
+   - Code splitting strategies
+   - Performance optimization
+   - Caching strategies
 
-2. **README Files:**
-   - Add README.md in feature directories
-   - Document component usage
-   - Include setup instructions
+2. **Maintainability**
+   - Testing strategy
+   - Documentation updates
+   - Code review process
 
-3. **Type Documentation:**
-   - Document interfaces and types
-   - Include example usage
-   - Document validation rules
-
-## Version Control
-
-1. **Branch Naming:**
-   - Feature: `feature/auth-system`
-   - Fix: `fix/auth-error`
-   - Refactor: `refactor/auth-store`
-
-2. **Commit Messages:**
-   - Start with type: feat, fix, refactor
-   - Include scope: (auth), (profile)
-   - Add clear description
-
-## Security Considerations
-
-1. **Authentication:**
-   - Implement proper token handling
-   - Use secure session management
-   - Follow security best practices
-
-2. **Data Protection:**
-   - Validate all inputs
-   - Sanitize outputs
-   - Handle sensitive data carefully
-
-## Performance Guidelines
-
-1. **Code Splitting:**
-   - Use lazy loading for routes
-   - Split vendor bundles
-   - Implement proper chunking
-
-2. **State Management:**
-   - Minimize global state
-   - Use proper memoization
-   - Implement efficient updates
+3. **Feature Expansion**
+   - New feature integration
+   - State management scaling
+   - Component reusability

@@ -33,10 +33,10 @@
    npm run dev
    ```
 
-### For Community Administrators
+### For Community Owners
 
 1. **Initial Setup**
-   - Navigate to `/admin/setup`
+   - Navigate to `/community/setup`
    - Complete the community profile
    - Configure branding settings
    - Set up job board preferences

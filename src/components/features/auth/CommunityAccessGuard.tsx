@@ -1,36 +1,47 @@
 import React, { useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAtom } from 'jotai';
 import { userAtom, userCommunityAtom } from '../../../lib/stores/auth';
 import { currentCommunityAtom } from '../../../lib/stores/community';
+import { parseDomain } from '../../../lib/utils/subdomain';
 
 interface CommunityAccessGuardProps {
   children: React.ReactNode;
 }
 
 export function CommunityAccessGuard({ children }: CommunityAccessGuardProps) {
-  const { communitySlug } = useParams();
   const navigate = useNavigate();
   const [user] = useAtom(userAtom);
   const [userCommunity] = useAtom(userCommunityAtom);
   const [, setCurrentCommunity] = useAtom(currentCommunityAtom);
+  const { subdomain } = parseDomain();
 
   useEffect(() => {
-    if (!communitySlug || !user) return;
+    if (!user) return;
 
-    // Only allow access to user's own community
-    if (userCommunity?.slug === communitySlug) {
+    // Debug logging
+    console.log('CommunityAccessGuard - Debug:', {
+      user: {
+        id: user.id,
+        role: user.role,
+      },
+      userCommunity: userCommunity ? {
+        id: userCommunity.id,
+        slug: userCommunity.slug,
+        ownerId: userCommunity.owner_id,
+      } : null,
+      subdomain,
+      pathname: window.location.pathname,
+    });
+
+    // Set current community if it matches the user's community
+    if (userCommunity && userCommunity.slug === subdomain) {
       setCurrentCommunity(userCommunity);
-    } else {
-      console.error('Access denied: Not your community');
-      navigate('/403');
+    } else if (user.role === 'community_owner' || user.role === 'community_admin') {
+      // Redirect admin/owner to their community if trying to access a different one
+      navigate(`/?subdomain=${userCommunity?.slug || ''}`);
     }
-  }, [communitySlug, user, userCommunity, setCurrentCommunity, navigate]);
-
-  // Don't render anything until we've confirmed access
-  if (!userCommunity || userCommunity.slug !== communitySlug) {
-    return null;
-  }
+  }, [user, userCommunity, subdomain, setCurrentCommunity, navigate]);
 
   return <>{children}</>;
 }

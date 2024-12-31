@@ -1,5 +1,6 @@
+import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
-import { render } from '@testing-library/react';
+import { render, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { Provider } from 'jotai';
 import { userAtom } from '@/lib/stores/auth';
@@ -24,7 +25,7 @@ describe('PublicOnlyRoute', () => {
     expect(getByText('Test Component')).toBeInTheDocument();
   });
 
-  it('redirects to dashboard when user is logged in', () => {
+  it('redirects to dashboard when user is logged in', async () => {
     const mockUser = {
       id: '123',
       email: 'test@example.com',
@@ -49,11 +50,13 @@ describe('PublicOnlyRoute', () => {
       </Provider>
     );
 
-    expect(queryByText('Test Component')).not.toBeInTheDocument();
-    expect(queryByText('Dashboard')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(queryByText('Test Component')).not.toBeInTheDocument();
+      expect(queryByText('Dashboard')).toBeInTheDocument();
+    });
   });
 
-  it('redirects to onboarding when user has not completed onboarding', () => {
+  it('redirects to onboarding when user has not completed onboarding', async () => {
     const mockUser = {
       id: '123',
       email: 'test@example.com',
@@ -78,16 +81,18 @@ describe('PublicOnlyRoute', () => {
       </Provider>
     );
 
-    expect(queryByText('Test Component')).not.toBeInTheDocument();
-    expect(queryByText('Onboarding')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(queryByText('Test Component')).not.toBeInTheDocument();
+      expect(queryByText('Onboarding')).toBeInTheDocument();
+    });
   });
 
-  it('redirects to community dashboard when user has a community', () => {
+  it('redirects to community dashboard when user has a community', async () => {
     const mockUser = {
       id: '123',
       email: 'test@example.com',
       onboarding_completed: true,
-      community_id: 'test-community',
+      community_slug: 'test-community',
     };
 
     const { queryByText } = render(
@@ -102,16 +107,15 @@ describe('PublicOnlyRoute', () => {
                 </PublicOnlyRoute>
               }
             />
-            <Route
-              path="/c/:communityId/dashboard"
-              element={<div>Community Dashboard</div>}
-            />
+            <Route path="/c/:slug/dashboard" element={<div>Community Dashboard</div>} />
           </Routes>
         </MemoryRouter>
       </Provider>
     );
 
-    expect(queryByText('Test Component')).not.toBeInTheDocument();
-    expect(queryByText('Community Dashboard')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(queryByText('Test Component')).not.toBeInTheDocument();
+      expect(queryByText('Community Dashboard')).toBeInTheDocument();
+    });
   });
 });

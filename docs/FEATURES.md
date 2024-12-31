@@ -2,7 +2,7 @@
 
 ## User Roles and Capabilities
 
-### Community Administrators
+### Community Owners
 
 #### Dashboard Features
 
@@ -100,7 +100,7 @@
 
 ### Multi-Tenant Community Platform
 
-1. Community Management
+1. Platform Management
 
    - Independent community spaces
    - Custom branding and themes
@@ -186,7 +186,7 @@
    - Push notifications
    - Mobile-specific UI
 
-## Administrative Features
+## Platform Management Features
 
 1. Community Management
 
@@ -271,14 +271,14 @@
 
 ## Feature Implementation Status
 
-- ✅ Core job board functionality
-- ✅ Basic member profiles
-- ✅ Community management tools
-- ✅ Analytics dashboard
-- ✅ Employer portal
-- 🚧 Advanced analytics (In Progress)
-- 🚧 Mobile applications (Planned)
-- 🚧 API integrations (Planned)
+- Core job board functionality
+- Basic member profiles
+- Community management tools
+- Analytics dashboard
+- Employer portal
+- Advanced analytics (In Progress)
+- Mobile applications (Planned)
+- API integrations (Planned)
 
 ## Upcoming Features
 

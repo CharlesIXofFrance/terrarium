@@ -53,7 +53,7 @@ export interface Database {
           email: string;
           full_name: string;
           avatar_url: string | null;
-          role: 'admin' | 'member';
+          role: 'platform_owner' | 'community_owner' | 'employer' | 'member';
           created_at: string;
           updated_at: string;
           profile_complete: number;
@@ -63,7 +63,7 @@ export interface Database {
           email: string;
           full_name: string;
           avatar_url?: string | null;
-          role?: 'admin' | 'member';
+          role?: 'platform_owner' | 'community_owner' | 'employer' | 'member';
           created_at?: string;
           updated_at?: string;
           profile_complete?: number;
@@ -73,7 +73,7 @@ export interface Database {
           email?: string;
           full_name?: string;
           avatar_url?: string | null;
-          role?: 'admin' | 'member';
+          role?: 'platform_owner' | 'community_owner' | 'employer' | 'member';
           created_at?: string;
           updated_at?: string;
           profile_complete?: number;
@@ -84,7 +84,7 @@ export interface Database {
           id: string;
           community_id: string;
           profile_id: string;
-          role: 'owner' | 'admin' | 'member';
+          role: 'platform_owner' | 'community_owner' | 'employer' | 'member';
           created_at: string;
           updated_at: string;
         };
@@ -92,7 +92,7 @@ export interface Database {
           id?: string;
           community_id: string;
           profile_id: string;
-          role?: 'owner' | 'admin' | 'member';
+          role?: 'platform_owner' | 'community_owner' | 'employer' | 'member';
           created_at?: string;
           updated_at?: string;
         };
@@ -100,7 +100,7 @@ export interface Database {
           id?: string;
           community_id?: string;
           profile_id?: string;
-          role?: 'owner' | 'admin' | 'member';
+          role?: 'platform_owner' | 'community_owner' | 'employer' | 'member';
           created_at?: string;
           updated_at?: string;
         };

@@ -3,6 +3,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAtom } from 'jotai';
 import { userAtom } from '../../../lib/stores/auth';
 import { supabase } from '../../../lib/supabase';
+import { parseDomain } from '../../../lib/utils/subdomain';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -11,6 +12,7 @@ interface ProtectedRouteProps {
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const [user, setUser] = useAtom(userAtom);
   const location = useLocation();
+  const { subdomain } = parseDomain();
 
   // Effect to check and refresh session if needed
   useEffect(() => {
@@ -34,6 +36,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   console.log('ProtectedRoute - Debug:', {
     user,
     pathname: location.pathname,
+    subdomain,
     localStorage: {
       authToken: localStorage.getItem('sb-terrarium-auth-token'),
     },
@@ -47,7 +50,9 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   if (!user) {
     console.log('ProtectedRoute - No user found, redirecting to login');
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    // Let the SubdomainRouter handle the login redirect
+    const loginUrl = location.search ? `${location.search.split('/')[0]}/login` : '/login';
+    return <Navigate to={loginUrl} state={{ from: location }} replace />;
   }
 
   // Check if user should be redirected to onboarding

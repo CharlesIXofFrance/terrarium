@@ -22,11 +22,11 @@ const mockUsers = {
     avatar:
       'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&h=120&fit=crop',
   },
-  admin: {
-    id: 'test-admin',
-    email: 'admin@test.com',
-    name: 'Test Admin',
-    role: 'admin',
+  platformOwner: {
+    id: 'test-platform-owner',
+    email: 'platform-owner@test.com',
+    name: 'Test Platform Owner',
+    role: 'platform_owner',
     communities: ['women-in-fintech'],
     createdAt: new Date().toISOString(),
   },
@@ -36,7 +36,7 @@ export function LandingPage() {
   const navigate = useNavigate();
   const setUser = useSetAtom(userAtom);
 
-  const loginAs = (role: 'member' | 'admin') => {
+  const loginAs = (role: 'member' | 'platform_owner') => {
     const user = mockUsers[role];
     setUser(user);
     localStorage.setItem('user', JSON.stringify(user));
@@ -68,10 +68,10 @@ export function LandingPage() {
           Test as Member
         </button>
         <button
-          onClick={() => loginAs('admin')}
+          onClick={() => loginAs('platform_owner')}
           className="px-4 py-2 bg-purple-600 text-white rounded-lg shadow-lg hover:bg-purple-700 transition-colors"
         >
-          Test as Admin
+          Test as Platform Owner
         </button>
       </div>
     </div>

@@ -40,8 +40,8 @@ export function useAuth() {
 
       setUser(user);
 
-      if (user.role === 'community_admin') {
-        // For community admins, check if they have a community
+      // For community admins and owners, check their community
+      if (user.role === 'community_admin' || user.role === 'community_owner') {
         const { data: community, error: communityError } = await supabase
           .from('communities')
           .select('*')
@@ -52,14 +52,14 @@ export function useAuth() {
           console.error('Error fetching community:', communityError);
         }
 
-        setUserCommunity(community);
-
-        if (!community || !user.profile_complete) {
-          navigate('/onboarding');
+        if (community) {
+          setUserCommunity(community);
+          navigate(`/?subdomain=${community.slug}/dashboard`);
         } else {
-          navigate(`/m/${community.slug}`);
+          navigate('/onboarding');
         }
       } else {
+        // Regular member flow
         navigate('/m/women-in-fintech');
       }
     },

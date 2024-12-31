@@ -1,10 +1,10 @@
 # Terrarium
 
-Terrarium is a modern platform for building and managing professional communities, with a focus on job opportunities and career development. It provides a comprehensive suite of tools for community administrators, members, and employers to create valuable professional networks.
+Terrarium is a modern platform for building and managing professional communities, with a focus on job opportunities and career development. It provides a comprehensive suite of tools for community owners, members, and employers to create valuable professional networks.
 
 ## 🌟 Key Features
 
-### For Community Administrators
+### For Community Owners
 
 - **Custom Job Boards**: Create and manage dedicated job boards with customizable filters
 - **Community Management**: Comprehensive tools for member management and engagement
@@ -37,6 +37,32 @@ Terrarium is a modern platform for building and managing professional communitie
 - **Routing**: React Router
 - **Analytics**: Chart.js
 - **UI Components**: Radix UI
+
+## 🏗 Architecture
+
+### Multi-tenant Routing
+
+Terrarium uses a subdomain-based routing architecture for multi-tenant separation:
+
+- **Main Domain** (`terrarium.dev`): Landing, authentication, and marketing
+- **Platform** (`platform.terrarium.dev`): Platform administration
+- **Communities** (`[community-slug].terrarium.dev`): Community spaces
+
+For detailed information about the routing architecture, see [ROUTING.md](docs/ROUTING.md).
+
+### Development Environment
+
+For local development, subdomains are simulated using URL parameters:
+```bash
+# Main app
+http://localhost:3000
+
+# Platform admin
+http://localhost:3000?subdomain=platform
+
+# Community space
+http://localhost:3000?subdomain=community-slug
+```
 
 ## 🚀 Getting Started
 
@@ -107,13 +133,14 @@ terrarium/
 - [Database Migration Plan](docs/DATABASE_MIGRATION_PLAN.md)
 - [Features](docs/FEATURES.md)
 - [Implementation Status](docs/IMPLEMENTATION_STATUS.md)
+- [Routing](docs/ROUTING.md)
 
 ## 🔒 Security Features
 
 - **Role-Based Access Control (RBAC)**
 
-  - App Administrators: Global system management
-  - Community Administrators: Community-specific management
+  - Platform Owners: Global system management
+  - Community Owners: Community-specific management
   - Members: Basic platform access
   - Employers: Job posting and talent access
 

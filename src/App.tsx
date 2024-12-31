@@ -38,6 +38,7 @@ import { Feed } from './pages/member/Feed';
 import { MemberProfile } from './pages/member/MemberProfile';
 import { RBACTest } from './pages/RBACTest';
 import { CommunityAccessGuard } from './components/features/auth/CommunityAccessGuard';
+import { SubdomainRouter } from './components/routing/SubdomainRouter';
 
 function App() {
   const [user, setUser] = useAtom(userAtom);
@@ -166,7 +167,7 @@ function App() {
               let retryError = null;
 
               while (retryCount < maxRetries) {
-                await new Promise(resolve => setTimeout(resolve, 1000));
+                await new Promise((resolve) => setTimeout(resolve, 1000));
 
                 const result = await supabase
                   .from('profiles')
@@ -198,7 +199,10 @@ function App() {
                   .upsert({
                     id: session.user.id,
                     email: session.user.email,
-                    full_name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'New User',
+                    full_name:
+                      session.user.user_metadata?.full_name ||
+                      session.user.email?.split('@')[0] ||
+                      'New User',
                     role: 'community_admin',
                     profile_complete: false,
                   })
@@ -282,30 +286,7 @@ function App() {
     <ErrorBoundary>
       <Router>
         <Routes>
-          {/* Public routes */}
-          <Route
-            path="/"
-            element={
-              user ? (
-                <ProtectedRoute>
-                  <Navigate
-                    to={
-                      user?.profile_complete
-                        ? user.role === 'community_admin'
-                          ? `/c/${userCommunity?.slug || ''}`
-                          : `/m/${userCommunity?.slug || ''}`
-                        : '/onboarding'
-                    }
-                    replace
-                  />
-                </ProtectedRoute>
-              ) : (
-                <PublicOnlyRoute>
-                  <LandingPage />
-                </PublicOnlyRoute>
-              )
-            }
-          />
+          <Route path="*" element={<SubdomainRouter />} />
           <Route
             path="/login"
             element={
@@ -338,7 +319,10 @@ function App() {
               </PublicOnlyRoute>
             }
           />
-          <Route path="/auth/reset-password" element={<ResetPasswordCallback />} />
+          <Route
+            path="/auth/reset-password"
+            element={<ResetPasswordCallback />}
+          />
           <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="/auth/v1/verify" element={<ResetPasswordCallback />} />
           <Route path="/logout" element={<Logout />} />
@@ -351,7 +335,6 @@ function App() {
               </ProtectedRoute>
             }
           />
-
           {/* Protected community admin routes */}
           <Route
             path="/c/:slug/*"

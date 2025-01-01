@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/atoms/Input';
 import { FileUpload } from '@/components/ui/atoms/FileUpload';
 import { supabase } from '@/lib/supabase';
 import { Link } from 'react-router-dom';
+import { toast } from '@/components/ui/atoms/Toast';
 
 const brandingSchema = z.object({
   name: z.string().min(1, 'Community name is required'),
@@ -57,7 +58,7 @@ const SUPPORTED_IMAGE_TYPES = {
 };
 
 export function BrandingSettings() {
-  const [community] = useAtom(currentCommunityAtom);
+  const [community, setCommunity] = useAtom(currentCommunityAtom);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -286,22 +287,45 @@ export function BrandingSettings() {
               ...community.settings?.branding,
               primaryColor: data.branding.primaryColor,
               secondaryColor: data.branding.secondaryColor,
-              login: {
-                ...data.branding.login,
-              },
-              memberNaming: {
-                ...data.branding.memberNaming,
-              },
+              login: data.branding.login,
+              memberNaming: data.branding.memberNaming,
             },
           },
           custom_domain: data.customDomain,
         })
-        .eq('id', community.id);
+        .eq('id', community.id)
+        .select();
 
       if (updateError) throw updateError;
+
+      // Refresh community data
+      const { data: updatedCommunity, error: fetchError } = await supabase
+        .from('communities')
+        .select('*')
+        .eq('id', community.id)
+        .single();
+
+      if (fetchError) throw fetchError;
+      if (!updatedCommunity)
+        throw new Error('Failed to fetch updated community');
+
+      // Update the community atom with new data
+      setCommunity(updatedCommunity);
+
+      // Show success message
+      toast({
+        title: 'Settings saved',
+        description: 'Your branding settings have been updated successfully.',
+        variant: 'success',
+      });
     } catch (err: any) {
       console.error('Error updating branding:', err);
       setError(err.message || 'Error updating branding settings');
+      toast({
+        title: 'Error',
+        description: err.message || 'Failed to save settings',
+        variant: 'destructive',
+      });
     } finally {
       setIsSubmitting(false);
     }

@@ -105,9 +105,54 @@ export function BrandingSettings() {
     },
   });
 
-  // Load existing images
+  // Load existing images and settings
   useEffect(() => {
     if (!community) return;
+
+    setValue('name', community.name);
+    setValue('description', community.description || '');
+    setValue('customDomain', community.custom_domain || '');
+
+    // Set branding values
+    if (community.settings?.branding) {
+      const { branding } = community.settings;
+      setValue('branding.primaryColor', branding.primaryColor || '#4F46E5');
+      setValue('branding.secondaryColor', branding.secondaryColor || '#818CF8');
+
+      // Set login settings
+      if (branding.login) {
+        setValue('branding.login.title', branding.login.title || '');
+        setValue('branding.login.subtitle', branding.login.subtitle || '');
+        setValue(
+          'branding.login.welcomeMessage',
+          branding.login.welcomeMessage || ''
+        );
+        setValue(
+          'branding.login.buttonText',
+          branding.login.buttonText || 'Sign In'
+        );
+        setValue(
+          'branding.login.backgroundColor',
+          branding.login.backgroundColor || '#FFFFFF'
+        );
+        setValue(
+          'branding.login.textColor',
+          branding.login.textColor || '#000000'
+        );
+      }
+
+      // Set member naming
+      if (branding.memberNaming) {
+        setValue(
+          'branding.memberNaming.singular',
+          branding.memberNaming.singular || 'Member'
+        );
+        setValue(
+          'branding.memberNaming.plural',
+          branding.memberNaming.plural || 'Members'
+        );
+      }
+    }
 
     const loadExistingImages = async () => {
       const getSignedUrl = async (path: string | null) => {

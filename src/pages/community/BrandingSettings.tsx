@@ -277,23 +277,29 @@ export function BrandingSettings() {
     setSuccess(null);
 
     try {
+      const updateData = {
+        name: data.name,
+        description: data.description,
+        settings: {
+          ...community.settings,
+          branding: {
+            ...community.settings?.branding,
+            primaryColor: data.branding.primaryColor,
+            secondaryColor: data.branding.secondaryColor,
+            login: data.branding.login,
+            memberNaming: data.branding.memberNaming,
+          },
+        },
+      } as any;
+
+      // Only include custom_domain if it's not empty
+      if (data.customDomain?.trim()) {
+        updateData.custom_domain = data.customDomain.trim();
+      }
+
       const { error: updateError } = await supabase
         .from('communities')
-        .update({
-          name: data.name,
-          description: data.description,
-          settings: {
-            ...community.settings,
-            branding: {
-              ...community.settings?.branding,
-              primaryColor: data.branding.primaryColor,
-              secondaryColor: data.branding.secondaryColor,
-              login: data.branding.login,
-              memberNaming: data.branding.memberNaming,
-            },
-          },
-          custom_domain: data.customDomain,
-        })
+        .update(updateData)
         .eq('id', community.id)
         .select();
 

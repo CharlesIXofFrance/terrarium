@@ -9,7 +9,6 @@ import { Input } from '@/components/ui/atoms/Input';
 import { FileUpload } from '@/components/ui/atoms/FileUpload';
 import { supabase } from '@/lib/supabase';
 import { Link } from 'react-router-dom';
-import { toast } from '@/components/ui/atoms/Toast';
 
 const brandingSchema = z.object({
   name: z.string().min(1, 'Community name is required'),
@@ -60,6 +59,7 @@ const SUPPORTED_IMAGE_TYPES = {
 export function BrandingSettings() {
   const [community, setCommunity] = useAtom(currentCommunityAtom);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
@@ -274,6 +274,7 @@ export function BrandingSettings() {
     if (!community) return;
     setIsSubmitting(true);
     setError(null);
+    setSuccess(null);
 
     try {
       const { error: updateError } = await supabase
@@ -311,21 +312,10 @@ export function BrandingSettings() {
 
       // Update the community atom with new data
       setCommunity(updatedCommunity);
-
-      // Show success message
-      toast({
-        title: 'Settings saved',
-        description: 'Your branding settings have been updated successfully.',
-        variant: 'success',
-      });
+      setSuccess('Your branding settings have been updated successfully.');
     } catch (err: any) {
       console.error('Error updating branding:', err);
       setError(err.message || 'Error updating branding settings');
-      toast({
-        title: 'Error',
-        description: err.message || 'Failed to save settings',
-        variant: 'destructive',
-      });
     } finally {
       setIsSubmitting(false);
     }
@@ -349,6 +339,11 @@ export function BrandingSettings() {
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
             {error}
+          </div>
+        )}
+        {success && (
+          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded">
+            {success}
           </div>
         )}
 

@@ -29,13 +29,13 @@ import {
 interface FormData {
   name: string;
   description: string;
+  memberNaming: {
+    singular: string;
+    plural: string;
+  };
   branding: {
     primaryColor: string;
     secondaryColor: string;
-    memberNaming: {
-      singular: string;
-      plural: string;
-    };
     logo: File | null;
     banner: File | null;
     favicon: File | null;
@@ -76,6 +76,11 @@ const steps = [
     icon: Upload,
   },
   {
+    title: 'Member Naming',
+    description: 'How would you like to call your community members?',
+    icon: Users,
+  },
+  {
     title: 'Brand Your Community',
     description: 'Customize your community look and feel.',
     icon: Palette,
@@ -108,13 +113,13 @@ export function OnboardingFlow() {
   const [formData, setFormData] = useState<FormData>({
     name: '',
     description: '',
+    memberNaming: {
+      singular: 'member',
+      plural: 'members',
+    },
     branding: {
       primaryColor: '#4F46E5',
       secondaryColor: '#818CF8',
-      memberNaming: {
-        singular: 'Member',
-        plural: 'Members',
-      },
       logo: null,
       banner: null,
       favicon: null,
@@ -194,17 +199,16 @@ export function OnboardingFlow() {
           setFormData({
             name: existingCommunity.name,
             description: existingCommunity.description || '',
+            memberNaming: {
+              singular: existingCommunity.member_singular_name || 'member',
+              plural: existingCommunity.member_plural_name || 'members',
+            },
             branding: {
               primaryColor:
                 existingCommunity.settings?.branding?.primaryColor || '#4F46E5',
               secondaryColor:
                 existingCommunity.settings?.branding?.secondaryColor ||
                 '#818CF8',
-              memberNaming: existingCommunity.settings?.branding
-                ?.memberNaming || {
-                singular: 'Member',
-                plural: 'Members',
-              },
               logo: null,
               banner: null,
               favicon: null,
@@ -385,133 +389,264 @@ export function OnboardingFlow() {
     }
   };
 
-  const handleNext = async () => {
-    setError(null);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     setIsSubmitting(true);
+    setError('');
 
     try {
       const slug = slugify(formData.name);
-      const { data: existingCommunity } = await supabase
-        .from('communities')
-        .select('id')
-        .eq('slug', slug)
-        .single();
+      const settings = {
+        branding: {
+          primaryColor: formData.branding.primaryColor,
+          secondaryColor: formData.branding.secondaryColor,
+          fontFamily: formData.branding.fontFamily,
+          memberNaming: {
+            singular: formData.memberNaming.singular,
+            plural: formData.memberNaming.plural,
+          },
+        },
+        social: formData.social,
+        jobBoard: formData.jobBoardSettings,
+        events: formData.eventSettings,
+      };
 
-      if (existingCommunity && !user?.community_id) {
-        setError('A community with this name already exists');
-        setIsSubmitting(false);
-        return;
-      }
-
-      // Upload images if they exist
-      const [logoUrl, bannerUrl, faviconUrl] = await Promise.all([
-        formData.branding.logo
-          ? uploadImage(
-              formData.branding.logo,
-              `${slug}/logo`,
-              user?.community_id ? formData.branding.logoUrl : null
-            )
-          : null,
-        formData.branding.banner
-          ? uploadImage(
-              formData.branding.banner,
-              `${slug}/banner`,
-              user?.community_id ? formData.branding.bannerUrl : null
-            )
-          : null,
-        formData.branding.favicon
-          ? uploadImage(
-              formData.branding.favicon,
-              `${slug}/favicon`,
-              user?.community_id ? formData.branding.faviconUrl : null
-            )
-          : null,
-      ]);
-
-      const communityData = {
+      const { error } = await supabase.from('communities').upsert({
+        id: userCommunity?.id,
         name: formData.name,
         description: formData.description,
         slug,
-        settings: {
-          branding: {
-            primaryColor: formData.branding.primaryColor,
-            secondaryColor: formData.branding.secondaryColor,
-            fontFamily: formData.branding.fontFamily,
-            memberNaming: formData.branding.memberNaming,
-          },
-          social: formData.social,
-          jobBoard: formData.jobBoardSettings,
-          events: formData.eventSettings,
-        },
-      };
+        settings,
+        logo_url: formData.branding.logo
+          ? `community-assets/${slug}/logo`
+          : userCommunity?.logo_url,
+        banner_url: formData.branding.banner
+          ? `community-assets/${slug}/banner`
+          : userCommunity?.banner_url,
+        favicon_url: formData.branding.favicon
+          ? `community-assets/${slug}/favicon`
+          : userCommunity?.favicon_url,
+        owner_id: user?.id,
+      });
 
-      if (logoUrl) {
-        communityData.logo_url = `community-assets/${slug}/logo`;
+      if (error) throw error;
+
+      // Upload images if they exist
+      const uploadPromises = [];
+      if (formData.branding.logo) {
+        uploadPromises.push(
+          uploadImage(
+            formData.branding.logo,
+            `${slug}/logo`,
+            userCommunity?.logo_url || null
+          )
+        );
       }
-      if (bannerUrl) {
-        communityData.banner_url = `community-assets/${slug}/banner`;
+      if (formData.branding.banner) {
+        uploadPromises.push(
+          uploadImage(
+            formData.branding.banner,
+            `${slug}/banner`,
+            userCommunity?.banner_url || null
+          )
+        );
       }
-      if (faviconUrl) {
-        communityData.favicon_url = `community-assets/${slug}/favicon`;
-      }
-
-      let community;
-      if (user?.community_id) {
-        // Update existing community
-        const { data, error } = await supabase
-          .from('communities')
-          .update(communityData)
-          .eq('id', user.community_id)
-          .select()
-          .single();
-
-        if (error) throw error;
-        community = data;
-      } else {
-        // Create new community
-        const { data, error } = await supabase
-          .from('communities')
-          .insert({
-            ...communityData,
-            owner_id: user?.id,
-          })
-          .select()
-          .single();
-
-        if (error) throw error;
-        community = data;
-
-        // Update user with community_id and role
-        const { error: userError } = await supabase.auth.updateUser({
-          data: {
-            community_id: community.id,
-            role: 'community_owner',
-          },
-        });
-
-        if (userError) throw userError;
-
-        // Update local user state
-        setUser((prev) => {
-          if (!prev) return prev;
-          return {
-            ...prev,
-            community_id: community.id,
-            role: 'community_owner',
-          };
-        });
+      if (formData.branding.favicon) {
+        uploadPromises.push(
+          uploadImage(
+            formData.branding.favicon,
+            `${slug}/favicon`,
+            userCommunity?.favicon_url || null
+          )
+        );
       }
 
-      setUserCommunity(community);
+      await Promise.all(uploadPromises);
 
-      if (currentStep === steps.length - 1) {
-        navigate(`/c/${community.slug}/dashboard`);
-      } else {
-        setCurrentStep((prev) => prev + 1);
+      // Fetch the updated community
+      const { data: updatedCommunity } = await supabase
+        .from('communities')
+        .select('*')
+        .eq('id', userCommunity?.id)
+        .single();
+
+      if (updatedCommunity) {
+        setUserCommunity(updatedCommunity);
       }
+
+      handleNext();
     } catch (err: any) {
-      console.error('Error saving community:', err);
+      console.error('Error creating community:', err);
       setError(err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleNext = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      // Get existing community if we're past step 1
+      const { data: existingCommunity } = await supabase
+        .from('communities')
+        .select('*')
+        .eq('owner_id', user.id)
+        .single();
+
+      // Create community in step 2 when name is set
+      if (currentStep === 1 && !existingCommunity) {
+        if (!formData.name) {
+          setError('Community name is required');
+          setIsSubmitting(false);
+          return;
+        }
+
+        const communitySlug = slugify(formData.name);
+        const newCommunity = {
+          name: formData.name,
+          slug: communitySlug,
+          description: formData.description,
+          owner_id: user.id,
+        };
+
+        const { data: community, error: createError } = await supabase
+          .from('communities')
+          .insert([newCommunity])
+          .select()
+          .single();
+
+        if (createError) throw createError;
+        if (!community) throw new Error('Failed to create community');
+
+        setUserCommunity(community);
+      }
+
+      // Update existing community in subsequent steps
+      if (existingCommunity && currentStep > 1) {
+        const updates: any = {};
+        const communitySlug = existingCommunity.slug;
+
+        if (currentStep === 2) {
+          updates.member_singular_name = formData.memberNaming.singular;
+          updates.member_plural_name = formData.memberNaming.plural;
+        }
+
+        if (currentStep === 3) {
+          updates.settings = {
+            ...existingCommunity.settings,
+            branding: {
+              ...existingCommunity.settings?.branding,
+              primaryColor: formData.branding.primaryColor,
+              secondaryColor: formData.branding.secondaryColor,
+              fontFamily: formData.branding.fontFamily,
+              memberNaming: {
+                singular: formData.memberNaming.singular,
+                plural: formData.memberNaming.plural,
+              },
+            },
+          };
+
+          // Handle image uploads
+          const imageUpdates: any = {};
+
+          if (formData.branding.logo) {
+            const logoUrl = await uploadImage(
+              formData.branding.logo,
+              `${communitySlug}/logo`,
+              existingCommunity.logo_url
+            );
+            if (logoUrl) imageUpdates.logo_url = logoUrl;
+          }
+
+          if (formData.branding.banner) {
+            const bannerUrl = await uploadImage(
+              formData.branding.banner,
+              `${communitySlug}/banner`,
+              existingCommunity.banner_url
+            );
+            if (bannerUrl) imageUpdates.banner_url = bannerUrl;
+          }
+
+          if (formData.branding.favicon) {
+            const faviconUrl = await uploadImage(
+              formData.branding.favicon,
+              `${communitySlug}/favicon`,
+              existingCommunity.favicon_url
+            );
+            if (faviconUrl) imageUpdates.favicon_url = faviconUrl;
+          }
+
+          Object.assign(updates, imageUpdates);
+        }
+
+        if (currentStep === 4) {
+          updates.settings = {
+            ...existingCommunity.settings,
+            social: formData.social,
+          };
+        }
+
+        if (currentStep === 5) {
+          updates.settings = {
+            ...existingCommunity.settings,
+            jobBoard: formData.jobBoardSettings,
+            events: formData.eventSettings,
+          };
+        }
+
+        const { error: updateError } = await supabase
+          .from('communities')
+          .update(updates)
+          .eq('id', existingCommunity.id);
+
+        if (updateError) throw updateError;
+      }
+
+      // If this is the last step, update profile completion and redirect
+      if (currentStep === steps.length - 1) {
+        try {
+          // Update profile completion status
+          const { error: profileUpdateError } = await supabase
+            .from('profiles')
+            .update({ profile_complete: true })
+            .eq('id', user.id);
+
+          if (profileUpdateError) throw profileUpdateError;
+
+          // Update local user state
+          setUser({
+            ...user,
+            profile_complete: true,
+          });
+
+          // Get the latest community data
+          const { data: community } = await supabase
+            .from('communities')
+            .select('*')
+            .eq('owner_id', user.id)
+            .single();
+
+          if (!community) throw new Error('Community not found');
+
+          // Navigate to the community dashboard
+          navigate(`/c/${community.slug}/dashboard`);
+          return;
+        } catch (error) {
+          console.error('Error in final step:', error);
+          setError('Failed to complete onboarding. Please try again.');
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
+      // Move to next step if not the last step
+      setCurrentStep(currentStep + 1);
+    } catch (error) {
+      console.error('Error:', error);
+      setError('An error occurred. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -684,504 +819,515 @@ export function OnboardingFlow() {
             </div>
           )}
 
-          <div className="space-y-6">
-            {safeCurrentStep === 1 && (
-              <>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Community Name
-                  </label>
-                  <Input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => updateFormData('name', e.target.value)}
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Description
-                  </label>
-                  <Input
-                    type="text"
-                    value={formData.description}
-                    onChange={(e) =>
-                      updateFormData('description', e.target.value)
-                    }
-                    required
-                  />
-                </div>
-              </>
-            )}
-
-            {safeCurrentStep === 2 && (
-              <div className="space-y-6">
-                <h3 className="text-lg font-medium text-gray-900">Branding</h3>
-                <div className="space-y-4">
-                  {/* Logo Upload */}
+          <form onSubmit={handleSubmit}>
+            <div className="space-y-6">
+              {safeCurrentStep === 1 && (
+                <>
                   <div>
                     <label className="block text-sm font-medium text-gray-700">
-                      Logo
+                      Community Name
                     </label>
-                    <div className="mt-1 flex flex-col items-start space-y-2">
-                      {formData.branding.logoUrl || formData.branding.logo ? (
-                        <div
-                          className="relative group cursor-pointer"
-                          onClick={() => {
-                            const input = document.createElement('input');
-                            input.type = 'file';
-                            input.accept = 'image/*';
-                            input.onchange = (e) => {
-                              const file = (e.target as HTMLInputElement)
-                                .files?.[0];
-                              if (file) {
-                                handleImageUpload('logo', file);
-                              }
-                            };
-                            input.click();
-                          }}
-                        >
-                          <img
-                            src={
-                              formData.branding.logo
-                                ? URL.createObjectURL(formData.branding.logo)
-                                : formData.branding.logoUrl || ''
-                            }
-                            alt="Logo preview"
-                            className="h-20 w-20 object-contain rounded border border-gray-200"
-                          />
-                          <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded">
-                            <span className="text-white text-sm">Change</span>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-center w-full">
-                          <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
-                            <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                              <svg
-                                className="w-8 h-8 mb-4 text-gray-500"
-                                aria-hidden="true"
-                                xmlns="http://www.w3.org/2000/svg"
-                                fill="none"
-                                viewBox="0 0 20 16"
-                              >
-                                <path
-                                  stroke="currentColor"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth="2"
-                                  d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"
-                                />
-                              </svg>
-                              <p className="mb-2 text-sm text-gray-500">
-                                <span className="font-semibold">
-                                  Click to upload
-                                </span>{' '}
-                                or drag and drop
-                              </p>
-                              <p className="text-xs text-gray-500">
-                                PNG, JPG or GIF (MAX. 800x400px)
-                              </p>
-                            </div>
-                            <input
-                              type="file"
-                              accept="image/*"
-                              className="hidden"
-                              onChange={(e) => {
-                                const file = e.target.files?.[0];
+                    <Input
+                      type="text"
+                      value={formData.name}
+                      onChange={(e) => updateFormData('name', e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Description
+                    </label>
+                    <Input
+                      type="text"
+                      value={formData.description}
+                      onChange={(e) =>
+                        updateFormData('description', e.target.value)
+                      }
+                      required
+                    />
+                  </div>
+                </>
+              )}
+
+              {safeCurrentStep === 2 && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    How do you want to call your community members?
+                  </label>
+                  <div className="mt-4 space-y-4">
+                    <div>
+                      <label className="block text-sm text-gray-600">
+                        Singular (e.g., member, student, player)
+                      </label>
+                      <Input
+                        type="text"
+                        value={formData.memberNaming.singular}
+                        onChange={(e) =>
+                          updateFormData('memberNaming', {
+                            ...formData.memberNaming,
+                            singular: e.target.value,
+                          })
+                        }
+                        placeholder="member"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-gray-600">
+                        Plural (e.g., members, students, players)
+                      </label>
+                      <Input
+                        type="text"
+                        value={formData.memberNaming.plural}
+                        onChange={(e) =>
+                          updateFormData('memberNaming', {
+                            ...formData.memberNaming,
+                            plural: e.target.value,
+                          })
+                        }
+                        placeholder="members"
+                        className="mt-1"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {safeCurrentStep === 3 && (
+                <div className="space-y-6">
+                  <h3 className="text-lg font-medium text-gray-900">
+                    Branding
+                  </h3>
+                  <div className="space-y-4">
+                    {/* Logo Upload */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Logo
+                      </label>
+                      <div className="mt-1 flex flex-col items-start space-y-2">
+                        {formData.branding.logoUrl || formData.branding.logo ? (
+                          <div
+                            className="relative group cursor-pointer"
+                            onClick={() => {
+                              const input = document.createElement('input');
+                              input.type = 'file';
+                              input.accept = 'image/*';
+                              input.onchange = (e) => {
+                                const file = (e.target as HTMLInputElement)
+                                  .files?.[0];
                                 if (file) {
                                   handleImageUpload('logo', file);
                                 }
-                              }}
-                            />
-                          </label>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Banner Upload with similar pattern */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Banner
-                    </label>
-                    <div className="mt-1 flex flex-col items-start space-y-2">
-                      {formData.branding.bannerUrl ||
-                      formData.branding.banner ? (
-                        <div
-                          className="relative group cursor-pointer"
-                          onClick={() => {
-                            const input = document.createElement('input');
-                            input.type = 'file';
-                            input.accept = 'image/*';
-                            input.onchange = (e) => {
-                              const file = (e.target as HTMLInputElement)
-                                .files?.[0];
-                              if (file) {
-                                handleImageUpload('banner', file);
+                              };
+                              input.click();
+                            }}
+                          >
+                            <img
+                              src={
+                                formData.branding.logo
+                                  ? URL.createObjectURL(formData.branding.logo)
+                                  : formData.branding.logoUrl || ''
                               }
-                            };
-                            input.click();
-                          }}
-                        >
-                          <img
-                            src={
-                              formData.branding.banner
-                                ? URL.createObjectURL(formData.branding.banner)
-                                : formData.branding.bannerUrl || ''
-                            }
-                            alt="Banner preview"
-                            className="w-full h-32 object-cover rounded border border-gray-200"
-                          />
-                          <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded">
-                            <span className="text-white text-sm">Change</span>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-center w-full">
-                          <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
-                            <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                              <svg
-                                className="w-8 h-8 mb-4 text-gray-500"
-                                aria-hidden="true"
-                                xmlns="http://www.w3.org/2000/svg"
-                                fill="none"
-                                viewBox="0 0 20 16"
-                              >
-                                <path
-                                  stroke="currentColor"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth="2"
-                                  d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"
-                                />
-                              </svg>
-                              <p className="mb-2 text-sm text-gray-500">
-                                <span className="font-semibold">
-                                  Click to upload
-                                </span>{' '}
-                                or drag and drop
-                              </p>
-                              <p className="text-xs text-gray-500">
-                                PNG, JPG or GIF (MAX. 1920x480px)
-                              </p>
+                              alt="Logo preview"
+                              className="h-20 w-20 object-contain rounded border border-gray-200"
+                            />
+                            <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded">
+                              <span className="text-white text-sm">Change</span>
                             </div>
-                            <input
-                              type="file"
-                              accept="image/*"
-                              className="hidden"
-                              onChange={(e) => {
-                                const file = e.target.files?.[0];
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-center w-full">
+                            <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                              <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                <svg
+                                  className="w-8 h-8 mb-4 text-gray-500"
+                                  aria-hidden="true"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  fill="none"
+                                  viewBox="0 0 20 16"
+                                >
+                                  <path
+                                    stroke="currentColor"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth="2"
+                                    d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"
+                                  />
+                                </svg>
+                                <p className="mb-2 text-sm text-gray-500">
+                                  <span className="font-semibold">
+                                    Click to upload
+                                  </span>{' '}
+                                  or drag and drop
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  PNG, JPG or GIF (MAX. 800x400px)
+                                </p>
+                              </div>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) {
+                                    handleImageUpload('logo', file);
+                                  }
+                                }}
+                              />
+                            </label>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Banner Upload with similar pattern */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Banner
+                      </label>
+                      <div className="mt-1 flex flex-col items-start space-y-2">
+                        {formData.branding.bannerUrl ||
+                        formData.branding.banner ? (
+                          <div
+                            className="relative group cursor-pointer"
+                            onClick={() => {
+                              const input = document.createElement('input');
+                              input.type = 'file';
+                              input.accept = 'image/*';
+                              input.onchange = (e) => {
+                                const file = (e.target as HTMLInputElement)
+                                  .files?.[0];
                                 if (file) {
                                   handleImageUpload('banner', file);
                                 }
-                              }}
-                            />
-                          </label>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Favicon Upload with similar pattern */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Favicon
-                    </label>
-                    <div className="mt-1 flex flex-col items-start space-y-2">
-                      {formData.branding.faviconUrl ||
-                      formData.branding.favicon ? (
-                        <div
-                          className="relative group cursor-pointer"
-                          onClick={() => {
-                            const input = document.createElement('input');
-                            input.type = 'file';
-                            input.accept = 'image/*';
-                            input.onchange = (e) => {
-                              const file = (e.target as HTMLInputElement)
-                                .files?.[0];
-                              if (file) {
-                                handleImageUpload('favicon', file);
+                              };
+                              input.click();
+                            }}
+                          >
+                            <img
+                              src={
+                                formData.branding.banner
+                                  ? URL.createObjectURL(
+                                      formData.branding.banner
+                                    )
+                                  : formData.branding.bannerUrl || ''
                               }
-                            };
-                            input.click();
-                          }}
-                        >
-                          <img
-                            src={
-                              formData.branding.favicon
-                                ? URL.createObjectURL(formData.branding.favicon)
-                                : formData.branding.faviconUrl || ''
-                            }
-                            alt="Favicon preview"
-                            className="h-10 w-10 object-contain rounded border border-gray-200"
-                          />
-                          <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded">
-                            <span className="text-white text-sm">Change</span>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-center w-full">
-                          <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
-                            <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                              <svg
-                                className="w-8 h-8 mb-4 text-gray-500"
-                                aria-hidden="true"
-                                xmlns="http://www.w3.org/2000/svg"
-                                fill="none"
-                                viewBox="0 0 20 16"
-                              >
-                                <path
-                                  stroke="currentColor"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth="2"
-                                  d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"
-                                />
-                              </svg>
-                              <p className="mb-2 text-sm text-gray-500">
-                                <span className="font-semibold">
-                                  Click to upload
-                                </span>{' '}
-                                or drag and drop
-                              </p>
-                              <p className="text-xs text-gray-500">
-                                PNG, ICO (MAX. 64x64px)
-                              </p>
+                              alt="Banner preview"
+                              className="w-full h-32 object-cover rounded border border-gray-200"
+                            />
+                            <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded">
+                              <span className="text-white text-sm">Change</span>
                             </div>
-                            <input
-                              type="file"
-                              accept="image/*"
-                              className="hidden"
-                              onChange={(e) => {
-                                const file = e.target.files?.[0];
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-center w-full">
+                            <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                              <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                <svg
+                                  className="w-8 h-8 mb-4 text-gray-500"
+                                  aria-hidden="true"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  fill="none"
+                                  viewBox="0 0 20 16"
+                                >
+                                  <path
+                                    stroke="currentColor"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth="2"
+                                    d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"
+                                  />
+                                </svg>
+                                <p className="mb-2 text-sm text-gray-500">
+                                  <span className="font-semibold">
+                                    Click to upload
+                                  </span>{' '}
+                                  or drag and drop
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  PNG, JPG or GIF (MAX. 1920x480px)
+                                </p>
+                              </div>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) {
+                                    handleImageUpload('banner', file);
+                                  }
+                                }}
+                              />
+                            </label>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Favicon Upload with similar pattern */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Favicon
+                      </label>
+                      <div className="mt-1 flex flex-col items-start space-y-2">
+                        {formData.branding.faviconUrl ||
+                        formData.branding.favicon ? (
+                          <div
+                            className="relative group cursor-pointer"
+                            onClick={() => {
+                              const input = document.createElement('input');
+                              input.type = 'file';
+                              input.accept = 'image/*';
+                              input.onchange = (e) => {
+                                const file = (e.target as HTMLInputElement)
+                                  .files?.[0];
                                 if (file) {
                                   handleImageUpload('favicon', file);
                                 }
-                              }}
+                              };
+                              input.click();
+                            }}
+                          >
+                            <img
+                              src={
+                                formData.branding.favicon
+                                  ? URL.createObjectURL(
+                                      formData.branding.favicon
+                                    )
+                                  : formData.branding.faviconUrl || ''
+                              }
+                              alt="Favicon preview"
+                              className="h-10 w-10 object-contain rounded border border-gray-200"
                             />
+                            <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded">
+                              <span className="text-white text-sm">Change</span>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-center w-full">
+                            <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                              <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                <svg
+                                  className="w-8 h-8 mb-4 text-gray-500"
+                                  aria-hidden="true"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  fill="none"
+                                  viewBox="0 0 20 16"
+                                >
+                                  <path
+                                    stroke="currentColor"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth="2"
+                                    d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"
+                                  />
+                                </svg>
+                                <p className="mb-2 text-sm text-gray-500">
+                                  <span className="font-semibold">
+                                    Click to upload
+                                  </span>{' '}
+                                  or drag and drop
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  PNG, ICO (MAX. 64x64px)
+                                </p>
+                              </div>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) {
+                                    handleImageUpload('favicon', file);
+                                  }
+                                }}
+                              />
+                            </label>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Color inputs */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Brand Colors
+                      </label>
+                      <div className="grid grid-cols-2 gap-4 mt-2">
+                        <div>
+                          <label className="text-xs text-gray-500">
+                            Primary
                           </label>
+                          <ColorPicker
+                            color={formData.branding.primaryColor}
+                            onChange={(color) =>
+                              updateFormData('branding', {
+                                ...formData.branding,
+                                primaryColor: color,
+                              })
+                            }
+                          />
                         </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Color inputs */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Brand Colors
-                    </label>
-                    <div className="grid grid-cols-2 gap-4 mt-2">
-                      <div>
-                        <label className="text-xs text-gray-500">Primary</label>
-                        <ColorPicker
-                          color={formData.branding.primaryColor}
-                          onChange={(color) =>
-                            updateFormData('branding', {
-                              ...formData.branding,
-                              primaryColor: color,
-                            })
-                          }
-                        />
-                      </div>
-                      <div>
-                        <label className="text-xs text-gray-500">
-                          Secondary
-                        </label>
-                        <ColorPicker
-                          color={formData.branding.secondaryColor}
-                          onChange={(color) =>
-                            updateFormData('branding', {
-                              ...formData.branding,
-                              secondaryColor: color,
-                            })
-                          }
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Member naming */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Member Naming
-                    </label>
-                    <div className="mt-4 space-y-4">
-                      <div>
-                        <label className="block text-sm text-gray-600">
-                          Singular (e.g., member, student, player)
-                        </label>
-                        <Input
-                          type="text"
-                          value={formData.branding.memberNaming.singular}
-                          onChange={(e) =>
-                            updateFormData('branding', {
-                              ...formData.branding,
-                              memberNaming: {
-                                ...formData.branding.memberNaming,
-                                singular: e.target.value,
-                              },
-                            })
-                          }
-                          placeholder="member"
-                          className="mt-1"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm text-gray-600">
-                          Plural (e.g., members, students, players)
-                        </label>
-                        <Input
-                          type="text"
-                          value={formData.branding.memberNaming.plural}
-                          onChange={(e) =>
-                            updateFormData('branding', {
-                              ...formData.branding,
-                              memberNaming: {
-                                ...formData.branding.memberNaming,
-                                plural: e.target.value,
-                              },
-                            })
-                          }
-                          placeholder="members"
-                          className="mt-1"
-                        />
+                        <div>
+                          <label className="text-xs text-gray-500">
+                            Secondary
+                          </label>
+                          <ColorPicker
+                            color={formData.branding.secondaryColor}
+                            onChange={(color) =>
+                              updateFormData('branding', {
+                                ...formData.branding,
+                                secondaryColor: color,
+                              })
+                            }
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            )}
-
-            {safeCurrentStep === 3 && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Social Media Links
-                </label>
-                <div className="space-y-3 mt-2">
-                  {Object.entries({
-                    facebook: { icon: Facebook, label: 'Facebook' },
-                    twitter: { icon: Twitter, label: 'Twitter' },
-                    linkedin: { icon: Linkedin, label: 'LinkedIn' },
-                    instagram: { icon: Instagram, label: 'Instagram' },
-                    website: { icon: Globe, label: 'Website' },
-                  }).map(([key, { icon: Icon, label }]) => (
-                    <div key={key} className="flex items-center space-x-2">
-                      <Icon className="w-5 h-5 text-gray-400" />
-                      <Input
-                        type="url"
-                        placeholder={label}
-                        value={
-                          formData.social[key as keyof typeof formData.social]
-                        }
-                        onChange={(e) =>
-                          updateFormData('social', {
-                            ...formData.social,
-                            [key]: e.target.value,
-                          })
-                        }
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {safeCurrentStep === 4 && (
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-lg font-medium text-gray-900">
-                    Job Board
-                  </h3>
-                  <div className="mt-2 space-y-2">
-                    <label className="flex items-center">
-                      <input
-                        type="checkbox"
-                        checked={formData.jobBoardSettings.requireApproval}
-                        onChange={(e) =>
-                          updateFormData('jobBoardSettings', {
-                            ...formData.jobBoardSettings,
-                            requireApproval: e.target.checked,
-                          })
-                        }
-                        className="rounded border-gray-300"
-                      />
-                      <span className="ml-2 text-sm text-gray-600">
-                        Require approval for new job posts
-                      </span>
-                    </label>
-                    <label className="flex items-center">
-                      <input
-                        type="checkbox"
-                        checked={formData.jobBoardSettings.allowRemote}
-                        onChange={(e) =>
-                          updateFormData('jobBoardSettings', {
-                            ...formData.jobBoardSettings,
-                            allowRemote: e.target.checked,
-                          })
-                        }
-                        className="rounded border-gray-300"
-                      />
-                      <span className="ml-2 text-sm text-gray-600">
-                        Allow remote job listings
-                      </span>
-                    </label>
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="text-lg font-medium text-gray-900">Events</h3>
-                  <div className="mt-2 space-y-2">
-                    <label className="flex items-center">
-                      <input
-                        type="checkbox"
-                        checked={formData.eventSettings.enableRegistration}
-                        onChange={(e) =>
-                          updateFormData('eventSettings', {
-                            ...formData.eventSettings,
-                            enableRegistration: e.target.checked,
-                          })
-                        }
-                        className="rounded border-gray-300"
-                      />
-                      <span className="ml-2 text-sm text-gray-600">
-                        Enable event registration
-                      </span>
-                    </label>
-                    <label className="flex items-center">
-                      <input
-                        type="checkbox"
-                        checked={formData.eventSettings.enableVirtual}
-                        onChange={(e) =>
-                          updateFormData('eventSettings', {
-                            ...formData.eventSettings,
-                            enableVirtual: e.target.checked,
-                          })
-                        }
-                        className="rounded border-gray-300"
-                      />
-                      <span className="ml-2 text-sm text-gray-600">
-                        Enable virtual events
-                      </span>
-                    </label>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <div className="flex justify-between pt-6">
-              {safeCurrentStep > 0 && (
-                <Button onClick={handleBack} disabled={isSubmitting}>
-                  Back
-                </Button>
               )}
-              <Button onClick={handleNext} disabled={isSubmitting}>
-                {safeCurrentStep === steps.length - 1
-                  ? 'Launch Community'
-                  : 'Next'}
-              </Button>
+
+              {safeCurrentStep === 4 && (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Social Media Links
+                    </label>
+                    <div className="space-y-3 mt-2">
+                      {Object.entries({
+                        facebook: { icon: Facebook, label: 'Facebook' },
+                        twitter: { icon: Twitter, label: 'Twitter' },
+                        linkedin: { icon: Linkedin, label: 'LinkedIn' },
+                        instagram: { icon: Instagram, label: 'Instagram' },
+                        website: { icon: Globe, label: 'Website' },
+                      }).map(([key, { icon: Icon, label }]) => (
+                        <div key={key} className="flex items-center space-x-2">
+                          <Icon className="w-5 h-5 text-gray-400" />
+                          <Input
+                            type="url"
+                            placeholder={label}
+                            value={
+                              formData.social[
+                                key as keyof typeof formData.social
+                              ]
+                            }
+                            onChange={(e) =>
+                              updateFormData('social', {
+                                ...formData.social,
+                                [key]: e.target.value,
+                              })
+                            }
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {safeCurrentStep === 5 && (
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900">
+                      Job Board
+                    </h3>
+                    <div className="mt-2 space-y-2">
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={formData.jobBoardSettings.requireApproval}
+                          onChange={(e) =>
+                            updateFormData('jobBoardSettings', {
+                              ...formData.jobBoardSettings,
+                              requireApproval: e.target.checked,
+                            })
+                          }
+                          className="rounded border-gray-300"
+                        />
+                        <span className="ml-2 text-sm text-gray-600">
+                          Require approval for new job posts
+                        </span>
+                      </label>
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={formData.jobBoardSettings.allowRemote}
+                          onChange={(e) =>
+                            updateFormData('jobBoardSettings', {
+                              ...formData.jobBoardSettings,
+                              allowRemote: e.target.checked,
+                            })
+                          }
+                          className="rounded border-gray-300"
+                        />
+                        <span className="ml-2 text-sm text-gray-600">
+                          Allow remote job listings
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900">
+                      Events
+                    </h3>
+                    <div className="mt-2 space-y-2">
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={formData.eventSettings.enableRegistration}
+                          onChange={(e) =>
+                            updateFormData('eventSettings', {
+                              ...formData.eventSettings,
+                              enableRegistration: e.target.checked,
+                            })
+                          }
+                          className="rounded border-gray-300"
+                        />
+                        <span className="ml-2 text-sm text-gray-600">
+                          Enable event registration
+                        </span>
+                      </label>
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={formData.eventSettings.enableVirtual}
+                          onChange={(e) =>
+                            updateFormData('eventSettings', {
+                              ...formData.eventSettings,
+                              enableVirtual: e.target.checked,
+                            })
+                          }
+                          className="rounded border-gray-300"
+                        />
+                        <span className="ml-2 text-sm text-gray-600">
+                          Enable virtual events
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex justify-between pt-6">
+                {safeCurrentStep > 0 && (
+                  <Button onClick={handleBack} disabled={isSubmitting}>
+                    Back
+                  </Button>
+                )}
+                <Button type="submit" disabled={isSubmitting}>
+                  {safeCurrentStep === steps.length - 1
+                    ? 'Launch Community'
+                    : 'Next'}
+                </Button>
+              </div>
             </div>
-          </div>
+          </form>
         </div>
       </div>
 

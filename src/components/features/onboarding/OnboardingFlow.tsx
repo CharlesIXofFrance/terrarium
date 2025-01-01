@@ -29,13 +29,13 @@ import {
 interface FormData {
   name: string;
   description: string;
-  memberNaming: {
-    singular: string;
-    plural: string;
-  };
   branding: {
     primaryColor: string;
     secondaryColor: string;
+    memberNaming: {
+      singular: string;
+      plural: string;
+    };
     logo: File | null;
     banner: File | null;
     favicon: File | null;
@@ -76,11 +76,6 @@ const steps = [
     icon: Upload,
   },
   {
-    title: 'Member Naming',
-    description: 'How would you like to call your community members?',
-    icon: Users,
-  },
-  {
     title: 'Brand Your Community',
     description: 'Customize your community look and feel.',
     icon: Palette,
@@ -113,13 +108,13 @@ export function OnboardingFlow() {
   const [formData, setFormData] = useState<FormData>({
     name: '',
     description: '',
-    memberNaming: {
-      singular: 'member',
-      plural: 'members',
-    },
     branding: {
       primaryColor: '#4F46E5',
       secondaryColor: '#818CF8',
+      memberNaming: {
+        singular: 'Member',
+        plural: 'Members',
+      },
       logo: null,
       banner: null,
       favicon: null,
@@ -199,16 +194,17 @@ export function OnboardingFlow() {
           setFormData({
             name: existingCommunity.name,
             description: existingCommunity.description || '',
-            memberNaming: {
-              singular: existingCommunity.member_singular_name || 'member',
-              plural: existingCommunity.member_plural_name || 'members',
-            },
             branding: {
               primaryColor:
                 existingCommunity.settings?.branding?.primaryColor || '#4F46E5',
               secondaryColor:
                 existingCommunity.settings?.branding?.secondaryColor ||
                 '#818CF8',
+              memberNaming: existingCommunity.settings?.branding
+                ?.memberNaming || {
+                singular: 'Member',
+                plural: 'Members',
+              },
               logo: null,
               banner: null,
               favicon: null,
@@ -390,165 +386,132 @@ export function OnboardingFlow() {
   };
 
   const handleNext = async () => {
-    if (isSubmitting) return;
-    setIsSubmitting(true);
     setError(null);
+    setIsSubmitting(true);
 
     try {
-      // Get existing community if we're past step 1
+      const slug = slugify(formData.name);
       const { data: existingCommunity } = await supabase
         .from('communities')
-        .select('*')
-        .eq('owner_id', user.id)
+        .select('id')
+        .eq('slug', slug)
         .single();
 
-      // Create community in step 2 when name is set
-      if (currentStep === 1 && !existingCommunity) {
-        if (!formData.name) {
-          setError('Community name is required');
-          setIsSubmitting(false);
-          return;
-        }
+      if (existingCommunity && !user?.community_id) {
+        setError('A community with this name already exists');
+        setIsSubmitting(false);
+        return;
+      }
 
-        const communitySlug = slugify(formData.name);
-        const newCommunity = {
-          name: formData.name,
-          slug: communitySlug,
-          description: formData.description,
-          owner_id: user.id,
-        };
+      // Upload images if they exist
+      const [logoUrl, bannerUrl, faviconUrl] = await Promise.all([
+        formData.branding.logo
+          ? uploadImage(
+              formData.branding.logo,
+              `${slug}/logo`,
+              user?.community_id ? formData.branding.logoUrl : null
+            )
+          : null,
+        formData.branding.banner
+          ? uploadImage(
+              formData.branding.banner,
+              `${slug}/banner`,
+              user?.community_id ? formData.branding.bannerUrl : null
+            )
+          : null,
+        formData.branding.favicon
+          ? uploadImage(
+              formData.branding.favicon,
+              `${slug}/favicon`,
+              user?.community_id ? formData.branding.faviconUrl : null
+            )
+          : null,
+      ]);
 
-        const { data: community, error: createError } = await supabase
+      const communityData = {
+        name: formData.name,
+        description: formData.description,
+        slug,
+        settings: {
+          branding: {
+            primaryColor: formData.branding.primaryColor,
+            secondaryColor: formData.branding.secondaryColor,
+            fontFamily: formData.branding.fontFamily,
+            memberNaming: formData.branding.memberNaming,
+          },
+          social: formData.social,
+          jobBoard: formData.jobBoardSettings,
+          events: formData.eventSettings,
+        },
+      };
+
+      if (logoUrl) {
+        communityData.logo_url = `community-assets/${slug}/logo`;
+      }
+      if (bannerUrl) {
+        communityData.banner_url = `community-assets/${slug}/banner`;
+      }
+      if (faviconUrl) {
+        communityData.favicon_url = `community-assets/${slug}/favicon`;
+      }
+
+      let community;
+      if (user?.community_id) {
+        // Update existing community
+        const { data, error } = await supabase
           .from('communities')
-          .insert([newCommunity])
+          .update(communityData)
+          .eq('id', user.community_id)
           .select()
           .single();
 
-        if (createError) throw createError;
-        if (!community) throw new Error('Failed to create community');
-
-        setUserCommunity(community);
-      }
-
-      // Update existing community in subsequent steps
-      if (existingCommunity && currentStep > 1) {
-        const updates: any = {};
-        const communitySlug = existingCommunity.slug;
-
-        if (currentStep === 2) {
-          updates.member_singular_name = formData.memberNaming.singular;
-          updates.member_plural_name = formData.memberNaming.plural;
-        }
-
-        if (currentStep === 3) {
-          updates.settings = {
-            ...existingCommunity.settings,
-            branding: {
-              ...existingCommunity.settings?.branding,
-              primaryColor: formData.branding.primaryColor,
-              secondaryColor: formData.branding.secondaryColor,
-              fontFamily: formData.branding.fontFamily,
-            },
-          };
-
-          // Handle image uploads
-          const imageUpdates: any = {};
-
-          if (formData.branding.logo) {
-            const logoUrl = await uploadImage(
-              formData.branding.logo,
-              `${communitySlug}/logo`,
-              existingCommunity.logo_url
-            );
-            if (logoUrl) imageUpdates.logo_url = logoUrl;
-          }
-
-          if (formData.branding.banner) {
-            const bannerUrl = await uploadImage(
-              formData.branding.banner,
-              `${communitySlug}/banner`,
-              existingCommunity.banner_url
-            );
-            if (bannerUrl) imageUpdates.banner_url = bannerUrl;
-          }
-
-          if (formData.branding.favicon) {
-            const faviconUrl = await uploadImage(
-              formData.branding.favicon,
-              `${communitySlug}/favicon`,
-              existingCommunity.favicon_url
-            );
-            if (faviconUrl) imageUpdates.favicon_url = faviconUrl;
-          }
-
-          Object.assign(updates, imageUpdates);
-        }
-
-        if (currentStep === 4) {
-          updates.settings = {
-            ...existingCommunity.settings,
-            social: formData.social,
-          };
-        }
-
-        if (currentStep === 5) {
-          updates.settings = {
-            ...existingCommunity.settings,
-            jobBoard: formData.jobBoardSettings,
-            events: formData.eventSettings,
-          };
-        }
-
-        const { error: updateError } = await supabase
+        if (error) throw error;
+        community = data;
+      } else {
+        // Create new community
+        const { data, error } = await supabase
           .from('communities')
-          .update(updates)
-          .eq('id', existingCommunity.id);
+          .insert({
+            ...communityData,
+            owner_id: user?.id,
+          })
+          .select()
+          .single();
 
-        if (updateError) throw updateError;
+        if (error) throw error;
+        community = data;
+
+        // Update user with community_id and role
+        const { error: userError } = await supabase.auth.updateUser({
+          data: {
+            community_id: community.id,
+            role: 'community_owner',
+          },
+        });
+
+        if (userError) throw userError;
+
+        // Update local user state
+        setUser((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            community_id: community.id,
+            role: 'community_owner',
+          };
+        });
       }
 
-      // If this is the last step, update profile completion and redirect
+      setUserCommunity(community);
+
       if (currentStep === steps.length - 1) {
-        try {
-          // Update profile completion status
-          const { error: profileUpdateError } = await supabase
-            .from('profiles')
-            .update({ profile_complete: true })
-            .eq('id', user.id);
-
-          if (profileUpdateError) throw profileUpdateError;
-
-          // Update local user state
-          setUser({
-            ...user,
-            profile_complete: true,
-          });
-
-          // Get the latest community data
-          const { data: community } = await supabase
-            .from('communities')
-            .select('*')
-            .eq('owner_id', user.id)
-            .single();
-
-          if (!community) throw new Error('Community not found');
-
-          // Navigate to the community dashboard
-          navigate(`/c/${community.slug}/dashboard`);
-          return;
-        } catch (error) {
-          console.error('Error in final step:', error);
-          setError('Failed to complete onboarding. Please try again.');
-          setIsSubmitting(false);
-          return;
-        }
+        navigate(`/c/${community.slug}/dashboard`);
+      } else {
+        setCurrentStep((prev) => prev + 1);
       }
-
-      // Move to next step if not the last step
-      setCurrentStep(currentStep + 1);
-    } catch (error) {
-      console.error('Error:', error);
-      setError('An error occurred. Please try again.');
+    } catch (err: any) {
+      console.error('Error saving community:', err);
+      setError(err.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -752,50 +715,6 @@ export function OnboardingFlow() {
             )}
 
             {safeCurrentStep === 2 && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  How do you want to call your community members?
-                </label>
-                <div className="mt-4 space-y-4">
-                  <div>
-                    <label className="block text-sm text-gray-600">
-                      Singular (e.g., member, student, player)
-                    </label>
-                    <Input
-                      type="text"
-                      value={formData.memberNaming.singular}
-                      onChange={(e) =>
-                        updateFormData('memberNaming', {
-                          ...formData.memberNaming,
-                          singular: e.target.value,
-                        })
-                      }
-                      placeholder="member"
-                      className="mt-1"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm text-gray-600">
-                      Plural (e.g., members, students, players)
-                    </label>
-                    <Input
-                      type="text"
-                      value={formData.memberNaming.plural}
-                      onChange={(e) =>
-                        updateFormData('memberNaming', {
-                          ...formData.memberNaming,
-                          plural: e.target.value,
-                        })
-                      }
-                      placeholder="members"
-                      className="mt-1"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {safeCurrentStep === 3 && (
               <div className="space-y-6">
                 <h3 className="text-lg font-medium text-gray-900">Branding</h3>
                 <div className="space-y-4">
@@ -1081,47 +1000,94 @@ export function OnboardingFlow() {
                       </div>
                     </div>
                   </div>
-                </div>
-              </div>
-            )}
 
-            {safeCurrentStep === 4 && (
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Social Media Links
-                  </label>
-                  <div className="space-y-3 mt-2">
-                    {Object.entries({
-                      facebook: { icon: Facebook, label: 'Facebook' },
-                      twitter: { icon: Twitter, label: 'Twitter' },
-                      linkedin: { icon: Linkedin, label: 'LinkedIn' },
-                      instagram: { icon: Instagram, label: 'Instagram' },
-                      website: { icon: Globe, label: 'Website' },
-                    }).map(([key, { icon: Icon, label }]) => (
-                      <div key={key} className="flex items-center space-x-2">
-                        <Icon className="w-5 h-5 text-gray-400" />
+                  {/* Member naming */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Member Naming
+                    </label>
+                    <div className="mt-4 space-y-4">
+                      <div>
+                        <label className="block text-sm text-gray-600">
+                          Singular (e.g., member, student, player)
+                        </label>
                         <Input
-                          type="url"
-                          placeholder={label}
-                          value={
-                            formData.social[key as keyof typeof formData.social]
-                          }
+                          type="text"
+                          value={formData.branding.memberNaming.singular}
                           onChange={(e) =>
-                            updateFormData('social', {
-                              ...formData.social,
-                              [key]: e.target.value,
+                            updateFormData('branding', {
+                              ...formData.branding,
+                              memberNaming: {
+                                ...formData.branding.memberNaming,
+                                singular: e.target.value,
+                              },
                             })
                           }
+                          placeholder="member"
+                          className="mt-1"
                         />
                       </div>
-                    ))}
+                      <div>
+                        <label className="block text-sm text-gray-600">
+                          Plural (e.g., members, students, players)
+                        </label>
+                        <Input
+                          type="text"
+                          value={formData.branding.memberNaming.plural}
+                          onChange={(e) =>
+                            updateFormData('branding', {
+                              ...formData.branding,
+                              memberNaming: {
+                                ...formData.branding.memberNaming,
+                                plural: e.target.value,
+                              },
+                            })
+                          }
+                          placeholder="members"
+                          className="mt-1"
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
             )}
 
-            {safeCurrentStep === 5 && (
+            {safeCurrentStep === 3 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Social Media Links
+                </label>
+                <div className="space-y-3 mt-2">
+                  {Object.entries({
+                    facebook: { icon: Facebook, label: 'Facebook' },
+                    twitter: { icon: Twitter, label: 'Twitter' },
+                    linkedin: { icon: Linkedin, label: 'LinkedIn' },
+                    instagram: { icon: Instagram, label: 'Instagram' },
+                    website: { icon: Globe, label: 'Website' },
+                  }).map(([key, { icon: Icon, label }]) => (
+                    <div key={key} className="flex items-center space-x-2">
+                      <Icon className="w-5 h-5 text-gray-400" />
+                      <Input
+                        type="url"
+                        placeholder={label}
+                        value={
+                          formData.social[key as keyof typeof formData.social]
+                        }
+                        onChange={(e) =>
+                          updateFormData('social', {
+                            ...formData.social,
+                            [key]: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {safeCurrentStep === 4 && (
               <div className="space-y-6">
                 <div>
                   <h3 className="text-lg font-medium text-gray-900">

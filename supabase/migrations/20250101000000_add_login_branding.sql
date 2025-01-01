@@ -5,14 +5,38 @@ COMMENT ON COLUMN public.communities.settings IS 'Community settings including b
 CREATE OR REPLACE FUNCTION validate_community_settings()
 RETURNS TRIGGER AS $$
 BEGIN
-  -- Ensure settings is a JSONB object
-  IF NOT jsonb_typeof(NEW.settings) = 'object' THEN
-    RAISE EXCEPTION 'settings must be a JSON object';
+  -- Initialize settings if null
+  IF NEW.settings IS NULL THEN
+    NEW.settings = '{}'::jsonb;
   END IF;
 
-  -- Ensure branding exists and is an object
-  IF NOT (NEW.settings ? 'branding' AND jsonb_typeof(NEW.settings->'branding') = 'object') THEN
-    RAISE EXCEPTION 'settings must contain a branding object';
+  -- Ensure settings is a JSONB object
+  IF NOT jsonb_typeof(NEW.settings) = 'object' THEN
+    NEW.settings = '{}'::jsonb;
+  END IF;
+
+  -- Initialize branding if it doesn't exist
+  IF NOT (NEW.settings ? 'branding') THEN
+    NEW.settings = jsonb_set(
+      NEW.settings,
+      '{branding}',
+      '{
+        "primaryColor": "#4F46E5",
+        "secondaryColor": "#818CF8"
+      }'::jsonb
+    );
+  END IF;
+
+  -- Ensure branding is an object
+  IF NOT jsonb_typeof(NEW.settings->'branding') = 'object' THEN
+    NEW.settings = jsonb_set(
+      NEW.settings,
+      '{branding}',
+      '{
+        "primaryColor": "#4F46E5",
+        "secondaryColor": "#818CF8"
+      }'::jsonb
+    );
   END IF;
 
   -- Initialize login object if it doesn't exist

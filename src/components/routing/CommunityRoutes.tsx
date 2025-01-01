@@ -19,6 +19,7 @@ import { CommunityAccessGuard } from '@/components/features/auth/CommunityAccess
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useAtom } from 'jotai';
 import { userCommunityAtom } from '@/lib/stores/auth';
+import { OnboardingFlow } from '../features/onboarding/OnboardingFlow';
 
 export const CommunityRoutes: React.FC = () => {
   const { user } = useAuth();
@@ -32,8 +33,8 @@ export const CommunityRoutes: React.FC = () => {
   const path = pathParts.length > 0 ? `/${pathParts.join('/')}` : '/';
 
   // Check if user is admin or owner of this specific community
-  const hasAdminAccess = 
-    (user?.role === 'community_admin' || user?.role === 'community_owner') && 
+  const hasAdminAccess =
+    (user?.role === 'community_admin' || user?.role === 'community_owner') &&
     userCommunity?.slug === community;
 
   console.log('CommunityRoutes - Debug:', {
@@ -80,6 +81,19 @@ export const CommunityRoutes: React.FC = () => {
       {hasAdminAccess ? (
         <Routes>
           <Route element={<CommunityLayout />}>
+            <Route
+              path="/settings"
+              element={
+                <CommunityAccessGuard allowedRoles={['COMMUNITY_OWNER']} />
+              }
+            >
+              <Route index element={<Navigate to="branding" replace />} />
+              <Route path="branding" element={<BrandingSettings />} />
+              <Route
+                path="onboarding"
+                element={<OnboardingFlow mode="edit" />}
+              />
+            </Route>
             <Route
               path="*"
               element={

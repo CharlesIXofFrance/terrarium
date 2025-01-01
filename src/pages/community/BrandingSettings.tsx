@@ -21,6 +21,28 @@ const brandingSchema = z.object({
     logoUrl: z.string().nullable(),
     bannerUrl: z.string().nullable(),
     faviconUrl: z.string().nullable(),
+    login: z
+      .object({
+        title: z.string().optional(),
+        subtitle: z.string().optional(),
+        welcomeMessage: z.string().optional(),
+        buttonText: z.string().optional(),
+        backgroundColor: z
+          .string()
+          .regex(/^#/, 'Must be a valid hex color')
+          .optional(),
+        textColor: z
+          .string()
+          .regex(/^#/, 'Must be a valid hex color')
+          .optional(),
+      })
+      .optional(),
+    memberNaming: z
+      .object({
+        singular: z.string().min(1, 'Singular name is required'),
+        plural: z.string().min(1, 'Plural name is required'),
+      })
+      .optional(),
   }),
   customDomain: z.string().optional(),
 });
@@ -59,6 +81,24 @@ export function BrandingSettings() {
         logoUrl: null,
         bannerUrl: null,
         faviconUrl: null,
+        login: {
+          title: community?.settings?.branding?.login?.title || '',
+          subtitle: community?.settings?.branding?.login?.subtitle || '',
+          welcomeMessage:
+            community?.settings?.branding?.login?.welcomeMessage || '',
+          buttonText:
+            community?.settings?.branding?.login?.buttonText || 'Sign In',
+          backgroundColor:
+            community?.settings?.branding?.login?.backgroundColor || '#FFFFFF',
+          textColor:
+            community?.settings?.branding?.login?.textColor || '#000000',
+        },
+        memberNaming: {
+          singular:
+            community?.settings?.branding?.memberNaming?.singular || 'Member',
+          plural:
+            community?.settings?.branding?.memberNaming?.plural || 'Members',
+        },
       },
       customDomain: community?.custom_domain || '',
     },
@@ -200,6 +240,12 @@ export function BrandingSettings() {
               ...community.settings?.branding,
               primaryColor: data.branding.primaryColor,
               secondaryColor: data.branding.secondaryColor,
+              login: {
+                ...data.branding.login,
+              },
+              memberNaming: {
+                ...data.branding.memberNaming,
+              },
             },
           },
           custom_domain: data.customDomain,
@@ -373,6 +419,112 @@ export function BrandingSettings() {
                 Recommended: ICO or PNG, 32x32px
               </p>
             </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-sm p-6">
+          <h2 className="text-lg font-medium text-gray-900 mb-4">
+            Login Page Customization
+          </h2>
+
+          <div className="space-y-4">
+            <Input
+              label="Login Page Title"
+              {...register('branding.login.title')}
+              error={errors.branding?.login?.title?.message}
+              placeholder="Welcome to Our Community"
+            />
+
+            <Input
+              label="Login Page Subtitle"
+              {...register('branding.login.subtitle')}
+              error={errors.branding?.login?.subtitle?.message}
+              placeholder="Join our thriving community of professionals"
+            />
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Welcome Message
+              </label>
+              <textarea
+                {...register('branding.login.welcomeMessage')}
+                rows={3}
+                className="block w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-indigo-500 focus:ring-indigo-500"
+                placeholder="Enter a welcoming message for your login page"
+              />
+              {errors.branding?.login?.welcomeMessage?.message && (
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.branding?.login?.welcomeMessage?.message}
+                </p>
+              )}
+            </div>
+
+            <Input
+              label="Sign In Button Text"
+              {...register('branding.login.buttonText')}
+              error={errors.branding?.login?.buttonText?.message}
+              placeholder="Sign In"
+            />
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Background Color
+                </label>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="color"
+                    {...register('branding.login.backgroundColor')}
+                    className="h-10 w-10 rounded border border-gray-300"
+                  />
+                  <Input
+                    {...register('branding.login.backgroundColor')}
+                    error={errors.branding?.login?.backgroundColor?.message}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Text Color
+                </label>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="color"
+                    {...register('branding.login.textColor')}
+                    className="h-10 w-10 rounded border border-gray-300"
+                  />
+                  <Input
+                    {...register('branding.login.textColor')}
+                    error={errors.branding?.login?.textColor?.message}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-sm p-6">
+          <h2 className="text-lg font-medium text-gray-900 mb-4">
+            Member Naming
+          </h2>
+
+          <div className="space-y-4">
+            <Input
+              label="Singular Name"
+              {...register('branding.memberNaming.singular')}
+              error={errors.branding?.memberNaming?.singular?.message}
+              placeholder="Member"
+              helperText="How do you refer to a single member? (e.g., Member, Professional, Expert)"
+            />
+
+            <Input
+              label="Plural Name"
+              {...register('branding.memberNaming.plural')}
+              error={errors.branding?.memberNaming?.plural?.message}
+              placeholder="Members"
+              helperText="How do you refer to multiple members? (e.g., Members, Professionals, Experts)"
+            />
           </div>
         </div>
 

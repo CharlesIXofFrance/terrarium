@@ -140,10 +140,10 @@ export function Header({
               <img
                 src={logoUrl}
                 alt={communityName}
-                className="h-8 w-8 object-contain bg-white rounded-full"
+                className="h-10 w-auto md:h-12 object-contain"
               />
             ) : (
-              <Globe className="h-8 w-8 text-white" />
+              <Globe className="h-10 w-10 md:h-12 md:w-12 text-white" />
             )}
           </NavLink>
         </div>
@@ -157,7 +157,9 @@ export function Header({
                 key={item.name}
                 to={createUrl(item.href)}
                 className={`text-white hover:text-white/80 ${
-                  location.pathname === createUrl(item.href) ? 'font-semibold' : ''
+                  location.pathname === createUrl(item.href)
+                    ? 'font-semibold'
+                    : ''
                 }`}
               >
                 {item.name}
@@ -202,7 +204,9 @@ export function Header({
                   key={item.name}
                   to={createUrl(item.href)}
                   className={`block py-2 text-gray-800 hover:text-gray-600 ${
-                    location.pathname === createUrl(item.href) ? 'font-semibold' : ''
+                    location.pathname === createUrl(item.href)
+                      ? 'font-semibold'
+                      : ''
                   }`}
                   onClick={() => setIsMobileMenuOpen(false)}
                 >

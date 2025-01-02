@@ -4,11 +4,17 @@ import { Upload } from 'lucide-react';
 interface FileUploadProps {
   accept?: string;
   onChange: (file: File | null) => void;
+  helpText?: string;
+  previewUrl?: string;
+  imageClassName?: string;
 }
 
 export const FileUpload: React.FC<FileUploadProps> = ({
   accept,
   onChange,
+  helpText = 'PNG, JPG, GIF, SVG up to 10MB',
+  previewUrl,
+  imageClassName = 'h-20 w-20 object-contain rounded border border-gray-200',
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -20,6 +26,27 @@ export const FileUpload: React.FC<FileUploadProps> = ({
     const file = event.target.files?.[0] || null;
     onChange(file);
   };
+
+  if (previewUrl) {
+    return (
+      <div
+        onClick={handleClick}
+        className="relative group cursor-pointer inline-block"
+      >
+        <img src={previewUrl} alt="Preview" className={imageClassName} />
+        <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded">
+          <span className="text-white text-sm">Change</span>
+        </div>
+        <input
+          ref={fileInputRef}
+          type="file"
+          className="sr-only"
+          accept={accept}
+          onChange={handleChange}
+        />
+      </div>
+    );
+  }
 
   return (
     <div
@@ -41,7 +68,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
           </label>
           <p className="pl-1">or drag and drop</p>
         </div>
-        <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
+        <p className="text-xs text-gray-500">{helpText}</p>
       </div>
     </div>
   );

@@ -2,38 +2,42 @@
  * AI Context:
  * This hook is part of the community login customization feature. It's located in the hooks directory
  * because it provides reusable data fetching and mutation logic for community login page customization.
- * 
+ *
  * The hook:
  * 1. Fetches community-specific login page customization (colors, logo, text)
  * 2. Provides a mutation function for community owners to update these settings
  * 3. Handles loading states and error scenarios
- * 
+ *
  * It's placed in hooks/ rather than features/ because it's a generic data hook that could be used
  * by multiple components, not just the login page (e.g., preview in settings, admin dashboard).
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
-import type { Community } from '../lib/utils/community';
+import { useSignedUrl } from '@/lib/hooks/useSignedUrl';
 
 interface CustomizationError {
   message: string;
   status: number;
 }
 
-type LoginCustomization = NonNullable<Community['settings']['login_customization']>;
+interface LoginSettings {
+  title: string;
+  subtitle: string;
+  welcome_message?: string;
+  button_text: string;
+  background_color: string;
+  text_color: string;
+  side_image_url?: string;
+  logo_url?: string;
+}
 
-const defaultCustomization: LoginCustomization = {
-  logoUrl: '/default-logo.png',
-  colorScheme: {
-    primary: '#000000',
-    secondary: '#4F46E5',
-    background: '#FFFFFF',
-  },
-  customText: {
-    headline: 'Welcome Back',
-    subHeadline: 'Sign in to your account',
-  },
+const defaultCustomization: LoginSettings = {
+  title: 'Welcome Back',
+  subtitle: 'Sign in to your account',
+  button_text: 'Sign In',
+  background_color: '#FFFFFF',
+  text_color: '#000000',
 };
 
 /**
@@ -45,7 +49,11 @@ export function useCommunityCustomization(slug: string) {
   const queryClient = useQueryClient();
   const queryKey = ['communityCustomization', slug];
 
-  const { data: customization, error, isLoading } = useQuery({
+  const {
+    data: customization,
+    error,
+    isLoading,
+  } = useQuery({
     queryKey,
     queryFn: async () => {
       if (!slug) {
@@ -54,64 +62,62 @@ export function useCommunityCustomization(slug: string) {
       }
 
       console.log('Fetching customization for community:', slug);
-      const { data, error } = await supabase
+
+      // First get the community and its logo
+      const { data: community, error: communityError } = await supabase
         .from('communities')
-        .select('settings')
+        .select('id, logo_url')
         .eq('slug', slug)
         .single();
 
-      if (error) {
-        console.error('Error fetching community settings:', error);
-        if (error.code === 'PGRST116') {
-          console.log('Community not found, using default customization');
-          return defaultCustomization;
-        }
-        throw {
-          message: error.message,
-          status: 500,
-        } as CustomizationError;
-      }
-
-      if (!data?.settings?.login_customization) {
-        console.log('No login customization found, using default');
+      if (communityError) {
+        console.error('Error fetching community:', communityError);
         return defaultCustomization;
       }
 
+      // Then get the login settings
+      const { data: settings, error: settingsError } = await supabase
+        .from('community_login_settings')
+        .select('*')
+        .eq('community_id', community.id)
+        .single();
+
+      if (settingsError) {
+        console.error('Error fetching login settings:', settingsError);
+        return defaultCustomization;
+      }
+
+      // Return paths for images, they will be converted to signed URLs by useSignedUrl hook
       return {
-        ...defaultCustomization,
-        ...data.settings.login_customization,
+        title: settings.title || defaultCustomization.title,
+        subtitle: settings.subtitle || defaultCustomization.subtitle,
+        welcomeMessage: settings.welcome_message,
+        buttonText: settings.button_text || defaultCustomization.button_text,
+        backgroundColor:
+          settings.background_color || defaultCustomization.background_color,
+        textColor: settings.text_color || defaultCustomization.text_color,
+        sideImageUrl: settings.side_image_url,
+        logoUrl: community.logo_url,
       };
     },
-    enabled: true, // Always enabled, will return default if no slug
   });
 
-  const updateMutation = useMutation({
-    mutationFn: async (newCustomization: Partial<LoginCustomization>) => {
-      if (!slug) throw new Error('Community slug is required for updates');
+  // Use the useSignedUrl hook for both logo and side image
+  const { signedUrl: logoSignedUrl } = useSignedUrl(customization?.logoUrl);
+  const { signedUrl: sideImageSignedUrl } = useSignedUrl(
+    customization?.sideImageUrl
+  );
 
-      const { error } = await supabase
-        .from('communities')
-        .update({
-          settings: {
-            login_customization: {
-              ...customization,
-              ...newCustomization,
-            },
-          },
-        })
-        .eq('slug', slug);
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey });
-    },
-  });
-
+  // Return the customization with signed URLs
   return {
-    customization: customization || defaultCustomization,
+    customization: customization
+      ? {
+          ...customization,
+          logoUrl: logoSignedUrl,
+          sideImageUrl: sideImageSignedUrl,
+        }
+      : defaultCustomization,
     isLoading,
     error,
-    update: updateMutation.mutate,
   };
 }

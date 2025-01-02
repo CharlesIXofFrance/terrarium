@@ -4,11 +4,17 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAtom } from 'jotai';
 import { currentCommunityAtom } from '@/lib/stores/community';
+import { userAtom } from '@/lib/stores/auth';
 import { Button } from '@/components/ui/atoms/Button';
 import { Input } from '@/components/ui/atoms/Input';
 import { FileUpload } from '@/components/ui/atoms/FileUpload';
 import { supabase } from '@/lib/supabase';
 import { Link } from 'react-router-dom';
+import { Label } from '@/components/ui/atoms/Label';
+import { ColorPicker } from '@/components/ui/atoms/ColorPicker';
+import { useToast } from '@/lib/hooks/useToast';
+import { useSignedUrl } from '@/lib/hooks/useSignedUrl';
+import { SUPPORTED_IMAGE_TYPES } from '@/lib/constants/images';
 
 const brandingSchema = z.object({
   name: z.string().min(1, 'Community name is required'),
@@ -17,27 +23,11 @@ const brandingSchema = z.object({
     primaryColor: z.string().regex(/^#/, 'Must be a valid hex color'),
     secondaryColor: z.string().regex(/^#/, 'Must be a valid hex color'),
     logo: z.any().optional(),
-    banner: z.any().optional(),
-    favicon: z.any().optional(),
     logoUrl: z.string().nullable(),
+    banner: z.any().optional(),
     bannerUrl: z.string().nullable(),
+    favicon: z.any().optional(),
     faviconUrl: z.string().nullable(),
-    login: z
-      .object({
-        title: z.string().optional(),
-        subtitle: z.string().optional(),
-        welcomeMessage: z.string().optional(),
-        buttonText: z.string().optional(),
-        backgroundColor: z
-          .string()
-          .regex(/^#/, 'Must be a valid hex color')
-          .optional(),
-        textColor: z
-          .string()
-          .regex(/^#/, 'Must be a valid hex color')
-          .optional(),
-      })
-      .optional(),
     memberNaming: z
       .object({
         singular: z.string().min(1, 'Singular name is required'),
@@ -45,22 +35,32 @@ const brandingSchema = z.object({
       })
       .optional(),
   }),
+  login: z.object({
+    title: z.string(),
+    subtitle: z.string(),
+    welcomeMessage: z.string().optional(),
+    buttonText: z.string(),
+    backgroundColor: z.string(),
+    textColor: z.string(),
+    sideImage: z.any().optional(),
+    sideImageUrl: z.string().optional(),
+  }),
   customDomain: z.string().optional(),
 });
 
 type BrandingSettings = z.infer<typeof brandingSchema>;
 
-const SUPPORTED_IMAGE_TYPES = {
-  logo: ['image/png', 'image/jpeg', 'image/gif'],
-  banner: ['image/png', 'image/jpeg', 'image/gif'],
-  favicon: ['image/png', 'image/x-icon', 'image/vnd.microsoft.icon'],
-};
-
 export function BrandingSettings() {
   const [community, setCommunity] = useAtom(currentCommunityAtom);
+  const [user] = useAtom(userAtom);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
+
+  const [localPreviews, setLocalPreviews] = useState<Record<string, string>>(
+    {}
+  );
 
   const {
     register,
@@ -78,29 +78,28 @@ export function BrandingSettings() {
         secondaryColor:
           community?.settings?.branding?.secondaryColor || '#818CF8',
         logo: null,
-        banner: null,
-        favicon: null,
         logoUrl: null,
+        banner: null,
         bannerUrl: null,
+        favicon: null,
         faviconUrl: null,
-        login: {
-          title: community?.settings?.branding?.login?.title || '',
-          subtitle: community?.settings?.branding?.login?.subtitle || '',
-          welcomeMessage:
-            community?.settings?.branding?.login?.welcomeMessage || '',
-          buttonText:
-            community?.settings?.branding?.login?.buttonText || 'Sign In',
-          backgroundColor:
-            community?.settings?.branding?.login?.backgroundColor || '#FFFFFF',
-          textColor:
-            community?.settings?.branding?.login?.textColor || '#000000',
-        },
         memberNaming: {
           singular:
             community?.settings?.branding?.memberNaming?.singular || 'Member',
           plural:
             community?.settings?.branding?.memberNaming?.plural || 'Members',
         },
+      },
+      login: {
+        title: community?.settings?.login?.title || '',
+        subtitle: community?.settings?.login?.subtitle || '',
+        welcomeMessage: community?.settings?.login?.welcomeMessage || '',
+        buttonText: community?.settings?.login?.buttonText || 'Sign In',
+        backgroundColor:
+          community?.settings?.login?.backgroundColor || '#FFFFFF',
+        textColor: community?.settings?.login?.textColor || '#000000',
+        sideImage: null,
+        sideImageUrl: community?.settings?.login?.sideImageUrl || '',
       },
       customDomain: community?.custom_domain || '',
     },
@@ -120,28 +119,6 @@ export function BrandingSettings() {
       setValue('branding.primaryColor', branding.primaryColor || '#4F46E5');
       setValue('branding.secondaryColor', branding.secondaryColor || '#818CF8');
 
-      // Set login settings
-      if (branding.login) {
-        setValue('branding.login.title', branding.login.title || '');
-        setValue('branding.login.subtitle', branding.login.subtitle || '');
-        setValue(
-          'branding.login.welcomeMessage',
-          branding.login.welcomeMessage || ''
-        );
-        setValue(
-          'branding.login.buttonText',
-          branding.login.buttonText || 'Sign In'
-        );
-        setValue(
-          'branding.login.backgroundColor',
-          branding.login.backgroundColor || '#FFFFFF'
-        );
-        setValue(
-          'branding.login.textColor',
-          branding.login.textColor || '#000000'
-        );
-      }
-
       // Set member naming
       if (branding.memberNaming) {
         setValue(
@@ -155,161 +132,212 @@ export function BrandingSettings() {
       }
     }
 
-    const loadExistingImages = async () => {
-      const getSignedUrl = async (path: string | null) => {
-        if (!path) return null;
-        try {
-          const {
-            data: { signedUrl },
-            error,
-          } = await supabase.storage
-            .from('community-assets')
-            .createSignedUrl(path.replace(/^.*community-assets\//, ''), 3600);
+    // Set image paths directly from community
+    setValue('branding.logoUrl', community.logo_url);
+    setValue('branding.bannerUrl', community.banner_url);
+    setValue('branding.faviconUrl', community.favicon_url);
 
-          if (error) {
-            console.error('Error creating signed URL:', error);
-            return null;
-          }
-          return signedUrl;
-        } catch (error) {
-          console.error('Error getting signed URL:', error);
-          return null;
-        }
-      };
+    // Fetch and set login settings
+    async function fetchLoginSettings() {
+      const { data: loginSettings, error } = await supabase
+        .from('community_login_settings')
+        .select('*')
+        .eq('community_id', community.id)
+        .single();
 
-      const [logoUrl, bannerUrl, faviconUrl] = await Promise.all([
-        getSignedUrl(community.logo_url),
-        getSignedUrl(community.banner_url),
-        getSignedUrl(community.favicon_url),
-      ]);
-
-      setValue('branding.logoUrl', logoUrl);
-      setValue('branding.bannerUrl', bannerUrl);
-      setValue('branding.faviconUrl', faviconUrl);
-    };
-
-    loadExistingImages();
-  }, [community, setValue]);
-
-  const uploadImage = async (
-    file: File,
-    type: 'logo' | 'banner' | 'favicon'
-  ) => {
-    if (!file || !community) return null;
-
-    // Validate file type
-    if (!SUPPORTED_IMAGE_TYPES[type].includes(file.type)) {
-      const supportedTypes = SUPPORTED_IMAGE_TYPES[type]
-        .map((t) => t.replace('image/', '').toUpperCase())
-        .join(', ');
-      setError(
-        `Unsupported file type. Please use ${supportedTypes} for ${type}`
-      );
-      return null;
-    }
-
-    try {
-      const path = `${community.slug}/${type}`;
-      const oldPath = community[`${type}_url`];
-
-      // Delete old file if it exists
-      if (oldPath) {
-        await supabase.storage
-          .from('community-assets')
-          .remove([oldPath.replace(/^.*community-assets\//, '')]);
+      if (error) {
+        console.error('Error fetching login settings:', error);
+        return;
       }
 
-      // Upload new file
-      const { data, error: uploadError } = await supabase.storage
-        .from('community-assets')
-        .upload(`${path}`, file, {
-          cacheControl: '3600',
-          upsert: true,
+      if (loginSettings) {
+        setValue('login.title', loginSettings.title || '');
+        setValue('login.subtitle', loginSettings.subtitle || '');
+        setValue('login.welcomeMessage', loginSettings.welcome_message || '');
+        setValue('login.buttonText', loginSettings.button_text || 'Sign In');
+        setValue(
+          'login.backgroundColor',
+          loginSettings.background_color || '#FFFFFF'
+        );
+        setValue('login.textColor', loginSettings.text_color || '#000000');
+        setValue('login.sideImageUrl', loginSettings.side_image_url || '');
+      }
+    }
+
+    fetchLoginSettings();
+  }, [community, setValue]);
+
+  // Use the useSignedUrl hook for each image
+  const { signedUrl: logoSignedUrl } = useSignedUrl(watch('branding.logoUrl'));
+  const { signedUrl: bannerSignedUrl } = useSignedUrl(
+    watch('branding.bannerUrl')
+  );
+  const { signedUrl: faviconSignedUrl } = useSignedUrl(
+    watch('branding.faviconUrl')
+  );
+  const { signedUrl: sideImageSignedUrl } = useSignedUrl(
+    watch('login.sideImageUrl')
+  );
+
+  const handleImageUpload = async (
+    type: keyof typeof SUPPORTED_IMAGE_TYPES,
+    file: File | null
+  ) => {
+    if (!file || !community) return;
+
+    try {
+      if (!SUPPORTED_IMAGE_TYPES[type].includes(file.type)) {
+        const supportedTypes = SUPPORTED_IMAGE_TYPES[type]
+          .map((t) => t.replace('image/', '.'))
+          .join(', ');
+        toast({
+          title: 'Invalid file type',
+          description: `Please upload a ${supportedTypes} file.`,
+          type: 'error',
         });
+        return;
+      }
+
+      // Create local preview URL
+      const previewUrl = URL.createObjectURL(file);
+      setLocalPreviews((prev) => ({ ...prev, [type]: previewUrl }));
+
+      // Upload file
+      const fileName = `${community.slug}/${type}/${file.name}`;
+      const { error: uploadError } = await supabase.storage
+        .from('community-assets')
+        .upload(fileName, file, { upsert: true });
 
       if (uploadError) throw uploadError;
-      if (!data) throw new Error('Upload failed');
 
-      // Get signed URL for the uploaded file
-      const {
-        data: { signedUrl },
-        error: urlError,
-      } = await supabase.storage
-        .from('community-assets')
-        .createSignedUrl(data.path, 3600);
+      // Update database based on image type
+      if (type === 'sideImage') {
+        const { error: updateError } = await supabase
+          .from('community_login_settings')
+          .update({ side_image_url: fileName })
+          .eq('community_id', community.id);
 
-      if (urlError) throw urlError;
+        if (updateError) throw updateError;
+        setValue('login.sideImageUrl', fileName);
+      } else {
+        const fieldMap = {
+          logo: 'logo_url',
+          banner: 'banner_url',
+          favicon: 'favicon_url',
+        };
 
-      // Update form values
-      setValue(`branding.${type}`, file);
-      setValue(`branding.${type}Url`, signedUrl);
+        const dbField = fieldMap[type];
+        if (!dbField) return;
 
-      // Update the community with the new image URL
-      const { error: updateError } = await supabase
+        const { error: updateError } = await supabase
+          .from('communities')
+          .update({ [dbField]: fileName })
+          .eq('id', community.id);
+
+        if (updateError) throw updateError;
+        setValue(`branding.${type}Url`, fileName);
+      }
+
+      // Refetch community data to update the UI
+      const { data: updatedCommunity, error: fetchError } = await supabase
         .from('communities')
-        .update({
-          [`${type}_url`]: `community-assets/${data.path}`,
-        })
-        .eq('id', community.id);
+        .select('*, community_login_settings(*)')
+        .eq('id', community.id)
+        .single();
 
-      if (updateError) throw updateError;
+      if (fetchError) throw fetchError;
+      if (updatedCommunity) {
+        setCommunity(updatedCommunity);
+      }
 
-      return signedUrl;
-    } catch (err: any) {
-      console.error('Error uploading image:', err);
-      setError(err.message || 'Error uploading image');
-      return null;
+      toast({
+        title: 'Success',
+        description: 'Image uploaded successfully',
+        type: 'success',
+      });
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to upload image',
+        type: 'error',
+      });
     }
   };
 
-  const handleImageUpload = async (
-    type: 'logo' | 'banner' | 'favicon',
-    file: File | null
-  ) => {
-    if (!file) return;
-    await uploadImage(file, type);
-  };
+  useEffect(() => {
+    return () => {
+      Object.values(localPreviews).forEach(URL.revokeObjectURL);
+    };
+  }, [localPreviews]);
 
   const onSubmit = async (data: BrandingSettings) => {
-    if (!community) return;
+    if (!community || !user) return;
     setIsSubmitting(true);
     setError(null);
     setSuccess(null);
 
     try {
-      const updateData = {
-        name: data.name,
-        description: data.description,
-        settings: {
-          ...community.settings,
-          branding: {
-            ...community.settings?.branding,
-            primaryColor: data.branding.primaryColor,
-            secondaryColor: data.branding.secondaryColor,
-            login: data.branding.login,
-            memberNaming: data.branding.memberNaming,
+      // Update community branding settings
+      const { error: brandingError } = await supabase
+        .from('communities')
+        .update({
+          name: data.name,
+          description: data.description,
+          settings: {
+            ...community.settings,
+            branding: {
+              ...community.settings?.branding,
+              ...data.branding,
+            },
           },
-        },
-      } as any;
+        })
+        .eq('id', community.id)
+        .eq('owner_id', user.id);
+
+      if (brandingError) throw brandingError;
+
+      // Update login settings
+      const { error: loginError } = await supabase
+        .from('community_login_settings')
+        .upsert(
+          {
+            community_id: community.id,
+            title: data.login.title,
+            subtitle: data.login.subtitle,
+            welcome_message: data.login.welcomeMessage,
+            button_text: data.login.buttonText,
+            background_color: data.login.backgroundColor,
+            text_color: data.login.textColor,
+            side_image_url: data.login.sideImageUrl,
+          },
+          {
+            onConflict: 'community_id',
+            ignoreDuplicates: false,
+          }
+        );
+
+      if (loginError) throw loginError;
 
       // Only include custom_domain if it's not empty
       if (data.customDomain?.trim()) {
-        updateData.custom_domain = data.customDomain.trim();
+        const { error: customDomainError } = await supabase
+          .from('communities')
+          .update({
+            custom_domain: data.customDomain.trim(),
+          })
+          .eq('id', community.id)
+          .eq('owner_id', user.id);
+
+        if (customDomainError) throw customDomainError;
       }
-
-      const { error: updateError } = await supabase
-        .from('communities')
-        .update(updateData)
-        .eq('id', community.id)
-        .select();
-
-      if (updateError) throw updateError;
 
       // Refresh community data
       const { data: updatedCommunity, error: fetchError } = await supabase
         .from('communities')
         .select('*')
         .eq('id', community.id)
+        .eq('owner_id', user.id)
         .single();
 
       if (fetchError) throw fetchError;
@@ -318,10 +346,17 @@ export function BrandingSettings() {
 
       // Update the community atom with new data
       setCommunity(updatedCommunity);
-      setSuccess('Your branding settings have been updated successfully.');
+      toast({
+        title: 'Success',
+        description: 'Your branding settings have been updated successfully.',
+      });
     } catch (err: any) {
       console.error('Error updating branding:', err);
-      setError(err.message || 'Error updating branding settings');
+      toast({
+        title: 'Error',
+        description: err.message || 'Error updating branding settings',
+        variant: 'destructive',
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -435,66 +470,48 @@ export function BrandingSettings() {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Logo
               </label>
-              {brandingData.logoUrl && (
-                <div className="mb-4">
-                  <img
-                    src={brandingData.logoUrl}
-                    alt="Community logo"
-                    className="h-16 w-16 object-contain"
-                  />
-                </div>
-              )}
               <FileUpload
                 accept={SUPPORTED_IMAGE_TYPES.logo.join(',')}
                 onChange={(file) => handleImageUpload('logo', file)}
+                helpText="PNG, JPG, GIF, SVG up to 10MB (SVG recommended for logo)"
+                previewUrl={
+                  localPreviews.logo ||
+                  (watch('branding.logoUrl') ? logoSignedUrl : undefined)
+                }
+                imageClassName="h-20 w-20 object-contain rounded border border-gray-200"
               />
-              <p className="mt-1 text-sm text-gray-500">
-                Recommended: PNG or JPEG, at least 512x512px
-              </p>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Banner
               </label>
-              {brandingData.bannerUrl && (
-                <div className="mb-4">
-                  <img
-                    src={brandingData.bannerUrl}
-                    alt="Community banner"
-                    className="h-32 w-full object-cover rounded-lg"
-                  />
-                </div>
-              )}
               <FileUpload
                 accept={SUPPORTED_IMAGE_TYPES.banner.join(',')}
                 onChange={(file) => handleImageUpload('banner', file)}
+                helpText="PNG, JPG, GIF, SVG up to 10MB"
+                previewUrl={
+                  localPreviews.banner ||
+                  (watch('branding.bannerUrl') ? bannerSignedUrl : undefined)
+                }
+                imageClassName="w-full h-32 object-cover rounded border border-gray-200"
               />
-              <p className="mt-1 text-sm text-gray-500">
-                Recommended: PNG or JPEG, 1920x480px
-              </p>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Favicon
               </label>
-              {brandingData.faviconUrl && (
-                <div className="mb-4">
-                  <img
-                    src={brandingData.faviconUrl}
-                    alt="Community favicon"
-                    className="h-8 w-8 object-contain"
-                  />
-                </div>
-              )}
               <FileUpload
                 accept={SUPPORTED_IMAGE_TYPES.favicon.join(',')}
                 onChange={(file) => handleImageUpload('favicon', file)}
+                helpText="PNG, ICO, SVG up to 10MB (SVG or ICO recommended for favicon)"
+                previewUrl={
+                  localPreviews.favicon ||
+                  (watch('branding.faviconUrl') ? faviconSignedUrl : undefined)
+                }
+                imageClassName="h-10 w-10 object-contain rounded border border-gray-200"
               />
-              <p className="mt-1 text-sm text-gray-500">
-                Recommended: ICO or PNG, 32x32px
-              </p>
             </div>
           </div>
         </div>
@@ -504,79 +521,68 @@ export function BrandingSettings() {
             Login Page Customization
           </h2>
 
-          <div className="space-y-4">
+          <div className="space-y-6">
             <Input
-              label="Login Page Title"
-              {...register('branding.login.title')}
-              error={errors.branding?.login?.title?.message}
-              placeholder="Welcome to Our Community"
+              label="Title"
+              {...register('login.title')}
+              error={errors.login?.title?.message}
+              placeholder="Welcome Back"
             />
 
             <Input
-              label="Login Page Subtitle"
-              {...register('branding.login.subtitle')}
-              error={errors.branding?.login?.subtitle?.message}
-              placeholder="Join our thriving community of professionals"
+              label="Subtitle"
+              {...register('login.subtitle')}
+              error={errors.login?.subtitle?.message}
+              placeholder="Sign in to your account"
             />
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Welcome Message
-              </label>
-              <textarea
-                {...register('branding.login.welcomeMessage')}
-                rows={3}
-                className="block w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-indigo-500 focus:ring-indigo-500"
-                placeholder="Enter a welcoming message for your login page"
-              />
-              {errors.branding?.login?.welcomeMessage?.message && (
-                <p className="mt-1 text-sm text-red-600">
-                  {errors.branding?.login?.welcomeMessage?.message}
-                </p>
-              )}
-            </div>
+            <Input
+              label="Welcome Message (Optional)"
+              {...register('login.welcomeMessage')}
+              error={errors.login?.welcomeMessage?.message}
+              placeholder="Welcome to our community!"
+            />
 
             <Input
-              label="Sign In Button Text"
-              {...register('branding.login.buttonText')}
-              error={errors.branding?.login?.buttonText?.message}
+              label="Button Text"
+              {...register('login.buttonText')}
+              error={errors.login?.buttonText?.message}
               placeholder="Sign In"
             />
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Background Color
-                </label>
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="color"
-                    {...register('branding.login.backgroundColor')}
-                    className="h-10 w-10 rounded border border-gray-300"
-                  />
-                  <Input
-                    {...register('branding.login.backgroundColor')}
-                    error={errors.branding?.login?.backgroundColor?.message}
-                  />
-                </div>
+                <Label htmlFor="login.backgroundColor">Background Color</Label>
+                <ColorPicker
+                  color={watch('login.backgroundColor')}
+                  onChange={(color) => setValue('login.backgroundColor', color)}
+                />
               </div>
+              <div>
+                <Label htmlFor="login.textColor">Text Color</Label>
+                <ColorPicker
+                  color={watch('login.textColor')}
+                  onChange={(color) => setValue('login.textColor', color)}
+                />
+              </div>
+            </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Text Color
-                </label>
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="color"
-                    {...register('branding.login.textColor')}
-                    className="h-10 w-10 rounded border border-gray-300"
-                  />
-                  <Input
-                    {...register('branding.login.textColor')}
-                    error={errors.branding?.login?.textColor?.message}
-                  />
-                </div>
-              </div>
+            <div>
+              <Label htmlFor="login.sideImage">Side Image</Label>
+              <FileUpload
+                accept={SUPPORTED_IMAGE_TYPES.sideImage.join(',')}
+                onChange={(file) => handleImageUpload('sideImage', file)}
+                helpText="PNG, JPG, GIF, SVG up to 10MB"
+                previewUrl={
+                  localPreviews.sideImage ||
+                  (watch('login.sideImageUrl') ? sideImageSignedUrl : undefined)
+                }
+                imageClassName="w-full h-32 object-cover rounded border border-gray-200"
+              />
+              <p className="mt-1 text-sm text-gray-500">
+                Recommended size: 800x600px. Will be displayed next to the login
+                form.
+              </p>
             </div>
           </div>
         </div>

@@ -14,6 +14,7 @@ import {
 } from '@/components/layout/molecules/Tabs';
 import { supabase } from '@/lib/supabase';
 import { slugify } from '@/lib/utils/string';
+import { useSignedUrl } from '@/lib/hooks/useSignedUrl';
 import {
   Facebook,
   Twitter,
@@ -25,6 +26,7 @@ import {
   Palette,
   Users,
 } from 'lucide-react';
+import { SUPPORTED_IMAGE_TYPES } from '@/lib/constants/images';
 
 interface FormData {
   name: string;
@@ -166,50 +168,31 @@ export function OnboardingFlow() {
   const [, setUserCommunity] = useAtom(userCommunityAtom);
   const navigate = useNavigate();
 
+  const [localPreviews, setLocalPreviews] = useState<Record<string, string>>(
+    {}
+  );
+
+  const { signedUrl: logoSignedUrl } = useSignedUrl(
+    formData?.branding?.logoUrl
+  );
+  const { signedUrl: bannerSignedUrl } = useSignedUrl(
+    formData?.branding?.bannerUrl
+  );
+  const { signedUrl: faviconSignedUrl } = useSignedUrl(
+    formData?.branding?.faviconUrl
+  );
+
   useEffect(() => {
     const initializeFormData = async () => {
-      if (!user) return;
-
-      // Only check for existing community if user is a community owner
-      if (user.role === 'community_owner') {
+      try {
         const { data: existingCommunity } = await supabase
           .from('communities')
-          .select('*, settings')
+          .select('*')
           .eq('owner_id', user.id)
           .single();
 
         if (existingCommunity) {
-          // Load all community data
-          const getSignedUrl = async (path: string | null) => {
-            if (!path) return null;
-            try {
-              const {
-                data: { signedUrl },
-                error,
-              } = await supabase.storage
-                .from('community-assets')
-                .createSignedUrl(
-                  path.replace(/^.*community-assets\//, ''),
-                  3600
-                );
-
-              if (error) {
-                console.error('Error creating signed URL:', error);
-                return null;
-              }
-              return signedUrl;
-            } catch (error) {
-              console.error('Error getting signed URL:', error);
-              return null;
-            }
-          };
-
-          const [logoUrl, bannerUrl, faviconUrl] = await Promise.all([
-            getSignedUrl(existingCommunity.logo_url),
-            getSignedUrl(existingCommunity.banner_url),
-            getSignedUrl(existingCommunity.favicon_url),
-          ]);
-
+          // Initialize form data with paths from the database
           setFormData({
             name: existingCommunity.name,
             description: existingCommunity.description || '',
@@ -222,21 +205,27 @@ export function OnboardingFlow() {
               logo: null,
               banner: null,
               favicon: null,
-              logoUrl,
-              bannerUrl,
-              faviconUrl,
-              login: existingCommunity.settings?.branding?.login || {
-                title: '',
-                subtitle: '',
-                welcomeMessage: '',
-                buttonText: 'Sign In',
-                backgroundColor: '#FFFFFF',
-                textColor: '#000000',
+              logoUrl: existingCommunity.logo_url,
+              bannerUrl: existingCommunity.banner_url,
+              faviconUrl: existingCommunity.favicon_url,
+              login: {
+                title: existingCommunity.settings?.login?.title || '',
+                subtitle: existingCommunity.settings?.login?.subtitle || '',
+                welcomeMessage:
+                  existingCommunity.settings?.login?.welcomeMessage || '',
+                buttonText: existingCommunity.settings?.login?.buttonText || '',
+                backgroundColor:
+                  existingCommunity.settings?.login?.backgroundColor ||
+                  '#FFFFFF',
+                textColor:
+                  existingCommunity.settings?.login?.textColor || '#000000',
               },
-              memberNaming: existingCommunity.settings?.branding
-                ?.memberNaming || {
-                singular: 'Member',
-                plural: 'Members',
+              memberNaming: {
+                singular:
+                  existingCommunity.settings?.memberNaming?.singular ||
+                  'Member',
+                plural:
+                  existingCommunity.settings?.memberNaming?.plural || 'Members',
               },
             },
             social: {
@@ -275,116 +264,95 @@ export function OnboardingFlow() {
             navigate(`/c/${existingCommunity.slug}/dashboard`);
           }
         }
+      } catch (error) {
+        console.error('Error initializing form data:', error);
       }
     };
 
     initializeFormData();
   }, [user, navigate, currentStep]);
 
-  const SUPPORTED_IMAGE_TYPES = {
-    logo: ['image/png', 'image/jpeg', 'image/gif'],
-    banner: ['image/png', 'image/jpeg', 'image/gif'],
-    favicon: ['image/png', 'image/x-icon', 'image/vnd.microsoft.icon'],
-  };
-
   const uploadImage = async (
     file: File,
-    path: string,
-    oldPath: string | null = null
+    type: keyof typeof SUPPORTED_IMAGE_TYPES,
+    existingCommunity: any
   ) => {
-    if (!file) return null;
-
-    const imageType = path.split('/')[1] as keyof typeof SUPPORTED_IMAGE_TYPES;
-
-    // Validate file type
-    if (!SUPPORTED_IMAGE_TYPES[imageType].includes(file.type)) {
-      const supportedTypes = SUPPORTED_IMAGE_TYPES[imageType]
-        .map((type) => type.replace('image/', '').toUpperCase())
-        .join(', ');
-      setError(
-        `Unsupported file type. Please use ${supportedTypes} for ${imageType}`
-      );
-      return null;
-    }
-
     try {
-      // Delete old file if it exists
-      if (oldPath) {
-        await supabase.storage
-          .from('community-assets')
-          .remove([oldPath.replace(/^.*community-assets\//, '')]);
+      if (!SUPPORTED_IMAGE_TYPES[type].includes(file.type)) {
+        const supportedTypes = SUPPORTED_IMAGE_TYPES[type]
+          .map((t) => t.replace('image/', '.'))
+          .join(', ');
+        setError(
+          `Unsupported file type. Please use ${supportedTypes} for ${type}`
+        );
+        return;
       }
 
-      // Upload new file
-      const { data, error } = await supabase.storage
+      // Create local preview URL
+      const previewUrl = URL.createObjectURL(file);
+      setLocalPreviews((prev) => ({ ...prev, [type]: previewUrl }));
+
+      // Upload file
+      const fileName = `${existingCommunity.slug}/${type}/${file.name}`;
+      const { error: uploadError } = await supabase.storage
         .from('community-assets')
-        .upload(`${path}`, file, {
-          cacheControl: '3600',
-          upsert: true,
-        });
+        .upload(fileName, file, { upsert: true });
 
-      if (error) throw error;
-      if (!data) throw new Error('Upload failed');
+      if (uploadError) throw uploadError;
 
-      // Get the URL for the uploaded file
-      const {
-        data: { signedUrl },
-        error: urlError,
-      } = await supabase.storage
-        .from('community-assets')
-        .createSignedUrl(data.path, 3600);
+      // Update database
+      const fieldMap = {
+        logo: 'logo_url',
+        banner: 'banner_url',
+        favicon: 'favicon_url',
+      };
 
-      if (urlError) throw urlError;
-
-      // Update the community with the new image URL
-      const { data: existingCommunity } = await supabase
-        .from('communities')
-        .select('*')
-        .eq('owner_id', user.id)
-        .single();
-
-      if (!existingCommunity) throw new Error('Community not found');
-
-      const imageField =
-        path.split('/')[1] === 'logo'
-          ? 'logo_url'
-          : path.split('/')[1] === 'banner'
-            ? 'banner_url'
-            : 'favicon_url';
+      const dbField = fieldMap[type];
+      if (!dbField) return;
 
       const { error: updateError } = await supabase
         .from('communities')
-        .update({ [imageField]: `community-assets/${data.path}` })
+        .update({ [dbField]: fileName })
         .eq('id', existingCommunity.id);
 
       if (updateError) throw updateError;
 
-      // Update user community state
-      setUserCommunity({
-        ...existingCommunity,
-        [imageField]: `community-assets/${data.path}`,
-      });
+      // Update form data
+      setFormData((prev) => ({
+        ...prev,
+        branding: {
+          ...prev.branding,
+          [`${type}Url`]: fileName,
+        },
+      }));
 
-      return signedUrl;
-    } catch (error: any) {
-      console.error('Error uploading image:', error);
-      if (error.message === 'invalid_mime_type') {
-        const supportedTypes = SUPPORTED_IMAGE_TYPES[imageType].join(', ');
-        setError(
-          `Unsupported file type. Please use ${supportedTypes} for ${imageType}`
-        );
-      } else {
-        setError(error.message || 'Error uploading image');
+      // Refetch community data
+      const { data: updatedCommunity, error: fetchError } = await supabase
+        .from('communities')
+        .select('*')
+        .eq('id', existingCommunity.id)
+        .single();
+
+      if (fetchError) throw fetchError;
+      if (updatedCommunity) {
+        setUserCommunity(updatedCommunity);
       }
+
+      setError(null);
+      return fileName;
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      setError(error.message || 'Error uploading image');
       return null;
     }
   };
 
   const handleImageUpload = async (
     type: 'logo' | 'banner' | 'favicon',
-    file: File
+    file: File | null
   ) => {
-    setError(null); // Clear any previous errors
+    if (!file) return;
+
     const { data: existingCommunity } = await supabase
       .from('communities')
       .select('*')
@@ -392,23 +360,18 @@ export function OnboardingFlow() {
       .single();
 
     if (!existingCommunity) {
-      setError('Please save your community details first');
+      setError('Community not found');
       return;
     }
 
-    const path = `${existingCommunity.slug}/${type}`;
-    const oldPath = existingCommunity[`${type}_url`] || null;
-
-    const signedUrl = await uploadImage(file, path, oldPath);
-
-    if (signedUrl) {
-      updateFormData('branding', {
-        ...formData.branding,
-        [`${type}`]: file,
-        [`${type}Url`]: signedUrl,
-      });
-    }
+    await uploadImage(file, type, existingCommunity);
   };
+
+  useEffect(() => {
+    return () => {
+      Object.values(localPreviews).forEach(URL.revokeObjectURL);
+    };
+  }, [localPreviews]);
 
   const handleNext = async () => {
     if (isSubmitting) return;
@@ -474,8 +437,8 @@ export function OnboardingFlow() {
           if (formData.branding.logo) {
             const logoUrl = await uploadImage(
               formData.branding.logo,
-              `${communitySlug}/logo`,
-              existingCommunity.logo_url
+              'logo',
+              existingCommunity
             );
             if (logoUrl) imageUpdates.logo_url = logoUrl;
           }
@@ -483,8 +446,8 @@ export function OnboardingFlow() {
           if (formData.branding.banner) {
             const bannerUrl = await uploadImage(
               formData.branding.banner,
-              `${communitySlug}/banner`,
-              existingCommunity.banner_url
+              'banner',
+              existingCommunity
             );
             if (bannerUrl) imageUpdates.banner_url = bannerUrl;
           }
@@ -492,8 +455,8 @@ export function OnboardingFlow() {
           if (formData.branding.favicon) {
             const faviconUrl = await uploadImage(
               formData.branding.favicon,
-              `${communitySlug}/favicon`,
-              existingCommunity.favicon_url
+              'favicon',
+              existingCommunity
             );
             if (faviconUrl) imageUpdates.favicon_url = faviconUrl;
           }
@@ -787,247 +750,56 @@ export function OnboardingFlow() {
                     <label className="block text-sm font-medium text-gray-700">
                       Logo
                     </label>
-                    <div className="mt-1 flex flex-col items-start space-y-2">
-                      {formData.branding.logoUrl || formData.branding.logo ? (
-                        <div
-                          className="relative group cursor-pointer"
-                          onClick={() => {
-                            const input = document.createElement('input');
-                            input.type = 'file';
-                            input.accept = 'image/*';
-                            input.onchange = (e) => {
-                              const file = (e.target as HTMLInputElement)
-                                .files?.[0];
-                              if (file) {
-                                handleImageUpload('logo', file);
-                              }
-                            };
-                            input.click();
-                          }}
-                        >
-                          <img
-                            src={
-                              formData.branding.logo
-                                ? URL.createObjectURL(formData.branding.logo)
-                                : formData.branding.logoUrl || ''
-                            }
-                            alt="Logo preview"
-                            className="h-20 w-20 object-contain rounded border border-gray-200"
-                          />
-                          <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded">
-                            <span className="text-white text-sm">Change</span>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-center w-full">
-                          <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
-                            <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                              <svg
-                                className="w-8 h-8 mb-4 text-gray-500"
-                                aria-hidden="true"
-                                xmlns="http://www.w3.org/2000/svg"
-                                fill="none"
-                                viewBox="0 0 20 16"
-                              >
-                                <path
-                                  stroke="currentColor"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth="2"
-                                  d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"
-                                />
-                              </svg>
-                              <p className="mb-2 text-sm text-gray-500">
-                                <span className="font-semibold">
-                                  Click to upload
-                                </span>{' '}
-                                or drag and drop
-                              </p>
-                              <p className="text-xs text-gray-500">
-                                PNG, JPG or GIF (MAX. 800x400px)
-                              </p>
-                            </div>
-                            <input
-                              type="file"
-                              accept="image/*"
-                              className="hidden"
-                              onChange={(e) => {
-                                const file = e.target.files?.[0];
-                                if (file) {
-                                  handleImageUpload('logo', file);
-                                }
-                              }}
-                            />
-                          </label>
-                        </div>
-                      )}
-                    </div>
+                    <FileUpload
+                      accept={SUPPORTED_IMAGE_TYPES.logo.join(',')}
+                      onChange={(file) => handleImageUpload('logo', file)}
+                      helpText="PNG, JPG, GIF, SVG up to 10MB (SVG recommended for logo)"
+                      previewUrl={
+                        localPreviews.logo ||
+                        (formData.branding.logo
+                          ? URL.createObjectURL(formData.branding.logo)
+                          : logoSignedUrl || undefined)
+                      }
+                      imageClassName="h-20 w-20 object-contain rounded border border-gray-200"
+                    />
                   </div>
 
-                  {/* Banner Upload with similar pattern */}
+                  {/* Banner Upload */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700">
                       Banner
                     </label>
-                    <div className="mt-1 flex flex-col items-start space-y-2">
-                      {formData.branding.bannerUrl ||
-                      formData.branding.banner ? (
-                        <div
-                          className="relative group cursor-pointer"
-                          onClick={() => {
-                            const input = document.createElement('input');
-                            input.type = 'file';
-                            input.accept = 'image/*';
-                            input.onchange = (e) => {
-                              const file = (e.target as HTMLInputElement)
-                                .files?.[0];
-                              if (file) {
-                                handleImageUpload('banner', file);
-                              }
-                            };
-                            input.click();
-                          }}
-                        >
-                          <img
-                            src={
-                              formData.branding.banner
-                                ? URL.createObjectURL(formData.branding.banner)
-                                : formData.branding.bannerUrl || ''
-                            }
-                            alt="Banner preview"
-                            className="w-full h-32 object-cover rounded border border-gray-200"
-                          />
-                          <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded">
-                            <span className="text-white text-sm">Change</span>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-center w-full">
-                          <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
-                            <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                              <svg
-                                className="w-8 h-8 mb-4 text-gray-500"
-                                aria-hidden="true"
-                                xmlns="http://www.w3.org/2000/svg"
-                                fill="none"
-                                viewBox="0 0 20 16"
-                              >
-                                <path
-                                  stroke="currentColor"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth="2"
-                                  d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"
-                                />
-                              </svg>
-                              <p className="mb-2 text-sm text-gray-500">
-                                <span className="font-semibold">
-                                  Click to upload
-                                </span>{' '}
-                                or drag and drop
-                              </p>
-                              <p className="text-xs text-gray-500">
-                                PNG, JPG or GIF (MAX. 1920x480px)
-                              </p>
-                            </div>
-                            <input
-                              type="file"
-                              accept="image/*"
-                              className="hidden"
-                              onChange={(e) => {
-                                const file = e.target.files?.[0];
-                                if (file) {
-                                  handleImageUpload('banner', file);
-                                }
-                              }}
-                            />
-                          </label>
-                        </div>
-                      )}
-                    </div>
+                    <FileUpload
+                      accept={SUPPORTED_IMAGE_TYPES.banner.join(',')}
+                      onChange={(file) => handleImageUpload('banner', file)}
+                      helpText="PNG, JPG, GIF, SVG up to 10MB"
+                      previewUrl={
+                        localPreviews.banner ||
+                        (formData.branding.banner
+                          ? URL.createObjectURL(formData.branding.banner)
+                          : bannerSignedUrl || undefined)
+                      }
+                      imageClassName="w-full h-32 object-cover rounded border border-gray-200"
+                    />
                   </div>
 
-                  {/* Favicon Upload with similar pattern */}
+                  {/* Favicon Upload */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700">
                       Favicon
                     </label>
-                    <div className="mt-1 flex flex-col items-start space-y-2">
-                      {formData.branding.faviconUrl ||
-                      formData.branding.favicon ? (
-                        <div
-                          className="relative group cursor-pointer"
-                          onClick={() => {
-                            const input = document.createElement('input');
-                            input.type = 'file';
-                            input.accept = 'image/*';
-                            input.onchange = (e) => {
-                              const file = (e.target as HTMLInputElement)
-                                .files?.[0];
-                              if (file) {
-                                handleImageUpload('favicon', file);
-                              }
-                            };
-                            input.click();
-                          }}
-                        >
-                          <img
-                            src={
-                              formData.branding.favicon
-                                ? URL.createObjectURL(formData.branding.favicon)
-                                : formData.branding.faviconUrl || ''
-                            }
-                            alt="Favicon preview"
-                            className="h-10 w-10 object-contain rounded border border-gray-200"
-                          />
-                          <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded">
-                            <span className="text-white text-sm">Change</span>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-center w-full">
-                          <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
-                            <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                              <svg
-                                className="w-8 h-8 mb-4 text-gray-500"
-                                aria-hidden="true"
-                                xmlns="http://www.w3.org/2000/svg"
-                                fill="none"
-                                viewBox="0 0 20 16"
-                              >
-                                <path
-                                  stroke="currentColor"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth="2"
-                                  d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"
-                                />
-                              </svg>
-                              <p className="mb-2 text-sm text-gray-500">
-                                <span className="font-semibold">
-                                  Click to upload
-                                </span>{' '}
-                                or drag and drop
-                              </p>
-                              <p className="text-xs text-gray-500">
-                                PNG, ICO (MAX. 64x64px)
-                              </p>
-                            </div>
-                            <input
-                              type="file"
-                              accept="image/*"
-                              className="hidden"
-                              onChange={(e) => {
-                                const file = e.target.files?.[0];
-                                if (file) {
-                                  handleImageUpload('favicon', file);
-                                }
-                              }}
-                            />
-                          </label>
-                        </div>
-                      )}
-                    </div>
+                    <FileUpload
+                      accept={SUPPORTED_IMAGE_TYPES.favicon.join(',')}
+                      onChange={(file) => handleImageUpload('favicon', file)}
+                      helpText="PNG, ICO, SVG up to 10MB (SVG or ICO recommended for favicon)"
+                      previewUrl={
+                        localPreviews.favicon ||
+                        (formData.branding.favicon
+                          ? URL.createObjectURL(formData.branding.favicon)
+                          : faviconSignedUrl || undefined)
+                      }
+                      imageClassName="h-10 w-10 object-contain rounded border border-gray-200"
+                    />
                   </div>
 
                   {/* Color inputs */}

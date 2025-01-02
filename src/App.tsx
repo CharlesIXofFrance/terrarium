@@ -39,6 +39,7 @@ import { MemberProfile } from './pages/member/MemberProfile';
 import { RBACTest } from './pages/RBACTest';
 import { CommunityAccessGuard } from './components/features/auth/CommunityAccessGuard';
 import { SubdomainRouter } from './components/routing/SubdomainRouter';
+import { Toaster } from '@/components/ui/atoms/Toaster';
 
 function App() {
   const [user, setUser] = useAtom(userAtom);
@@ -374,6 +375,7 @@ function App() {
           </Route>
         </Routes>
       </Router>
+      <Toaster />
     </ErrorBoundary>
   );
 }

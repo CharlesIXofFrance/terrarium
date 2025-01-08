@@ -19,7 +19,8 @@ import { CommunityAccessGuard } from '@/components/features/auth/CommunityAccess
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useAtom } from 'jotai';
 import { userCommunityAtom } from '@/lib/stores/auth';
-import { OnboardingFlow } from '../features/onboarding/OnboardingFlow';
+import { OwnerOnboarding } from '../features/onboarding/OwnerOnboarding';
+import { DataSettings } from '@/pages/community/DataSettings';
 
 export const CommunityRoutes: React.FC = () => {
   const { user } = useAuth();
@@ -37,10 +38,14 @@ export const CommunityRoutes: React.FC = () => {
     (user?.role === 'community_admin' || user?.role === 'community_owner') &&
     userCommunity?.slug === community;
 
+  // Check if onboarding is complete
+  const isOnboardingComplete = user?.profile_complete;
+
   console.log('CommunityRoutes - Debug:', {
     user: {
       id: user?.id,
       role: user?.role,
+      profileComplete: user?.profile_complete,
     },
     userCommunity: {
       id: userCommunity?.id,
@@ -48,6 +53,7 @@ export const CommunityRoutes: React.FC = () => {
       ownerId: userCommunity?.owner_id,
     },
     hasAdminAccess,
+    isOnboardingComplete,
     pathname: location.pathname,
     subdomainParam,
     community,
@@ -64,6 +70,7 @@ export const CommunityRoutes: React.FC = () => {
     '/settings/job-board': <JobBoardSettings />,
     '/settings/branding': <BrandingSettings />,
     '/settings/customize': <CustomizationPortal />,
+    '/settings/data': <DataSettings />,
   };
 
   // Member routes mapping
@@ -76,24 +83,24 @@ export const CommunityRoutes: React.FC = () => {
     '/jobs/:id': <JobDetails />,
   };
 
+  // Redirect to onboarding if not complete and user is admin
+  if (
+    hasAdminAccess &&
+    !isOnboardingComplete &&
+    !path.includes('/onboarding')
+  ) {
+    return <Navigate to={`/?subdomain=${community}/onboarding`} replace />;
+  }
+
   return (
     <CommunityAccessGuard>
       {hasAdminAccess ? (
         <Routes>
           <Route element={<CommunityLayout />}>
-            <Route
-              path="/settings"
-              element={
-                <CommunityAccessGuard allowedRoles={['COMMUNITY_OWNER']} />
-              }
-            >
-              <Route index element={<Navigate to="branding" replace />} />
-              <Route path="branding" element={<BrandingSettings />} />
-              <Route
-                path="onboarding"
-                element={<OnboardingFlow mode="edit" />}
-              />
-            </Route>
+            {/* Onboarding Route */}
+            <Route path="/onboarding" element={<OwnerOnboarding />} />
+
+            {/* Handle subdomain-based routes */}
             <Route
               path="*"
               element={

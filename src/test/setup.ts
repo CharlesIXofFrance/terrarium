@@ -42,6 +42,15 @@ Object.defineProperty(window, 'sessionStorage', {
   value: sessionStorageMock,
 });
 
+// Mock ResizeObserver
+class ResizeObserverMock {
+  observe = vi.fn();
+  unobserve = vi.fn();
+  disconnect = vi.fn();
+}
+
+window.ResizeObserver = ResizeObserverMock;
+
 // Mock Supabase client
 const mockSupabaseClient = {
   auth: {

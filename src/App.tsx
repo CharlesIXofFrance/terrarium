@@ -29,7 +29,7 @@ import { Employers } from './pages/community/Employers';
 import { JobBoardSettings } from './pages/community/JobBoardSettings';
 import { BrandingSettings } from './pages/community/BrandingSettings';
 import { CustomizationPortal } from './pages/community/CustomizationPortal';
-import { OnboardingFlow } from './components/features/onboarding/OnboardingFlow';
+import { OwnerOnboarding } from './components/features/onboarding/OwnerOnboarding';
 import { MemberHub } from './pages/member/MemberHub';
 import { JobBoard } from './pages/member/JobBoard';
 import { JobDetails } from './pages/member/JobDetails';
@@ -332,7 +332,7 @@ function App() {
             path="/onboarding"
             element={
               <ProtectedRoute>
-                <OnboardingFlow />
+                <OwnerOnboarding />
               </ProtectedRoute>
             }
           />

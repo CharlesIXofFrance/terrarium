@@ -182,6 +182,39 @@ CREATE TABLE community_settings (
 );
 ```
 
+## Tech Stack Requirements
+
+- React 18+ with TypeScript
+- Vite for building
+- TailwindCSS for styling
+- Jotai for state management
+- Supabase for backend/auth
+- React Hook Form + Zod for forms
+- React Router for routing
+- Chart.js for analytics
+- Radix UI for components
+
+All new features must use these technologies consistently.
+
+## Multi-Tenant Architecture Rules
+
+1. Data Isolation
+
+   - Use RLS policies for tenant isolation
+   - Include community_id in relevant tables
+   - Validate tenant context in queries
+
+2. Feature Customization
+
+   - Store community settings in JSONB
+   - Use feature flags for tenant features
+   - Implement proper caching strategies
+
+3. Security
+   - Validate tenant access in middleware
+   - Implement proper role checks
+   - Handle cross-tenant requests carefully
+
 ### Row-Level Security
 
 ```sql
@@ -435,12 +468,12 @@ Example:
  * AI Context:
  * This component implements the community-specific login page. It's located in the pages directory
  * because it represents a full page that's directly tied to a route (/c/:slug/login).
- * 
+ *
  * The page:
  * 1. Loads community-specific branding (logo, colors, text)
  * 2. Provides a login form with validation
  * 3. Handles authentication through Supabase
- * 
+ *
  * It's placed in pages/ rather than features/ because it's a complete, routable page.
  * The actual login form could be extracted into features/ if needed for reuse.
  */
@@ -448,7 +481,7 @@ Example:
 
 ### When to Add AI Context
 
-- All new files must include AI Context
+- All new files or older files without it must include AI Context
 - When substantially modifying existing files, add AI Context
 - When moving or renaming files, update AI Context
 - When changing a file's responsibilities, update AI Context
@@ -456,16 +489,19 @@ Example:
 ### AI Context Guidelines
 
 1. **Be Specific**
+
    - Explain exact responsibilities
    - List key features or functions
    - Mention important dependencies
 
 2. **Explain Location**
+
    - Justify directory placement
    - Mention alternative locations considered
    - Explain relationship to nearby files
 
 3. **Document Constraints**
+
    - Note any design locks
    - List immutable aspects
    - Explain security considerations
@@ -785,3 +821,4 @@ function JobList() {
   if (isLoading) return <ExistingLoadingUI />;
   return <ExistingListComponent />;
 }
+```

@@ -1,3 +1,27 @@
+/**
+ * AI CONTEXT - DON'T DELETE
+ * AI Context: Community Customization
+ * User Types: COMMUNITY_OWNER
+ *
+ * Branding settings page for community owners to customize their community's appearance.
+ * Controls visual elements like colors, logos, and typography.
+ *
+ * Location: /src/pages/community/
+ * - Part of community settings
+ * - Affects all community pages
+ *
+ * Responsibilities:
+ * - Manage community branding
+ * - Upload and crop logos
+ * - Configure color schemes
+ * - Set typography options
+ *
+ * Design Constraints:
+ * - Must use shared UI components
+ * - Must preview changes in real-time
+ * - Must handle image optimization
+ */
+
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -15,6 +39,8 @@ import { ColorPicker } from '@/components/ui/atoms/ColorPicker';
 import { useToast } from '@/lib/hooks/useToast';
 import { useSignedUrl } from '@/lib/hooks/useSignedUrl';
 import { SUPPORTED_IMAGE_TYPES } from '@/lib/constants/images';
+import { PageHeader } from '@/components/ui/molecules/PageHeader';
+import { Section } from '@/components/ui/molecules/Section';
 
 const brandingSchema = z.object({
   name: z.string().min(1, 'Community name is required'),
@@ -365,33 +391,29 @@ export function BrandingSettings() {
   const brandingData = watch('branding');
 
   return (
-    <div className="max-w-4xl">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Community Branding</h1>
-        <Link
-          to="/settings/onboarding"
-          className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-        >
-          Edit Onboarding Flow
-        </Link>
-      </div>
+    <div className="space-y-8">
+      <PageHeader
+        title="Branding"
+        subtitle="Customize your community's look and feel"
+        actions={
+          <Button onClick={handleSubmit(onSubmit)} loading={isSubmitting}>
+            Save Changes
+          </Button>
+        }
+      />
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-            {error}
-          </div>
-        )}
-        {success && (
-          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded">
-            {success}
-          </div>
-        )}
-
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <h2 className="text-lg font-medium text-gray-900 mb-4">
-            Basic Information
-          </h2>
+      <Section title="Basic Information">
+        <form className="space-y-8">
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+              {error}
+            </div>
+          )}
+          {success && (
+            <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded">
+              {success}
+            </div>
+          )}
 
           <div className="space-y-4">
             <Input
@@ -416,224 +438,198 @@ export function BrandingSettings() {
               )}
             </div>
           </div>
-        </div>
+        </form>
+      </Section>
 
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <h2 className="text-lg font-medium text-gray-900 mb-4">
-            Brand Colors
-          </h2>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Primary Color
-              </label>
-              <div className="flex items-center space-x-2">
-                <input
-                  type="color"
-                  {...register('branding.primaryColor')}
-                  className="h-10 w-10 rounded border border-gray-300"
-                />
-                <Input
-                  {...register('branding.primaryColor')}
-                  error={errors.branding?.primaryColor?.message}
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Secondary Color
-              </label>
-              <div className="flex items-center space-x-2">
-                <input
-                  type="color"
-                  {...register('branding.secondaryColor')}
-                  className="h-10 w-10 rounded border border-gray-300"
-                />
-                <Input
-                  {...register('branding.secondaryColor')}
-                  error={errors.branding?.secondaryColor?.message}
-                />
-              </div>
+      <Section title="Brand Colors">
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Primary Color
+            </label>
+            <div className="flex items-center space-x-2">
+              <input
+                type="color"
+                {...register('branding.primaryColor')}
+                className="h-10 w-10 rounded border border-gray-300"
+              />
+              <Input
+                {...register('branding.primaryColor')}
+                error={errors.branding?.primaryColor?.message}
+              />
             </div>
           </div>
-        </div>
 
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <h2 className="text-lg font-medium text-gray-900 mb-4">
-            Brand Assets
-          </h2>
-
-          <div className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Logo
-              </label>
-              <FileUpload
-                accept={SUPPORTED_IMAGE_TYPES.logo.join(',')}
-                onChange={(file) => handleImageUpload('logo', file)}
-                helpText="PNG, JPG, GIF, SVG up to 10MB (SVG recommended for logo)"
-                previewUrl={
-                  localPreviews.logo ||
-                  (watch('branding.logoUrl') ? logoSignedUrl : undefined)
-                }
-                imageClassName="h-20 w-20 object-contain rounded border border-gray-200"
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Secondary Color
+            </label>
+            <div className="flex items-center space-x-2">
+              <input
+                type="color"
+                {...register('branding.secondaryColor')}
+                className="h-10 w-10 rounded border border-gray-300"
               />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Banner
-              </label>
-              <FileUpload
-                accept={SUPPORTED_IMAGE_TYPES.banner.join(',')}
-                onChange={(file) => handleImageUpload('banner', file)}
-                helpText="PNG, JPG, GIF, SVG up to 10MB"
-                previewUrl={
-                  localPreviews.banner ||
-                  (watch('branding.bannerUrl') ? bannerSignedUrl : undefined)
-                }
-                imageClassName="w-full h-32 object-cover rounded border border-gray-200"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Favicon
-              </label>
-              <FileUpload
-                accept={SUPPORTED_IMAGE_TYPES.favicon.join(',')}
-                onChange={(file) => handleImageUpload('favicon', file)}
-                helpText="PNG, ICO, SVG up to 10MB (SVG or ICO recommended for favicon)"
-                previewUrl={
-                  localPreviews.favicon ||
-                  (watch('branding.faviconUrl') ? faviconSignedUrl : undefined)
-                }
-                imageClassName="h-10 w-10 object-contain rounded border border-gray-200"
+              <Input
+                {...register('branding.secondaryColor')}
+                error={errors.branding?.secondaryColor?.message}
               />
             </div>
           </div>
         </div>
+      </Section>
 
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <h2 className="text-lg font-medium text-gray-900 mb-4">
-            Login Page Customization
-          </h2>
-
-          <div className="space-y-6">
-            <Input
-              label="Title"
-              {...register('login.title')}
-              error={errors.login?.title?.message}
-              placeholder="Welcome Back"
+      <Section title="Brand Assets">
+        <div className="space-y-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Logo
+            </label>
+            <FileUpload
+              accept={SUPPORTED_IMAGE_TYPES.logo.join(',')}
+              onChange={(file) => handleImageUpload('logo', file)}
+              helpText="PNG, JPG, GIF, SVG up to 10MB (SVG recommended for logo)"
+              previewUrl={
+                localPreviews.logo ||
+                (watch('branding.logoUrl') ? logoSignedUrl : undefined)
+              }
+              imageClassName="h-20 w-20 object-contain rounded border border-gray-200"
             />
-
-            <Input
-              label="Subtitle"
-              {...register('login.subtitle')}
-              error={errors.login?.subtitle?.message}
-              placeholder="Sign in to your account"
-            />
-
-            <Input
-              label="Welcome Message (Optional)"
-              {...register('login.welcomeMessage')}
-              error={errors.login?.welcomeMessage?.message}
-              placeholder="Welcome to our community!"
-            />
-
-            <Input
-              label="Button Text"
-              {...register('login.buttonText')}
-              error={errors.login?.buttonText?.message}
-              placeholder="Sign In"
-            />
-
-            <div className="grid grid-cols-2 gap-6">
-              <div>
-                <Label htmlFor="login.backgroundColor">Background Color</Label>
-                <ColorPicker
-                  color={watch('login.backgroundColor')}
-                  onChange={(color) => setValue('login.backgroundColor', color)}
-                />
-              </div>
-              <div>
-                <Label htmlFor="login.textColor">Text Color</Label>
-                <ColorPicker
-                  color={watch('login.textColor')}
-                  onChange={(color) => setValue('login.textColor', color)}
-                />
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="login.sideImage">Side Image</Label>
-              <FileUpload
-                accept={SUPPORTED_IMAGE_TYPES.sideImage.join(',')}
-                onChange={(file) => handleImageUpload('sideImage', file)}
-                helpText="PNG, JPG, GIF, SVG up to 10MB"
-                previewUrl={
-                  localPreviews.sideImage ||
-                  (watch('login.sideImageUrl') ? sideImageSignedUrl : undefined)
-                }
-                imageClassName="w-full h-32 object-cover rounded border border-gray-200"
-              />
-              <p className="mt-1 text-sm text-gray-500">
-                Recommended size: 800x600px. Will be displayed next to the login
-                form.
-              </p>
-            </div>
           </div>
-        </div>
 
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <h2 className="text-lg font-medium text-gray-900 mb-4">
-            Member Naming
-          </h2>
-
-          <div className="space-y-4">
-            <Input
-              label="Singular Name"
-              {...register('branding.memberNaming.singular')}
-              error={errors.branding?.memberNaming?.singular?.message}
-              placeholder="Member"
-              helperText="How do you refer to a single member? (e.g., Member, Professional, Expert)"
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Banner
+            </label>
+            <FileUpload
+              accept={SUPPORTED_IMAGE_TYPES.banner.join(',')}
+              onChange={(file) => handleImageUpload('banner', file)}
+              helpText="PNG, JPG, GIF, SVG up to 10MB"
+              previewUrl={
+                localPreviews.banner ||
+                (watch('branding.bannerUrl') ? bannerSignedUrl : undefined)
+              }
+              imageClassName="w-full h-32 object-cover rounded border border-gray-200"
             />
+          </div>
 
-            <Input
-              label="Plural Name"
-              {...register('branding.memberNaming.plural')}
-              error={errors.branding?.memberNaming?.plural?.message}
-              placeholder="Members"
-              helperText="How do you refer to multiple members? (e.g., Members, Professionals, Experts)"
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Favicon
+            </label>
+            <FileUpload
+              accept={SUPPORTED_IMAGE_TYPES.favicon.join(',')}
+              onChange={(file) => handleImageUpload('favicon', file)}
+              helpText="PNG, ICO, SVG up to 10MB (SVG or ICO recommended for favicon)"
+              previewUrl={
+                localPreviews.favicon ||
+                (watch('branding.faviconUrl') ? faviconSignedUrl : undefined)
+              }
+              imageClassName="h-10 w-10 object-contain rounded border border-gray-200"
             />
           </div>
         </div>
+      </Section>
 
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <h2 className="text-lg font-medium text-gray-900 mb-4">
-            Custom Domain
-          </h2>
+      <Section title="Login Page Customization">
+        <div className="space-y-6">
+          <Input
+            label="Title"
+            {...register('login.title')}
+            error={errors.login?.title?.message}
+            placeholder="Welcome Back"
+          />
 
           <Input
-            label="Custom Domain"
-            {...register('customDomain')}
-            error={errors.customDomain?.message}
-            placeholder="e.g., community.yourdomain.com"
+            label="Subtitle"
+            {...register('login.subtitle')}
+            error={errors.login?.subtitle?.message}
+            placeholder="Sign in to your account"
           />
-          <p className="mt-1 text-sm text-gray-500">
-            Enter your custom domain if you want to use it instead of the
-            default subdomain
-          </p>
-        </div>
 
-        <div className="flex justify-end">
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? 'Saving...' : 'Save Changes'}
-          </Button>
+          <Input
+            label="Welcome Message (Optional)"
+            {...register('login.welcomeMessage')}
+            error={errors.login?.welcomeMessage?.message}
+            placeholder="Welcome to our community!"
+          />
+
+          <Input
+            label="Button Text"
+            {...register('login.buttonText')}
+            error={errors.login?.buttonText?.message}
+            placeholder="Sign In"
+          />
+
+          <div className="grid grid-cols-2 gap-6">
+            <div>
+              <Label htmlFor="login.backgroundColor">Background Color</Label>
+              <ColorPicker
+                color={watch('login.backgroundColor')}
+                onChange={(color) => setValue('login.backgroundColor', color)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="login.textColor">Text Color</Label>
+              <ColorPicker
+                color={watch('login.textColor')}
+                onChange={(color) => setValue('login.textColor', color)}
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="login.sideImage">Side Image</Label>
+            <FileUpload
+              accept={SUPPORTED_IMAGE_TYPES.sideImage.join(',')}
+              onChange={(file) => handleImageUpload('sideImage', file)}
+              helpText="PNG, JPG, GIF, SVG up to 10MB"
+              previewUrl={
+                localPreviews.sideImage ||
+                (watch('login.sideImageUrl') ? sideImageSignedUrl : undefined)
+              }
+              imageClassName="w-full h-32 object-cover rounded border border-gray-200"
+            />
+            <p className="mt-1 text-sm text-gray-500">
+              Recommended size: 800x600px. Will be displayed next to the login
+              form.
+            </p>
+          </div>
         </div>
-      </form>
+      </Section>
+
+      <Section title="Member Naming">
+        <div className="space-y-4">
+          <Input
+            label="Singular Name"
+            {...register('branding.memberNaming.singular')}
+            error={errors.branding?.memberNaming?.singular?.message}
+            placeholder="Member"
+            helperText="How do you refer to a single member? (e.g., Member, Professional, Expert)"
+          />
+
+          <Input
+            label="Plural Name"
+            {...register('branding.memberNaming.plural')}
+            error={errors.branding?.memberNaming?.plural?.message}
+            placeholder="Members"
+            helperText="How do you refer to multiple members? (e.g., Members, Professionals, Experts)"
+          />
+        </div>
+      </Section>
+
+      <Section title="Custom Domain">
+        <Input
+          label="Custom Domain"
+          {...register('customDomain')}
+          error={errors.customDomain?.message}
+          placeholder="e.g., community.yourdomain.com"
+        />
+        <p className="mt-1 text-sm text-gray-500">
+          Enter your custom domain if you want to use it instead of the default
+          subdomain
+        </p>
+      </Section>
     </div>
   );
 }

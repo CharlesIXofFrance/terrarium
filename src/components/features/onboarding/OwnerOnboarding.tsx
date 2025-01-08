@@ -27,7 +27,11 @@ import {
   Users,
 } from 'lucide-react';
 import { SUPPORTED_IMAGE_TYPES } from '@/lib/constants/images';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 
+// Types
 interface FormData {
   name: string;
   description: string;
@@ -111,7 +115,59 @@ const steps = [
   },
 ];
 
-export function OnboardingFlow() {
+/**
+ * AI CONTEXT - DON'T DELETE
+ * AI Context: Community Owner Onboarding
+ * User Types: COMMUNITY_OWNER
+ *
+ * Onboarding flow for new community owners to set up their community.
+ * Guides owners through initial community configuration steps.
+ *
+ * Location: /src/components/features/onboarding/
+ * - Separate from member onboarding
+ * - Part of community creation flow
+ *
+ * Responsibilities:
+ * - Community profile setup
+ * - Branding configuration
+ * - Job board settings
+ * - Member field customization
+ * - Integration setup (RecruitCRM)
+ *
+ * Design Constraints:
+ * - Must follow step-by-step flow
+ * - Must validate each section
+ * - Must allow saving progress
+ */
+
+const communitySchema = z.object({
+  name: z.string().min(1, 'Community name is required'),
+  description: z.string(),
+  branding: z.object({
+    logo: z.string().optional(),
+    colors: z.object({
+      primary: z.string(),
+      secondary: z.string(),
+    }),
+  }),
+  jobBoard: z.object({
+    enabled: z.boolean(),
+    recruitcrmEnabled: z.boolean().optional(),
+    recruitcrmApiKey: z.string().optional(),
+  }),
+  memberFields: z.array(
+    z.object({
+      name: z.string(),
+      type: z.enum(['text', 'select', 'multiselect', 'date']),
+      required: z.boolean(),
+      options: z.array(z.string()).optional(),
+    })
+  ),
+});
+
+type CommunitySetup = z.infer<typeof communitySchema>;
+
+export function OwnerOnboarding() {
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -167,6 +223,16 @@ export function OnboardingFlow() {
   const [user, setUser] = useAtom(userAtom);
   const [, setUserCommunity] = useAtom(userCommunityAtom);
   const navigate = useNavigate();
+
+  const {
+    register,
+    handleSubmit,
+    watch,
+    formState: { errors },
+  } = useForm<FormData>({
+    resolver: zodResolver(communitySchema),
+    defaultValues: formData,
+  });
 
   const [localPreviews, setLocalPreviews] = useState<Record<string, string>>(
     {}
@@ -711,7 +777,7 @@ export function OnboardingFlow() {
             </div>
           )}
 
-          <div className="space-y-6">
+          <form onSubmit={handleSubmit(handleNext)} className="space-y-6">
             {safeCurrentStep === 1 && (
               <>
                 <div>
@@ -720,9 +786,8 @@ export function OnboardingFlow() {
                   </label>
                   <Input
                     type="text"
-                    value={formData.name}
-                    onChange={(e) => updateFormData('name', e.target.value)}
-                    required
+                    {...register('name')}
+                    error={errors.name?.message}
                   />
                 </div>
                 <div>
@@ -731,11 +796,8 @@ export function OnboardingFlow() {
                   </label>
                   <Input
                     type="text"
-                    value={formData.description}
-                    onChange={(e) =>
-                      updateFormData('description', e.target.value)
-                    }
-                    required
+                    {...register('description')}
+                    error={errors.description?.message}
                   />
                 </div>
               </>
@@ -852,16 +914,8 @@ export function OnboardingFlow() {
                     </label>
                     <Input
                       type="text"
-                      value={formData.branding.memberNaming.singular}
-                      onChange={(e) =>
-                        updateFormData('branding', {
-                          ...formData.branding,
-                          memberNaming: {
-                            ...formData.branding.memberNaming,
-                            singular: e.target.value,
-                          },
-                        })
-                      }
+                      {...register('branding.memberNaming.singular')}
+                      error={errors.branding?.memberNaming?.singular?.message}
                       placeholder="member"
                       className="mt-1"
                     />
@@ -872,16 +926,8 @@ export function OnboardingFlow() {
                     </label>
                     <Input
                       type="text"
-                      value={formData.branding.memberNaming.plural}
-                      onChange={(e) =>
-                        updateFormData('branding', {
-                          ...formData.branding,
-                          memberNaming: {
-                            ...formData.branding.memberNaming,
-                            plural: e.target.value,
-                          },
-                        })
-                      }
+                      {...register('branding.memberNaming.plural')}
+                      error={errors.branding?.memberNaming?.plural?.message}
                       placeholder="members"
                       className="mt-1"
                     />
@@ -909,15 +955,8 @@ export function OnboardingFlow() {
                         <Input
                           type="url"
                           placeholder={label}
-                          value={
-                            formData.social[key as keyof typeof formData.social]
-                          }
-                          onChange={(e) =>
-                            updateFormData('social', {
-                              ...formData.social,
-                              [key]: e.target.value,
-                            })
-                          }
+                          {...register(`social.${key}`)}
+                          error={errors.social?.[key]?.message}
                         />
                       </div>
                     ))}
@@ -936,13 +975,7 @@ export function OnboardingFlow() {
                     <label className="flex items-center">
                       <input
                         type="checkbox"
-                        checked={formData.jobBoardSettings.requireApproval}
-                        onChange={(e) =>
-                          updateFormData('jobBoardSettings', {
-                            ...formData.jobBoardSettings,
-                            requireApproval: e.target.checked,
-                          })
-                        }
+                        {...register('jobBoardSettings.requireApproval')}
                         className="rounded border-gray-300"
                       />
                       <span className="ml-2 text-sm text-gray-600">
@@ -952,13 +985,7 @@ export function OnboardingFlow() {
                     <label className="flex items-center">
                       <input
                         type="checkbox"
-                        checked={formData.jobBoardSettings.allowRemote}
-                        onChange={(e) =>
-                          updateFormData('jobBoardSettings', {
-                            ...formData.jobBoardSettings,
-                            allowRemote: e.target.checked,
-                          })
-                        }
+                        {...register('jobBoardSettings.allowRemote')}
                         className="rounded border-gray-300"
                       />
                       <span className="ml-2 text-sm text-gray-600">
@@ -974,13 +1001,7 @@ export function OnboardingFlow() {
                     <label className="flex items-center">
                       <input
                         type="checkbox"
-                        checked={formData.eventSettings.enableRegistration}
-                        onChange={(e) =>
-                          updateFormData('eventSettings', {
-                            ...formData.eventSettings,
-                            enableRegistration: e.target.checked,
-                          })
-                        }
+                        {...register('eventSettings.enableRegistration')}
                         className="rounded border-gray-300"
                       />
                       <span className="ml-2 text-sm text-gray-600">
@@ -990,13 +1011,7 @@ export function OnboardingFlow() {
                     <label className="flex items-center">
                       <input
                         type="checkbox"
-                        checked={formData.eventSettings.enableVirtual}
-                        onChange={(e) =>
-                          updateFormData('eventSettings', {
-                            ...formData.eventSettings,
-                            enableVirtual: e.target.checked,
-                          })
-                        }
+                        {...register('eventSettings.enableVirtual')}
                         className="rounded border-gray-300"
                       />
                       <span className="ml-2 text-sm text-gray-600">
@@ -1010,17 +1025,26 @@ export function OnboardingFlow() {
 
             <div className="flex justify-between pt-6">
               {safeCurrentStep > 0 && (
-                <Button onClick={handleBack} disabled={isSubmitting}>
-                  Back
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleBack}
+                  disabled={isSubmitting}
+                >
+                  Previous
                 </Button>
               )}
-              <Button onClick={handleNext} disabled={isSubmitting}>
-                {safeCurrentStep === steps.length - 1
-                  ? 'Launch Community'
-                  : 'Next'}
-              </Button>
+              {safeCurrentStep === steps.length - 1 ? (
+                <Button type="submit" loading={isSubmitting}>
+                  Complete Setup
+                </Button>
+              ) : (
+                <Button type="submit" disabled={isSubmitting}>
+                  Next
+                </Button>
+              )}
             </div>
-          </div>
+          </form>
         </div>
       </div>
 

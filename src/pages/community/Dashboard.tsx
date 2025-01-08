@@ -1,3 +1,27 @@
+/**
+ * AI CONTEXT - DON'T DELETE
+ * AI Context: Community Management
+ * User Types: COMMUNITY_OWNER
+ *
+ * Dashboard overview for community owners to monitor their community.
+ * Shows key metrics, recent activity, and quick actions.
+ *
+ * Location: /src/pages/community/
+ * - Main landing page for community owners
+ * - Central hub for community management
+ *
+ * Responsibilities:
+ * - Display community metrics
+ * - Show recent member activity
+ * - Track job board stats
+ * - Provide quick actions
+ *
+ * Design Constraints:
+ * - Must use shared UI components
+ * - Must be responsive
+ * - Must prioritize key metrics
+ */
+
 import React, { useMemo } from 'react';
 import { useAtom } from 'jotai';
 import { useNavigate, Navigate } from 'react-router-dom';
@@ -14,6 +38,10 @@ import {
 import { communityStateAtom } from '@/lib/stores/community';
 import { Button } from '@/components/ui/atoms/Button';
 import { LineChart } from '@/components/charts/LineChart';
+import { getThemeClasses } from '@/lib/styles/utils';
+import { cn } from '@/lib/utils';
+import { PageHeader } from '@/components/ui/molecules/PageHeader';
+import { Section } from '@/components/ui/molecules/Section';
 
 interface StatCardProps {
   title: string;
@@ -27,55 +55,62 @@ function StatCard({ title, value, change, period, icon: Icon }: StatCardProps) {
   const isPositive = change > 0;
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-sm">
-      <div className="flex justify-between items-start">
-        <div className="p-2 bg-indigo-50 rounded-lg">
-          <Icon className="h-6 w-6 text-indigo-600" />
+    <div className={getThemeClasses('cards.stat.container')}>
+      <div className={getThemeClasses('cards.stat.header')}>
+        <div className={getThemeClasses('cards.stat.icon.wrapper')}>
+          <Icon className={getThemeClasses('cards.stat.icon.icon')} />
         </div>
         <span
-          className={`flex items-center text-sm ${
-            isPositive ? 'text-green-600' : 'text-red-600'
-          }`}
+          className={cn(
+            getThemeClasses('cards.stat.metric.wrapper'),
+            isPositive
+              ? getThemeClasses('cards.stat.metric.positive')
+              : getThemeClasses('cards.stat.metric.negative')
+          )}
         >
           {isPositive ? (
-            <ArrowUpRight className="h-4 w-4 mr-1" />
+            <ArrowUpRight
+              className={getThemeClasses('cards.stat.metric.icon')}
+            />
           ) : (
-            <ArrowDownRight className="h-4 w-4 mr-1" />
+            <ArrowDownRight
+              className={getThemeClasses('cards.stat.metric.icon')}
+            />
           )}
           {Math.abs(change)}%
         </span>
       </div>
-      <div className="mt-4">
-        <h3 className="text-sm font-medium text-gray-500">{title}</h3>
-        <p className="text-2xl font-semibold text-gray-900 mt-1">{value}</p>
-        <p className="text-sm text-gray-500 mt-1">from {period}</p>
+      <div className={getThemeClasses('cards.stat.content')}>
+        <h3 className={getThemeClasses('cards.stat.title')}>{title}</h3>
+        <p className={getThemeClasses('cards.stat.value')}>{value}</p>
+        <p className={getThemeClasses('cards.stat.period')}>from {period}</p>
       </div>
     </div>
   );
 }
 
-function ResourceLink({
-  url,
-  label,
-  onCopy,
-}: {
+interface ResourceLinkProps {
   url: string;
   label: string;
   onCopy: () => void;
-}) {
+}
+
+function ResourceLink({ url, label, onCopy }: ResourceLinkProps) {
   return (
-    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-      <div className="flex items-center space-x-2 flex-1 min-w-0">
-        <span className="text-sm text-gray-600 truncate">{url}</span>
+    <div className={getThemeClasses('cards.resource.container')}>
+      <div className={getThemeClasses('cards.resource.content.wrapper')}>
+        <p className={getThemeClasses('cards.resource.content.label')}>
+          {label}
+        </p>
+        <p className={getThemeClasses('cards.resource.content.url')}>{url}</p>
       </div>
       <Button
-        variant="outline"
+        variant="ghost"
         size="sm"
-        className="flex items-center space-x-1"
         onClick={onCopy}
+        className={getThemeClasses('cards.resource.action')}
       >
         <Copy className="h-4 w-4" />
-        <span>Copy</span>
       </Button>
     </div>
   );
@@ -84,8 +119,6 @@ function ResourceLink({
 export function Dashboard() {
   const [{ community, isLoading }] = useAtom(communityStateAtom);
   const navigate = useNavigate();
-
-  console.log('Dashboard - Current Community State:', { community, isLoading });
 
   const stats = useMemo(
     () => [
@@ -133,22 +166,18 @@ export function Dashboard() {
 
   return (
     <div className="space-y-8">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Welcome back! 👋</h1>
-          <p className="text-gray-600 mt-1">
-            Here's how {community.name} is doing
-          </p>
-        </div>
-        <div className="flex items-center space-x-4">
+      <PageHeader
+        title="Welcome back! 👋"
+        subtitle={`Here's how ${community.name} is doing`}
+        actions={
           <select className="rounded-lg border-gray-300 text-sm">
             <option>Last 4 weeks</option>
             <option>Last 3 months</option>
             <option>Last 6 months</option>
             <option>Last year</option>
           </select>
-        </div>
-      </div>
+        }
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {stats.map((stat, index) => (
@@ -158,10 +187,7 @@ export function Dashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
-          <div className="bg-white p-6 rounded-lg shadow-sm">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">
-              Active Members
-            </h3>
+          <Section title="Active Members">
             <LineChart
               data={[
                 { date: '2024-01', value: 28423 },
@@ -170,14 +196,11 @@ export function Dashboard() {
                 { date: '2024-04', value: 36480 },
               ]}
             />
-          </div>
+          </Section>
         </div>
 
         <div className="space-y-6">
-          <div className="bg-white p-6 rounded-lg shadow-sm">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">
-              Resources
-            </h3>
+          <Section title="Resources">
             <div className="space-y-3">
               <ResourceLink
                 label="Community URL"
@@ -211,7 +234,7 @@ export function Dashboard() {
                 <ExternalLink className="h-4 w-4 ml-1" />
               </a>
             </div>
-          </div>
+          </Section>
         </div>
       </div>
     </div>

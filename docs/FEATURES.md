@@ -100,7 +100,7 @@
 
 ### Multi-Tenant Community Platform
 
-1. Platform Management
+1. Community Management
 
    - Independent community spaces
    - Custom branding and themes
@@ -186,7 +186,7 @@
    - Push notifications
    - Mobile-specific UI
 
-## Platform Management Features
+## Community Owners Administrative Features
 
 1. Community Management
 

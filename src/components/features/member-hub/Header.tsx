@@ -5,6 +5,31 @@ import { useAtom } from 'jotai';
 import { currentCommunityAtom } from '@/lib/stores/community';
 import { supabase } from '@/lib/supabase';
 import { parseDomain } from '@/lib/utils/subdomain';
+import { Button } from '@/components/ui/atoms/Button';
+
+/**
+ * AI CONTEXT - DON'T DELETE
+ * AI Context: Member Experience
+ * User Types: MEMBER
+ *
+ * Header component for the member hub dashboard.
+ * Shows community branding and member navigation.
+ *
+ * Location: /src/components/features/member-hub/
+ * - Part of member dashboard
+ * - Separate from community owner view
+ *
+ * Responsibilities:
+ * - Display community branding
+ * - Show member navigation
+ * - Handle member actions
+ * - Manage notifications
+ *
+ * Design Constraints:
+ * - Must use community colors
+ * - Must be responsive
+ * - Must show all key actions
+ */
 
 interface HeaderProps {
   styles: any;

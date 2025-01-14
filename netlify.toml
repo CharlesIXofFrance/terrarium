@@ -3,13 +3,15 @@
     mkdir -p docs-site &&
     cd docs-site &&
     npm init -y &&
-    npm install @docusaurus/core @docusaurus/preset-classic react react-dom &&
-    npm run build
+    npm install @docusaurus/core @docusaurus/preset-classic react react-dom clsx &&
+    npm install -D @babel/core @babel/preset-env &&
+    npm run build || (ls -la && pwd && cat npm-debug.log)
   """
   publish = "docs-site/build"
 
 [build.environment]
   NODE_VERSION = "18"
+  NPM_FLAGS = "--legacy-peer-deps"
 
 # Production context
 [context.production]

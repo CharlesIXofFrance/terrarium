@@ -1,18 +1,17 @@
 [build]
-  base = "preview"
-  command = "npm install && npm run build"
-  publish = "build"
+  command = "cd preview && npm install && npm run build"
+  publish = "preview/build"
 
 [build.environment]
   NODE_VERSION = "18"
 
 # Production context
 [context.production]
-  command = "npm install && npm run build"
+  command = "cd preview && npm install && npm run build"
 
 # Deploy Preview context
 [context.deploy-preview]
-  command = "npm install && npm run build"
+  command = "cd preview && npm install && npm run build"
 
 [[headers]]
   for = "/*"

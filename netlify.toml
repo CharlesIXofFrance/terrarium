@@ -1,7 +1,7 @@
 [build]
-  base = "preview/"
-  publish = "preview/"
+  base = "preview"
   command = "npm install && npm run build"
+  publish = "build"
 
 [build.environment]
   NODE_VERSION = "18"
@@ -14,16 +14,6 @@
 [context.deploy-preview]
   command = "npm install && npm run build"
 
-# Branch Deploy context
-[context.branch-deploy]
-  command = "npm install && npm run build"
-
-[[plugins]]
-  package = "@netlify/plugin-lighthouse"
-
-  [plugins.inputs]
-    output_path = "lighthouse-results"
-
 [[headers]]
   for = "/*"
   [headers.values]
@@ -31,4 +21,3 @@
     X-XSS-Protection = "1; mode=block"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https:;"

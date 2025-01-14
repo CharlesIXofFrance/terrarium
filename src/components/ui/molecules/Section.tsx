@@ -2,6 +2,7 @@ import React from 'react';
 import { cn } from '@/lib/utils';
 
 /**
+ * AI CONTEXT - DON'T DELETE
  * AI Context: Shared UI Component
  * User Types: ALL
  *

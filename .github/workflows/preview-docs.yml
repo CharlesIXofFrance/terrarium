@@ -1,0 +1,82 @@
+name: Preview Documentation
+
+on:
+  pull_request:
+    paths:
+      - 'docs/**'
+      - 'src/**/*.ts'
+      - 'src/**/*.tsx'
+      - 'openapi.yaml'
+      - 'typedoc.json'
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Create preview directory
+        run: mkdir -p preview
+
+      - name: Generate documentation
+        run: |
+          # Install dependencies
+          npm install
+          npm install -g typedoc
+          npm install -g redoc-cli
+          npm install -g @docusaurus/core @docusaurus/preset-classic
+          npm install typedoc-plugin-markdown @mxssfd/typedoc-theme
+
+          # Generate TypeScript docs
+          typedoc --options typedoc.json --out preview/docs/typescript
+          
+          # Generate API docs
+          mkdir -p preview/docs/api
+          redoc-cli bundle openapi.yaml -o preview/docs/api/index.html
+          npx @redocly/cli build-docs openapi.yaml --output=preview/docs/api/api.md
+
+      - name: Setup Docusaurus
+        run: |
+          cd preview
+          npm init -y
+          npm install @docusaurus/core @docusaurus/preset-classic
+          npm install react react-dom
+          
+          # Copy necessary files
+          cp -r ../docs/* ./docs/
+          
+          # Configure Docusaurus
+          node ../.github/scripts/configure-preview.js
+
+      - name: Build preview
+        run: |
+          cd preview
+          npm run build
+
+      - name: Deploy preview
+        uses: netlify/actions/cli@master
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+        with:
+          args: deploy --dir=preview --alias=pr-${{ github.event.number }}
+
+      - name: Comment PR
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const preview_url = `https://pr-${context.issue.number}--terrarium-docs.netlify.app`;
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.name,
+              body: `📚 Documentation preview deployed to: ${preview_url}\n\nChanges include:\n- TypeScript documentation\n- API documentation\n- Search functionality\n\nPlease review the changes and provide feedback.`
+            });

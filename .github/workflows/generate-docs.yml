@@ -1,0 +1,67 @@
+name: Generate Documentation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'openapi.yaml'
+      - 'typedoc.json'
+  workflow_dispatch:
+
+jobs:
+  generate-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: |
+          npm install
+          npm install -g typedoc
+          npm install -g redoc-cli
+          npm install typedoc-plugin-markdown @mxssfd/typedoc-theme
+
+      - name: Generate TypeScript documentation
+        run: typedoc --options typedoc.json
+
+      - name: Generate API documentation
+        run: |
+          redoc-cli bundle openapi.yaml -o docs/generated/api/index.html
+          
+      - name: Generate API Markdown
+        run: |
+          npx @redocly/cli build-docs openapi.yaml --output=docs/generated/api/api.md
+
+      - name: Update search index
+        run: |
+          node .github/scripts/generate-search-index.js
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs/generated
+          commit_message: 'docs: update generated documentation'
+
+      - name: Create Documentation PR
+        uses: peter-evans/create-pull-request@v5
+        with:
+          title: 'docs: update generated documentation'
+          commit-message: 'docs: update generated documentation'
+          branch: docs/auto-update
+          base: main
+          body: |
+            🤖 Auto-generated documentation update
+            
+            This PR updates the generated documentation based on recent changes.
+            
+            Changes include:
+            - TypeScript documentation updates
+            - API documentation updates
+            - Search index updates

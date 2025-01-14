@@ -9,6 +9,7 @@ import { Section } from '@/components/ui/molecules/Section';
 import type { Job } from '@/lib/types';
 
 /**
+ * AI CONTEXT - DON'T DELETE
  * AI Context: Community Job Board
  * User Types: COMMUNITY_OWNER
  *

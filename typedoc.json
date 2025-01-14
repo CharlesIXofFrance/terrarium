@@ -1,0 +1,23 @@
+{
+  "entryPoints": ["src"],
+  "entryPointStrategy": "expand",
+  "out": "docs/generated/typescript",
+  "exclude": ["**/*.test.ts", "**/*.spec.ts", "**/node_modules/**"],
+  "theme": "default",
+  "name": "Terrarium Documentation",
+  "excludePrivate": true,
+  "excludeProtected": true,
+  "excludeExternals": true,
+  "includeVersion": true,
+  "categorizeByGroup": true,
+  "categoryOrder": ["Core", "Components", "Utilities", "*"],
+  "readme": "none",
+  "plugin": [
+    "typedoc-plugin-markdown",
+    "@mxssfd/typedoc-theme"
+  ],
+  "validation": {
+    "invalidLink": true,
+    "notExported": true
+  }
+}

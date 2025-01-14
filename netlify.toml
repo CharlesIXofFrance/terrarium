@@ -1,25 +1,10 @@
 [build]
-  command = """
-    mkdir -p docs-site &&
-    cd docs-site &&
-    npm init -y &&
-    npm install @docusaurus/core @docusaurus/preset-classic react react-dom clsx &&
-    npm install -D @babel/core @babel/preset-env &&
-    npm run build || (ls -la && pwd && cat npm-debug.log)
-  """
   publish = "docs-site/build"
+  command = "cd docs-site && npm install && npm install @docusaurus/core @docusaurus/preset-classic react react-dom clsx @babel/core @babel/preset-env && npm run build"
 
 [build.environment]
   NODE_VERSION = "18"
   NPM_FLAGS = "--legacy-peer-deps"
-
-# Production context
-[context.production]
-  command = "cd docs-site && npm install && npm run build"
-
-# Deploy Preview context
-[context.deploy-preview]
-  command = "cd docs-site && npm install && npm run build"
 
 [[headers]]
   for = "/*"

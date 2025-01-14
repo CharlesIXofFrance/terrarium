@@ -1,72 +1,49 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Globe2 } from 'lucide-react';
-import { useAuth } from '@/lib/hooks/useAuth';
+import { Link } from 'react-router-dom';
+import { useAtom } from 'jotai';
+import { userAtom } from '@/lib/stores/auth';
+import { Button } from '@/components/ui/atoms/Button';
 
-export function Navbar() {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
+interface NavbarProps {
+  onDashboardClick?: () => void;
+}
 
-  const handleLogout = async () => {
-    await logout();
-    navigate('/');
-  };
+export function Navbar({ onDashboardClick }: NavbarProps) {
+  const [user] = useAtom(userAtom);
 
   return (
-    <nav className="fixed w-full bg-white/80 backdrop-blur-md z-50 border-b border-gray-100">
+    <nav className="bg-white shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16 items-center">
-          <div className="flex items-center space-x-2">
-            <Globe2 className="h-8 w-8 text-indigo-600" />
-            <span className="text-xl font-bold text-gray-900">Terrarium</span>
-          </div>
-
-          <div className="hidden md:flex space-x-8">
-            <a href="#features" className="text-gray-600 hover:text-gray-900">
-              Features
-            </a>
-            <a
-              href="#communities"
-              className="text-gray-600 hover:text-gray-900"
-            >
-              Communities
-            </a>
-            <a href="#employers" className="text-gray-600 hover:text-gray-900">
-              Employers
-            </a>
+        <div className="flex justify-between h-16">
+          <div className="flex">
+            <Link to="/" className="flex items-center">
+              <span className="text-xl font-bold text-indigo-600">
+                Terrarium
+              </span>
+            </Link>
           </div>
 
           <div className="flex items-center space-x-4">
             {user ? (
-              <>
-                <Link
-                  to={
-                    user.role === 'platform_owner' ? '/platform' : '/m/dashboard'
-                  }
-                  className="text-gray-600 hover:text-gray-900"
-                >
-                  Dashboard
-                </Link>
-                <button
-                  onClick={handleLogout}
-                  className="text-gray-600 hover:text-gray-900"
-                >
-                  Sign Out
-                </button>
-              </>
+              <Button
+                onClick={onDashboardClick}
+                variant="default"
+                className="bg-indigo-600 text-white hover:bg-indigo-700"
+              >
+                Dashboard
+              </Button>
             ) : (
               <>
-                <Link
-                  to="/login"
-                  className="text-gray-600 hover:text-gray-900 px-3 py-2"
-                >
-                  Sign In
+                <Link to="/login">
+                  <Button variant="ghost">Log in</Button>
                 </Link>
-                <Link
-                  to="/register"
-                  className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition"
-                >
-                  Get Started
+                <Link to="/register">
+                  <Button
+                    variant="default"
+                    className="bg-indigo-600 text-white hover:bg-indigo-700"
+                  >
+                    Get Started
+                  </Button>
                 </Link>
               </>
             )}

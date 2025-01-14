@@ -15,6 +15,7 @@ import {
 import { supabase } from '@/lib/supabase';
 import { slugify } from '@/lib/utils/string';
 import { useSignedUrl } from '@/lib/hooks/useSignedUrl';
+import { redirectToSubdomain } from '@/lib/utils/subdomain';
 import {
   Facebook,
   Twitter,
@@ -39,11 +40,15 @@ interface FormData {
     primaryColor: string;
     secondaryColor: string;
     logo: File | null;
-    banner: File | null;
-    favicon: File | null;
     logoUrl: string | null;
+    banner: File | null;
     bannerUrl: string | null;
+    favicon: File | null;
     faviconUrl: string | null;
+    memberNaming: {
+      singular: string;
+      plural: string;
+    };
     login: {
       title: string;
       subtitle: string;
@@ -52,28 +57,20 @@ interface FormData {
       backgroundColor: string;
       textColor: string;
     };
-    memberNaming: {
-      singular: string;
-      plural: string;
-    };
   };
   social: {
     facebook: string;
     twitter: string;
     linkedin: string;
     instagram: string;
-    website: string;
+    discord: string;
+    youtube: string;
   };
   jobBoardSettings: {
     requireApproval: boolean;
     categories: string[];
     allowRemote: boolean;
     customFields: any[];
-  };
-  eventSettings: {
-    enableRegistration: boolean;
-    enableVirtual: boolean;
-    requireApproval: boolean;
   };
 }
 
@@ -102,11 +99,6 @@ const steps = [
     title: 'Social Presence',
     description: 'Connect your social media accounts.',
     icon: Facebook,
-  },
-  {
-    title: 'Feature Setup',
-    description: 'Configure your community features.',
-    icon: Eye,
   },
   {
     title: 'Almost Done!',
@@ -175,29 +167,29 @@ export function OwnerOnboarding() {
     'desktop' | 'mobile' | 'tablet'
   >('desktop');
   const [previewPage, setPreviewPage] = useState('member-hub');
-  const [formData, setFormData] = useState<FormData>({
+  const defaultFormData = {
     name: '',
     description: '',
     branding: {
-      primaryColor: '#4F46E5',
-      secondaryColor: '#818CF8',
+      primaryColor: '#000000',
+      secondaryColor: '#FFFFFF',
       logo: null,
+      logoUrl: '',
       banner: null,
+      bannerUrl: '',
       favicon: null,
-      logoUrl: null,
-      bannerUrl: null,
-      faviconUrl: null,
+      faviconUrl: '',
+      memberNaming: {
+        singular: 'member',
+        plural: 'members',
+      },
       login: {
         title: '',
         subtitle: '',
         welcomeMessage: '',
-        buttonText: 'Sign In',
+        buttonText: '',
         backgroundColor: '#FFFFFF',
         textColor: '#000000',
-      },
-      memberNaming: {
-        singular: 'Member',
-        plural: 'Members',
       },
     },
     social: {
@@ -205,7 +197,8 @@ export function OwnerOnboarding() {
       twitter: '',
       linkedin: '',
       instagram: '',
-      website: '',
+      discord: '',
+      youtube: '',
     },
     jobBoardSettings: {
       requireApproval: true,
@@ -213,15 +206,11 @@ export function OwnerOnboarding() {
       allowRemote: true,
       customFields: [],
     },
-    eventSettings: {
-      enableRegistration: true,
-      enableVirtual: true,
-      requireApproval: false,
-    },
-  });
+  };
+  const [formData, setFormData] = useState(defaultFormData);
 
   const [user, setUser] = useAtom(userAtom);
-  const [, setUserCommunity] = useAtom(userCommunityAtom);
+  const [userCommunity, setUserCommunity] = useAtom(userCommunityAtom);
   const navigate = useNavigate();
 
   const {
@@ -229,6 +218,7 @@ export function OwnerOnboarding() {
     handleSubmit,
     watch,
     formState: { errors },
+    reset,
   } = useForm<FormData>({
     resolver: zodResolver(communitySchema),
     defaultValues: formData,
@@ -249,6 +239,68 @@ export function OwnerOnboarding() {
   );
 
   useEffect(() => {
+    if (!userCommunity) return;
+    console.log('Setting initial form data from community:', userCommunity);
+
+    setFormData({
+      name: userCommunity.name || '',
+      description: userCommunity.description || '',
+      branding: {
+        primaryColor:
+          userCommunity.settings?.branding?.primaryColor || '#000000',
+        secondaryColor:
+          userCommunity.settings?.branding?.secondaryColor || '#FFFFFF',
+        logo: null,
+        logoUrl: userCommunity.settings?.branding?.logoUrl || '',
+        banner: null,
+        bannerUrl: userCommunity.settings?.branding?.bannerUrl || '',
+        favicon: null,
+        faviconUrl: userCommunity.settings?.branding?.faviconUrl || '',
+        memberNaming: {
+          singular:
+            userCommunity.settings?.branding?.memberNaming?.singular ||
+            'member',
+          plural:
+            userCommunity.settings?.branding?.memberNaming?.plural || 'members',
+        },
+        login: {
+          title: userCommunity.settings?.branding?.login?.title || '',
+          subtitle: userCommunity.settings?.branding?.login?.subtitle || '',
+          welcomeMessage:
+            userCommunity.settings?.branding?.login?.welcomeMessage || '',
+          buttonText: userCommunity.settings?.branding?.login?.buttonText || '',
+          backgroundColor:
+            userCommunity.settings?.branding?.login?.backgroundColor ||
+            '#FFFFFF',
+          textColor:
+            userCommunity.settings?.branding?.login?.textColor || '#000000',
+        },
+      },
+      social: {
+        facebook: userCommunity.settings?.social?.facebook || '',
+        twitter: userCommunity.settings?.social?.twitter || '',
+        linkedin: userCommunity.settings?.social?.linkedin || '',
+        instagram: userCommunity.settings?.social?.instagram || '',
+        discord: userCommunity.settings?.social?.discord || '',
+        youtube: userCommunity.settings?.social?.youtube || '',
+      },
+      jobBoardSettings: {
+        requireApproval:
+          userCommunity.settings?.jobBoardSettings?.requireApproval ?? true,
+        categories: userCommunity.settings?.jobBoardSettings?.categories || [
+          'Engineering',
+          'Design',
+          'Product',
+        ],
+        allowRemote:
+          userCommunity.settings?.jobBoardSettings?.allowRemote ?? true,
+        customFields:
+          userCommunity.settings?.jobBoardSettings?.customFields || [],
+      },
+    });
+  }, [userCommunity]);
+
+  useEffect(() => {
     const initializeFormData = async () => {
       try {
         const { data: existingCommunity } = await supabase
@@ -258,40 +310,45 @@ export function OwnerOnboarding() {
           .single();
 
         if (existingCommunity) {
-          // Initialize form data with paths from the database
           setFormData({
-            name: existingCommunity.name,
+            name: existingCommunity.name || '',
             description: existingCommunity.description || '',
             branding: {
               primaryColor:
-                existingCommunity.settings?.branding?.primaryColor || '#4F46E5',
+                existingCommunity.settings?.branding?.primaryColor || '#000000',
               secondaryColor:
                 existingCommunity.settings?.branding?.secondaryColor ||
-                '#818CF8',
+                '#FFFFFF',
               logo: null,
+              logoUrl: existingCommunity.settings?.branding?.logoUrl || '',
               banner: null,
+              bannerUrl: existingCommunity.settings?.branding?.bannerUrl || '',
               favicon: null,
-              logoUrl: existingCommunity.logo_url,
-              bannerUrl: existingCommunity.banner_url,
-              faviconUrl: existingCommunity.favicon_url,
-              login: {
-                title: existingCommunity.settings?.login?.title || '',
-                subtitle: existingCommunity.settings?.login?.subtitle || '',
-                welcomeMessage:
-                  existingCommunity.settings?.login?.welcomeMessage || '',
-                buttonText: existingCommunity.settings?.login?.buttonText || '',
-                backgroundColor:
-                  existingCommunity.settings?.login?.backgroundColor ||
-                  '#FFFFFF',
-                textColor:
-                  existingCommunity.settings?.login?.textColor || '#000000',
-              },
+              faviconUrl:
+                existingCommunity.settings?.branding?.faviconUrl || '',
               memberNaming: {
                 singular:
-                  existingCommunity.settings?.memberNaming?.singular ||
-                  'Member',
+                  existingCommunity.settings?.branding?.memberNaming
+                    ?.singular || 'member',
                 plural:
-                  existingCommunity.settings?.memberNaming?.plural || 'Members',
+                  existingCommunity.settings?.branding?.memberNaming?.plural ||
+                  'members',
+              },
+              login: {
+                title: existingCommunity.settings?.branding?.login?.title || '',
+                subtitle:
+                  existingCommunity.settings?.branding?.login?.subtitle || '',
+                welcomeMessage:
+                  existingCommunity.settings?.branding?.login?.welcomeMessage ||
+                  '',
+                buttonText:
+                  existingCommunity.settings?.branding?.login?.buttonText || '',
+                backgroundColor:
+                  existingCommunity.settings?.branding?.login
+                    ?.backgroundColor || '#FFFFFF',
+                textColor:
+                  existingCommunity.settings?.branding?.login?.textColor ||
+                  '#000000',
               },
             },
             social: {
@@ -299,44 +356,60 @@ export function OwnerOnboarding() {
               twitter: existingCommunity.settings?.social?.twitter || '',
               linkedin: existingCommunity.settings?.social?.linkedin || '',
               instagram: existingCommunity.settings?.social?.instagram || '',
-              website: existingCommunity.settings?.social?.website || '',
+              discord: existingCommunity.settings?.social?.discord || '',
+              youtube: existingCommunity.settings?.social?.youtube || '',
             },
             jobBoardSettings: {
               requireApproval:
-                existingCommunity.settings?.jobBoard?.requireApproval ?? true,
-              categories: existingCommunity.settings?.jobBoard?.categories || [
-                'Engineering',
-                'Design',
-                'Product',
-              ],
+                existingCommunity.settings?.jobBoardSettings?.requireApproval ??
+                true,
+              categories: existingCommunity.settings?.jobBoardSettings
+                ?.categories || ['Engineering', 'Design', 'Product'],
               allowRemote:
-                existingCommunity.settings?.jobBoard?.allowRemote ?? true,
+                existingCommunity.settings?.jobBoardSettings?.allowRemote ??
+                true,
               customFields:
-                existingCommunity.settings?.jobBoard?.customFields || [],
-            },
-            eventSettings: {
-              enableRegistration:
-                existingCommunity.settings?.events?.enableRegistration ?? true,
-              enableVirtual:
-                existingCommunity.settings?.events?.enableVirtual ?? true,
-              requireApproval:
-                existingCommunity.settings?.events?.requireApproval ?? false,
+                existingCommunity.settings?.jobBoardSettings?.customFields ||
+                [],
             },
           });
           setUserCommunity(existingCommunity);
-
-          // If not in onboarding, redirect to dashboard
-          if (!window.location.pathname.includes('/onboarding')) {
-            navigate(`/c/${existingCommunity.slug}/dashboard`);
-          }
         }
       } catch (error) {
         console.error('Error initializing form data:', error);
       }
     };
 
-    initializeFormData();
-  }, [user, navigate, currentStep]);
+    if (user) {
+      initializeFormData();
+    }
+  }, [user]);
+
+  useEffect(() => {
+    const loadExistingData = async () => {
+      const { data: existingCommunity } = await supabase
+        .from('communities')
+        .select('*')
+        .eq('owner_id', user.id)
+        .single();
+
+      if (existingCommunity) {
+        setFormData({
+          name: existingCommunity.name,
+          description: existingCommunity.description,
+          branding: existingCommunity.settings?.branding || {},
+          social: existingCommunity.settings?.social || {},
+          jobBoardSettings:
+            existingCommunity.settings?.jobBoardSettings ||
+            defaultFormData.jobBoardSettings,
+        });
+      }
+    };
+
+    if (currentStep > 1) {
+      loadExistingData();
+    }
+  }, [currentStep, user.id]);
 
   const uploadImage = async (
     file: File,
@@ -439,12 +512,37 @@ export function OwnerOnboarding() {
     };
   }, [localPreviews]);
 
+  const updateFormData = (field: string, value: any) => {
+    console.log('Updating form data:', field, value);
+    setFormData((prev) => {
+      // Handle nested fields with dot notation (e.g., 'branding.memberNaming.singular')
+      const fields = field.split('.');
+      if (fields.length === 1) {
+        return {
+          ...prev,
+          [field]: value,
+        };
+      }
+
+      // Handle nested objects
+      const current = { ...prev };
+      let currentObj = current;
+      for (let i = 0; i < fields.length - 1; i++) {
+        currentObj[fields[i]] = { ...currentObj[fields[i]] };
+        currentObj = currentObj[fields[i]];
+      }
+      currentObj[fields[fields.length - 1]] = value;
+      return current;
+    });
+  };
+
   const handleNext = async () => {
     if (isSubmitting) return;
     setIsSubmitting(true);
     setError(null);
 
     try {
+      console.log('Current form data:', formData);
       // Get existing community if we're past step 1
       const { data: existingCommunity } = await supabase
         .from('communities')
@@ -452,156 +550,217 @@ export function OwnerOnboarding() {
         .eq('owner_id', user.id)
         .single();
 
+      console.log('Existing community:', existingCommunity);
+
       // Create community in step 2 when name is set
-      if (currentStep === 1 && !existingCommunity) {
+      if (currentStep === 1) {
         if (!formData.name) {
           setError('Community name is required');
           setIsSubmitting(false);
           return;
         }
 
-        const communitySlug = slugify(formData.name);
-        const newCommunity = {
-          name: formData.name,
-          slug: communitySlug,
-          description: formData.description,
-          owner_id: user.id,
-        };
+        if (existingCommunity) {
+          console.log('Updating existing community:', {
+            name: formData.name,
+            description: formData.description,
+          });
 
-        const { data: community, error: createError } = await supabase
-          .from('communities')
-          .insert([newCommunity])
-          .select()
-          .single();
+          const { data: updated, error: updateError } = await supabase
+            .from('communities')
+            .update({
+              name: formData.name,
+              description: formData.description,
+            })
+            .eq('id', existingCommunity.id)
+            .select()
+            .single();
 
-        if (createError) throw createError;
-        if (!community) throw new Error('Failed to create community');
+          if (updateError) throw updateError;
+          console.log('Updated community:', updated);
+          setUserCommunity(updated);
+        } else {
+          const communitySlug = slugify(formData.name);
+          console.log('Creating new community:', {
+            name: formData.name,
+            slug: communitySlug,
+            description: formData.description,
+            owner_id: user.id,
+          });
 
-        setUserCommunity(community);
+          const { data: created, error: createError } = await supabase
+            .from('communities')
+            .insert([
+              {
+                name: formData.name,
+                slug: communitySlug,
+                description: formData.description,
+                owner_id: user.id,
+              },
+            ])
+            .select()
+            .single();
+
+          if (createError) throw createError;
+          console.log('Created community:', created);
+          setUserCommunity(created);
+        }
       }
 
       // Update existing community in subsequent steps
       if (existingCommunity && currentStep > 1) {
         const updates: any = {};
-        const communitySlug = existingCommunity.slug;
 
         if (currentStep === 2) {
+          console.log('Step 2: Updating branding colors');
           updates.settings = {
             ...existingCommunity.settings,
             branding: {
-              ...existingCommunity.settings?.branding,
+              ...(existingCommunity.settings?.branding || {}),
               primaryColor: formData.branding.primaryColor,
               secondaryColor: formData.branding.secondaryColor,
-              login: formData.branding.login,
-              memberNaming: formData.branding.memberNaming,
             },
           };
 
-          // Handle image uploads
-          const imageUpdates: any = {};
+          const { data: updated, error: updateError } = await supabase
+            .from('communities')
+            .update(updates)
+            .eq('id', existingCommunity.id)
+            .select()
+            .single();
 
-          if (formData.branding.logo) {
-            const logoUrl = await uploadImage(
-              formData.branding.logo,
-              'logo',
-              existingCommunity
-            );
-            if (logoUrl) imageUpdates.logo_url = logoUrl;
+          if (updateError) {
+            console.error('Failed to update branding colors:', updateError);
+            throw updateError;
           }
 
-          if (formData.branding.banner) {
-            const bannerUrl = await uploadImage(
-              formData.branding.banner,
-              'banner',
-              existingCommunity
-            );
-            if (bannerUrl) imageUpdates.banner_url = bannerUrl;
-          }
-
-          if (formData.branding.favicon) {
-            const faviconUrl = await uploadImage(
-              formData.branding.favicon,
-              'favicon',
-              existingCommunity
-            );
-            if (faviconUrl) imageUpdates.favicon_url = faviconUrl;
-          }
-
-          Object.assign(updates, imageUpdates);
+          console.log('Successfully updated branding colors:', updated);
+          setUserCommunity(updated);
         }
 
         if (currentStep === 3) {
-          updates.settings = {
-            ...existingCommunity.settings,
+          console.log('Step 3: Updating member naming');
+          console.log('Current member naming:', formData.branding.memberNaming);
+          console.log('Existing settings:', existingCommunity.settings);
+
+          // Create a new settings object with the updated member naming
+          const updatedSettings = {
+            ...(existingCommunity.settings || {}),
             branding: {
-              ...existingCommunity.settings?.branding,
-              memberNaming: formData.branding.memberNaming,
+              ...(existingCommunity.settings?.branding || {}),
+              memberNaming: {
+                singular: formData.branding.memberNaming.singular,
+                plural: formData.branding.memberNaming.plural,
+              },
             },
           };
+
+          console.log('Sending update with settings:', updatedSettings);
+
+          const { data: updated, error: updateError } = await supabase
+            .from('communities')
+            .update({
+              settings: updatedSettings,
+            })
+            .eq('id', existingCommunity.id)
+            .select()
+            .single();
+
+          if (updateError) {
+            console.error('Failed to update member naming:', updateError);
+            throw updateError;
+          }
+
+          console.log(
+            'Successfully updated community with new settings:',
+            updated
+          );
+          setUserCommunity(updated);
+
+          // Verify the update
+          const { data: verifyUpdate } = await supabase
+            .from('communities')
+            .select('*')
+            .eq('id', existingCommunity.id)
+            .single();
+
+          console.log(
+            'Verified update - current community state:',
+            verifyUpdate
+          );
         }
 
         if (currentStep === 4) {
+          console.log('Step 4: Updating social links');
           updates.settings = {
             ...existingCommunity.settings,
             social: formData.social,
           };
-        }
 
-        if (currentStep === 5) {
-          updates.settings = {
-            ...existingCommunity.settings,
-            jobBoard: formData.jobBoardSettings,
-            events: formData.eventSettings,
-          };
-        }
-
-        const { error: updateError } = await supabase
-          .from('communities')
-          .update(updates)
-          .eq('id', existingCommunity.id);
-
-        if (updateError) throw updateError;
-      }
-
-      // If this is the last step, update profile completion and redirect
-      if (currentStep === steps.length - 1) {
-        try {
-          // Update profile completion status
-          const { error: profileUpdateError } = await supabase
-            .from('profiles')
-            .update({ profile_complete: true })
-            .eq('id', user.id);
-
-          if (profileUpdateError) throw profileUpdateError;
-
-          // Update local user state
-          setUser({
-            ...user,
-            profile_complete: true,
-          });
-
-          // Get the latest community data
-          const { data: community } = await supabase
+          const { data: updated, error: updateError } = await supabase
             .from('communities')
-            .select('*')
-            .eq('owner_id', user.id)
+            .update(updates)
+            .eq('id', existingCommunity.id)
+            .select()
             .single();
 
-          if (!community) throw new Error('Community not found');
-
-          // Navigate to the community dashboard
-          navigate(`/c/${community.slug}/dashboard`);
-          return;
-        } catch (error) {
-          console.error('Error in final step:', error);
-          setError('Failed to complete onboarding. Please try again.');
-          setIsSubmitting(false);
-          return;
+          if (updateError) throw updateError;
+          console.log('Successfully updated social links:', updated);
+          setUserCommunity(updated);
         }
-      }
 
-      // Move to next step if not the last step
-      setCurrentStep(currentStep + 1);
+        // If this is the last step, update profile completion and redirect
+        if (currentStep === steps.length - 1) {
+          try {
+            // Update profile completion status
+            const { error: profileUpdateError } = await supabase
+              .from('profiles')
+              .update({ profile_complete: true })
+              .eq('id', user.id);
+
+            if (profileUpdateError) throw profileUpdateError;
+
+            // Update local user state
+            setUser({
+              ...user,
+              profile_complete: true,
+            });
+
+            // Get the latest community data
+            const { data: community } = await supabase
+              .from('communities')
+              .select('*')
+              .eq('owner_id', user.id)
+              .single();
+
+            if (!community) throw new Error('Community not found');
+
+            // Navigate to the community dashboard
+            console.log('Redirecting to dashboard...');
+            const isLocalhost = window.location.hostname.includes('localhost');
+            const path = '/settings/dashboard';
+
+            if (isLocalhost) {
+              // For local development, use navigate to preserve the session
+              navigate(`/?subdomain=${community.slug}${path}`);
+            } else {
+              // For production, use full URL redirect
+              window.location.href = `${window.location.protocol}//${community.slug}.${import.meta.env.VITE_APP_DOMAIN}${path}`;
+            }
+            return;
+          } catch (error) {
+            console.error('Error in final step:', error);
+            setError('Failed to complete onboarding. Please try again.');
+            setIsSubmitting(false);
+            return;
+          }
+        }
+
+        // Move to next step if not the last step
+        setCurrentStep(currentStep + 1);
+      } else {
+        setCurrentStep(currentStep + 1);
+      }
     } catch (error) {
       console.error('Error:', error);
       setError('An error occurred. Please try again.');
@@ -612,13 +771,6 @@ export function OwnerOnboarding() {
 
   const handleBack = () => {
     setCurrentStep((prev) => prev - 1);
-  };
-
-  const updateFormData = (field: string, value: any) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
   };
 
   const renderPreview = () => {
@@ -647,7 +799,6 @@ export function OwnerOnboarding() {
             <TabsList>
               <TabsTrigger value="member-hub">Member Hub</TabsTrigger>
               <TabsTrigger value="job-board">Job Board</TabsTrigger>
-              <TabsTrigger value="events">Events</TabsTrigger>
             </TabsList>
           </Tabs>
 
@@ -778,6 +929,7 @@ export function OwnerOnboarding() {
           )}
 
           <form onSubmit={handleSubmit(handleNext)} className="space-y-6">
+            {/* Community details step */}
             {safeCurrentStep === 1 && (
               <>
                 <div>
@@ -786,8 +938,13 @@ export function OwnerOnboarding() {
                   </label>
                   <Input
                     type="text"
-                    {...register('name')}
+                    value={formData.name}
+                    onChange={(e) => {
+                      console.log('Name changed:', e.target.value);
+                      updateFormData('name', e.target.value);
+                    }}
                     error={errors.name?.message}
+                    placeholder="Enter your community name"
                   />
                 </div>
                 <div>
@@ -796,13 +953,17 @@ export function OwnerOnboarding() {
                   </label>
                   <Input
                     type="text"
-                    {...register('description')}
+                    value={formData.description}
+                    onChange={(e) => {
+                      console.log('Description changed:', e.target.value);
+                      updateFormData('description', e.target.value);
+                    }}
                     error={errors.description?.message}
+                    placeholder="Describe your community"
                   />
                 </div>
               </>
             )}
-
             {safeCurrentStep === 2 && (
               <div className="space-y-6">
                 <h3 className="text-lg font-medium text-gray-900">Branding</h3>
@@ -875,10 +1036,13 @@ export function OwnerOnboarding() {
                         <ColorPicker
                           color={formData.branding.primaryColor}
                           onChange={(color) =>
-                            updateFormData('branding', {
-                              ...formData.branding,
-                              primaryColor: color,
-                            })
+                            setFormData((prev) => ({
+                              ...prev,
+                              branding: {
+                                ...prev.branding,
+                                primaryColor: color,
+                              },
+                            }))
                           }
                         />
                       </div>
@@ -889,10 +1053,13 @@ export function OwnerOnboarding() {
                         <ColorPicker
                           color={formData.branding.secondaryColor}
                           onChange={(color) =>
-                            updateFormData('branding', {
-                              ...formData.branding,
-                              secondaryColor: color,
-                            })
+                            setFormData((prev) => ({
+                              ...prev,
+                              branding: {
+                                ...prev.branding,
+                                secondaryColor: color,
+                              },
+                            }))
                           }
                         />
                       </div>
@@ -901,7 +1068,6 @@ export function OwnerOnboarding() {
                 </div>
               </div>
             )}
-
             {safeCurrentStep === 3 && (
               <div>
                 <label className="block text-sm font-medium text-gray-700">
@@ -914,7 +1080,21 @@ export function OwnerOnboarding() {
                     </label>
                     <Input
                       type="text"
-                      {...register('branding.memberNaming.singular')}
+                      value={formData.branding.memberNaming.singular}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        console.log('Member singular changing to:', value);
+                        setFormData((prev) => ({
+                          ...prev,
+                          branding: {
+                            ...prev.branding,
+                            memberNaming: {
+                              ...prev.branding.memberNaming,
+                              singular: value,
+                            },
+                          },
+                        }));
+                      }}
                       error={errors.branding?.memberNaming?.singular?.message}
                       placeholder="member"
                       className="mt-1"
@@ -926,7 +1106,21 @@ export function OwnerOnboarding() {
                     </label>
                     <Input
                       type="text"
-                      {...register('branding.memberNaming.plural')}
+                      value={formData.branding.memberNaming.plural}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        console.log('Member plural changing to:', value);
+                        setFormData((prev) => ({
+                          ...prev,
+                          branding: {
+                            ...prev.branding,
+                            memberNaming: {
+                              ...prev.branding.memberNaming,
+                              plural: value,
+                            },
+                          },
+                        }));
+                      }}
                       error={errors.branding?.memberNaming?.plural?.message}
                       placeholder="members"
                       className="mt-1"
@@ -935,36 +1129,37 @@ export function OwnerOnboarding() {
                 </div>
               </div>
             )}
-
             {safeCurrentStep === 4 && (
               <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Social Media Links
-                  </label>
-                  <div className="space-y-3 mt-2">
-                    {Object.entries({
-                      facebook: { icon: Facebook, label: 'Facebook' },
-                      twitter: { icon: Twitter, label: 'Twitter' },
-                      linkedin: { icon: Linkedin, label: 'LinkedIn' },
-                      instagram: { icon: Instagram, label: 'Instagram' },
-                      website: { icon: Globe, label: 'Website' },
-                    }).map(([key, { icon: Icon, label }]) => (
-                      <div key={key} className="flex items-center space-x-2">
-                        <Icon className="w-5 h-5 text-gray-400" />
-                        <Input
-                          type="url"
-                          placeholder={label}
-                          {...register(`social.${key}`)}
-                          error={errors.social?.[key]?.message}
-                        />
-                      </div>
-                    ))}
+                {[
+                  { name: 'facebook', label: 'Facebook', icon: Facebook },
+                  { name: 'twitter', label: 'Twitter', icon: Twitter },
+                  { name: 'linkedin', label: 'LinkedIn', icon: Linkedin },
+                  { name: 'instagram', label: 'Instagram', icon: Instagram },
+                  { name: 'discord', label: 'Discord', icon: Globe },
+                  { name: 'youtube', label: 'YouTube', icon: Globe },
+                ].map(({ name, label, icon: Icon }) => (
+                  <div key={name} className="flex items-center space-x-2">
+                    <Icon className="w-6 h-6 text-gray-400" />
+                    <Input
+                      type="url"
+                      value={formData.social?.[name] || ''}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          social: {
+                            ...prev.social,
+                            [name]: e.target.value,
+                          },
+                        }))
+                      }
+                      placeholder={`${label} URL`}
+                      className="flex-1"
+                    />
                   </div>
-                </div>
+                ))}
               </div>
             )}
-
             {safeCurrentStep === 5 && (
               <div className="space-y-6">
                 <div>
@@ -975,7 +1170,16 @@ export function OwnerOnboarding() {
                     <label className="flex items-center">
                       <input
                         type="checkbox"
-                        {...register('jobBoardSettings.requireApproval')}
+                        checked={formData.jobBoardSettings.requireApproval}
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            jobBoardSettings: {
+                              ...prev.jobBoardSettings,
+                              requireApproval: e.target.checked,
+                            },
+                          }))
+                        }
                         className="rounded border-gray-300"
                       />
                       <span className="ml-2 text-sm text-gray-600">
@@ -985,37 +1189,20 @@ export function OwnerOnboarding() {
                     <label className="flex items-center">
                       <input
                         type="checkbox"
-                        {...register('jobBoardSettings.allowRemote')}
+                        checked={formData.jobBoardSettings.allowRemote}
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            jobBoardSettings: {
+                              ...prev.jobBoardSettings,
+                              allowRemote: e.target.checked,
+                            },
+                          }))
+                        }
                         className="rounded border-gray-300"
                       />
                       <span className="ml-2 text-sm text-gray-600">
                         Allow remote job listings
-                      </span>
-                    </label>
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="text-lg font-medium text-gray-900">Events</h3>
-                  <div className="mt-2 space-y-2">
-                    <label className="flex items-center">
-                      <input
-                        type="checkbox"
-                        {...register('eventSettings.enableRegistration')}
-                        className="rounded border-gray-300"
-                      />
-                      <span className="ml-2 text-sm text-gray-600">
-                        Enable event registration
-                      </span>
-                    </label>
-                    <label className="flex items-center">
-                      <input
-                        type="checkbox"
-                        {...register('eventSettings.enableVirtual')}
-                        className="rounded border-gray-300"
-                      />
-                      <span className="ml-2 text-sm text-gray-600">
-                        Enable virtual events
                       </span>
                     </label>
                   </div>
@@ -1034,15 +1221,15 @@ export function OwnerOnboarding() {
                   Previous
                 </Button>
               )}
-              {safeCurrentStep === steps.length - 1 ? (
-                <Button type="submit" loading={isSubmitting}>
-                  Complete Setup
-                </Button>
-              ) : (
-                <Button type="submit" disabled={isSubmitting}>
-                  Next
-                </Button>
-              )}
+              <Button
+                type="button"
+                disabled={isSubmitting}
+                onClick={handleNext}
+              >
+                {safeCurrentStep === steps.length - 1
+                  ? 'Complete Setup'
+                  : 'Next'}
+              </Button>
             </div>
           </form>
         </div>

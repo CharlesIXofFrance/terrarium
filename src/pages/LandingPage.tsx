@@ -1,7 +1,8 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useSetAtom } from 'jotai';
+import { useAtom } from 'jotai';
 import { userAtom } from '@/lib/stores/auth';
+import { supabase } from '@/lib/supabase';
 import { Navbar } from '@/components/layout/Navbar';
 import { Hero } from '@/components/layout/molecules/Hero';
 import { Features } from '@/components/layout/molecules/Features';
@@ -34,11 +35,60 @@ const mockUsers = {
 
 export function LandingPage() {
   const navigate = useNavigate();
-  const setUser = useSetAtom(userAtom);
+  const [user] = useAtom(userAtom);
+
+  const handleDashboardClick = async () => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+
+    // First check if user has completed onboarding
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('onboarding_completed')
+      .eq('id', user.id)
+      .single();
+
+    const userMetadata = user.user_metadata || {};
+    const onboardingCompleted =
+      profile?.onboarding_completed && userMetadata.onboarding_completed;
+
+    if (!onboardingCompleted) {
+      navigate('/onboarding');
+      return;
+    }
+
+    // Check if user is a community owner
+    const { data: ownedCommunity, error } = await supabase
+      .from('communities')
+      .select('slug')
+      .eq('owner_id', user.id)
+      .single();
+
+    if (error) {
+      console.error('Error checking community ownership:', error);
+      // If not a community owner, redirect to member hub
+      const { data: memberCommunity } = await supabase
+        .from('community_members')
+        .select('communities:communities(slug)')
+        .eq('profile_id', user.id)
+        .single();
+
+      if (memberCommunity?.communities?.slug) {
+        navigate(`/?subdomain=${memberCommunity.communities.slug}`);
+      } else {
+        navigate('/login');
+      }
+      return;
+    }
+
+    // User is a community owner and has completed onboarding
+    navigate(`/?subdomain=${ownedCommunity.slug}/settings/dashboard`);
+  };
 
   const loginAs = (role: 'member' | 'platform_owner') => {
     const user = mockUsers[role];
-    setUser(user);
     localStorage.setItem('user', JSON.stringify(user));
 
     if (role === 'member') {
@@ -52,11 +102,11 @@ export function LandingPage() {
 
   return (
     <div className="min-h-screen">
-      <Navbar />
-      <Hero />
+      <Navbar onDashboardClick={handleDashboardClick} />
+      <Hero onGetStarted={handleDashboardClick} />
       <Features />
       <Benefits />
-      <CTA />
+      <CTA onGetStarted={handleDashboardClick} />
       <Footer />
 
       {/* Quick Access Panel */}

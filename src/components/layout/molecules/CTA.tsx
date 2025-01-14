@@ -1,20 +1,38 @@
 import React from 'react';
+import { Button } from '@/components/ui/atoms/Button';
 
-export function CTA() {
+interface CTAProps {
+  onGetStarted?: () => void;
+}
+
+export function CTA({ onGetStarted }: CTAProps) {
   return (
-    <section className="py-20 bg-indigo-600">
-      <div className="max-w-7xl mx-auto px-4 text-center">
-        <h2 className="text-3xl font-bold text-white mb-6">
-          Ready to Transform Your Community?
-        </h2>
-        <p className="text-indigo-100 mb-8 max-w-2xl mx-auto">
-          Join the growing network of professional communities powered by
-          Terrarium.
-        </p>
-        <button className="bg-white text-indigo-600 px-8 py-4 rounded-lg hover:bg-gray-100 transition">
-          Get Started Now
-        </button>
+    <div className="bg-indigo-600 py-24 sm:py-32">
+      <div className="mx-auto max-w-7xl px-6 lg:px-8">
+        <div className="mx-auto max-w-2xl text-center">
+          <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
+            Ready to build your community?
+          </h2>
+          <p className="mx-auto mt-6 max-w-xl text-lg leading-8 text-indigo-100">
+            Start connecting your members, sharing opportunities, and growing
+            your professional network today.
+          </p>
+          <div className="mt-10 flex items-center justify-center gap-x-6">
+            <Button
+              onClick={onGetStarted}
+              className="bg-white text-indigo-600 hover:bg-indigo-50"
+            >
+              Get started
+            </Button>
+            <a
+              href="#features"
+              className="text-sm font-semibold leading-6 text-white"
+            >
+              Learn more <span aria-hidden="true">→</span>
+            </a>
+          </div>
+        </div>
       </div>
-    </section>
+    </div>
   );
 }

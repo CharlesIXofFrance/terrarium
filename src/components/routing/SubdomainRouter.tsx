@@ -74,8 +74,14 @@ export const SubdomainRouter: React.FC = () => {
       <Route
         path="*"
         element={
-          user ? (
-            <Navigate to={`/?subdomain=${community}${path}`} replace state={{ from: location }} />
+          location.pathname === '/' && !subdomainParam ? (
+            <LandingPage />
+          ) : user ? (
+            <Navigate
+              to={`/?subdomain=${community}${path}`}
+              replace
+              state={{ from: location }}
+            />
           ) : (
             <LandingPage />
           )

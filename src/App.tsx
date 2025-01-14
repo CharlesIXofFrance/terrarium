@@ -287,7 +287,7 @@ function App() {
     <ErrorBoundary>
       <Router>
         <Routes>
-          <Route path="*" element={<SubdomainRouter />} />
+          {/* Auth routes */}
           <Route
             path="/login"
             element={
@@ -336,7 +336,8 @@ function App() {
               </ProtectedRoute>
             }
           />
-          {/* Protected community admin routes */}
+
+          {/* Legacy community admin routes */}
           <Route
             path="/c/:slug/*"
             element={
@@ -355,7 +356,7 @@ function App() {
             <Route path="customize" element={<CustomizationPortal />} />
           </Route>
 
-          {/* Protected member routes */}
+          {/* Legacy member routes */}
           <Route
             path="/m/:communitySlug"
             element={
@@ -373,6 +374,9 @@ function App() {
             <Route path="feed" element={<Feed />} />
             <Route path="profile" element={<MemberProfile />} />
           </Route>
+
+          {/* Subdomain routes - must be last */}
+          <Route path="*" element={<SubdomainRouter />} />
         </Routes>
       </Router>
       <Toaster />

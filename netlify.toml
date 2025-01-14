@@ -1,23 +1,23 @@
 [build]
   command = """
-    mkdir -p preview &&
-    cd preview &&
+    mkdir -p docs-site &&
+    cd docs-site &&
     npm init -y &&
     npm install @docusaurus/core @docusaurus/preset-classic react react-dom &&
     npm run build
   """
-  publish = "preview/build"
+  publish = "docs-site/build"
 
 [build.environment]
   NODE_VERSION = "18"
 
 # Production context
 [context.production]
-  command = "cd preview && npm install && npm run build"
+  command = "cd docs-site && npm install && npm run build"
 
 # Deploy Preview context
 [context.deploy-preview]
-  command = "cd preview && npm install && npm run build"
+  command = "cd docs-site && npm install && npm run build"
 
 [[headers]]
   for = "/*"

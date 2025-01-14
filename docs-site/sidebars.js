@@ -1,14 +1,25 @@
-module.exports = {
+/** @type {import('@docusaurus/plugin-content-docs').SidebarsConfig} */
+const sidebars = {
   docs: [
+    'introduction',
     {
       type: 'category',
       label: 'Getting Started',
-      items: ['introduction'],
+      items: [
+        'getting-started/installation',
+        'getting-started/configuration',
+      ],
     },
     {
       type: 'category',
-      label: 'API Reference',
-      items: ['api/api'],
+      label: 'Features',
+      items: [
+        'features/communities',
+        'features/job-boards',
+        'features/analytics',
+      ],
     },
   ],
 };
+
+module.exports = sidebars;

@@ -1,5 +1,11 @@
 [build]
-  command = "cd preview && npm install && npm run build"
+  command = """
+    mkdir -p preview &&
+    cd preview &&
+    npm init -y &&
+    npm install @docusaurus/core @docusaurus/preset-classic react react-dom &&
+    npm run build
+  """
   publish = "preview/build"
 
 [build.environment]

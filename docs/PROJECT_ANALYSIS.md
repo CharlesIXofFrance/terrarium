@@ -1,10 +1,15 @@
 # Terrarium Project Analysis
 
-Version: 1.0.3 (January 2025)
+Version: 1.0.4 (January 2025)
 Last Updated: 2025-01-15
 
 ## Document Changelog
 
+- v1.0.4 (2025-01-15): Enhanced testing documentation and infrastructure
+  - Consolidated testing documentation
+  - Improved test patterns and examples
+  - Reorganized internal and public docs
+  - Added detailed environment-specific testing guidelines
 - v1.0.3 (2025-01-15): Implemented CI/CD and testing infrastructure
   - Added GitHub Actions workflow for CI/CD
   - Configured test coverage thresholds
@@ -1608,3 +1613,45 @@ Total estimated time: 4-6 days
 - Automated CI/CD pipeline
 - Clear test documentation
 - Fast and reliable test suite
+
+### Testing Infrastructure
+
+The project uses a comprehensive testing setup:
+
+1. **Unit Testing**
+
+   - Framework: Vitest
+   - Coverage requirements: >80% for core functionality
+   - Patterns: Component testing, hooks testing, utility testing
+   - Location: `__tests__` directories adjacent to source files
+
+2. **Integration Testing**
+
+   - Framework: Vitest + React Testing Library
+   - Focus: Component interactions, data flow, API integration
+   - Coverage: Critical user flows and feature interactions
+   - Environment: Development environment with test database
+
+3. **End-to-End Testing**
+
+   - Framework: Playwright
+   - Scope: Critical user journeys
+   - Environments: Development environment
+   - Browsers: Chrome, Firefox, Safari
+
+4. **Test Data Management**
+
+   - Development: Regular refresh of test data
+   - CI/CD: Isolated test database
+   - Cleanup: Automated daily cleanup
+
+5. **Test Documentation**
+
+   - Internal: Detailed patterns and examples in `/docs/testing.md`
+   - Public: High-level overview in docs-site
+   - Checklist: Manual testing procedures in `/docs/TESTING_CHECKLIST.md`
+
+6. **CI/CD Integration**
+   - Automated test runs on pull requests
+   - Coverage reports via Codecov
+   - Required status checks for merging

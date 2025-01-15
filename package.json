@@ -12,9 +12,10 @@
     "test:coverage": "vitest run --coverage",
     "test:ui": "vitest --ui",
     "format": "prettier --write \"src/**/*.{ts,tsx,css,md}\"",
-    "type-check": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
     "prepare": "husky install",
-    "analyze-logos": "tsx scripts/analyzeLogo.ts"
+    "analyze-logos": "tsx scripts/analyzeLogo.ts",
+    "ci": "npm run lint && npm run typecheck && npm run test:coverage"
   },
   "dependencies": {
     "@fontsource/inter": "^5.0.17",

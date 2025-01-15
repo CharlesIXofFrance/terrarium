@@ -1,20 +1,33 @@
 {
-  "entryPoints": ["src"],
+  "entryPoints": ["src/**/*.ts", "src/**/*.tsx"],
   "entryPointStrategy": "expand",
-  "out": "docs/generated/typescript",
-  "exclude": ["**/*.test.ts", "**/*.spec.ts", "**/node_modules/**"],
-  "theme": "default",
-  "name": "Terrarium Documentation",
+  "exclude": ["**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts", "**/*.spec.tsx", "**/node_modules/**"],
+  "out": "docs-site/docs/api-reference",
+  "theme": "markdown",
+  "name": "Terrarium API Reference",
   "excludePrivate": true,
   "excludeProtected": true,
   "excludeExternals": true,
   "includeVersion": true,
+  "hideGenerator": true,
+  "searchInComments": true,
+  "defaultCategory": "Other",
+  "categoryOrder": [
+    "Components",
+    "Hooks",
+    "Services",
+    "Utils",
+    "Types",
+    "Other"
+  ],
   "categorizeByGroup": true,
-  "categoryOrder": ["Core", "Components", "Utilities", "*"],
+  "sort": ["source-order"],
+  "gitRevision": "main",
+  "githubPages": false,
+  "cleanOutputDir": true,
   "readme": "none",
   "plugin": [
-    "typedoc-plugin-markdown",
-    "@mxssfd/typedoc-theme"
+    "typedoc-plugin-markdown"
   ],
   "validation": {
     "invalidLink": true,

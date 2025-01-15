@@ -3,7 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { useAtom } from 'jotai';
 import { userAtom, userCommunityAtom } from '../stores/auth';
 import { authService } from '../../backend/services/auth.service';
-import type { LoginCredentials, RegisterData } from '../../backend/types/auth.types';
+import type {
+  LoginCredentials,
+  RegisterData,
+} from '../../backend/types/auth.types';
 import { AuthError } from '@supabase/supabase-js';
 import { atom } from 'jotai';
 import { supabase } from '../supabase';
@@ -152,5 +155,10 @@ export function useAuth() {
     logout: logoutMutation.mutate,
     signIn,
     signOut,
+    loading:
+      isCheckingAuth ||
+      loginMutation.isLoading ||
+      registerMutation.isLoading ||
+      logoutMutation.isLoading,
   };
 }

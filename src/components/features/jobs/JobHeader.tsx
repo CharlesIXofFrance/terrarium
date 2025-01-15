@@ -1,5 +1,10 @@
 import React from 'react';
-import { MapPin, Building2, Clock, Euro } from 'lucide-react';
+import {
+  MapPinIcon,
+  BuildingIcon,
+  ClockIcon,
+  DollarSignIcon,
+} from 'lucide-react';
 import { useImageLoader } from '@/lib/hooks/useImageLoader';
 import { useCompanyColors } from '@/lib/hooks/useCompanyColors';
 import type { Job } from '@/lib/types';
@@ -60,7 +65,7 @@ export function JobHeader({ job }: JobHeaderProps) {
               className="w-10 h-10 md:w-12 md:h-12 object-contain"
             />
           ) : (
-            <Building2 className="h-8 w-8 text-gray-400" />
+            <BuildingIcon className="h-8 w-8 text-gray-400" />
           )}
         </div>
         <div>
@@ -81,7 +86,7 @@ export function JobHeader({ job }: JobHeaderProps) {
             color: companyColor,
           }}
         >
-          <Clock className="h-4 w-4 mr-1" />
+          <ClockIcon className="h-4 w-4 mr-1" />
           {job.type}
         </span>
 
@@ -93,7 +98,7 @@ export function JobHeader({ job }: JobHeaderProps) {
             color: companyColor,
           }}
         >
-          <MapPin className="h-4 w-4 mr-1" />
+          <MapPinIcon className="h-4 w-4 mr-1" />
           {job.location}
         </span>
 
@@ -106,7 +111,7 @@ export function JobHeader({ job }: JobHeaderProps) {
               color: companyColor,
             }}
           >
-            <Euro className="h-4 w-4 mr-1" />
+            <DollarSignIcon className="h-4 w-4 mr-1" />
             {job.salary.min / 1000}-{job.salary.max / 1000}k{' '}
             {job.salary.currency}
           </span>
@@ -121,7 +126,7 @@ export function JobHeader({ job }: JobHeaderProps) {
               color: companyColor,
             }}
           >
-            <Clock className="h-4 w-4 mr-1" />
+            <ClockIcon className="h-4 w-4 mr-1" />
             Early Applicant
           </span>
         )}

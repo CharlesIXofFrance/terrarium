@@ -1,4 +1,4 @@
-import type { Job } from '../types/jobs';
+import type { Job } from '../../types/domain/jobs';
 
 export const MOCK_JOBS: Job[] = [
   {
@@ -346,7 +346,7 @@ export const MOCK_JOBS: Job[] = [
         size: 'medium',
       },
       {
-        url: 'https://images.unsplash.com/photo-1590650213165-c1fef80648c4?q=80&w=3870&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', // C6 (using as culture image)
+        url: 'https://images.unsplash.com/photo-1590650046871-92c887180603?q=80&w=3870&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', // C6 (using as culture image)
         caption: 'Innovation workshop',
         category: 'culture',
         size: 'small',

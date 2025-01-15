@@ -1,5 +1,5 @@
 import { atom } from 'jotai';
-import type { Job } from '../types/jobs';
+import type { Job } from '../../types/domain/jobs';
 import { MOCK_JOBS } from '../mocks/mockJobs';
 
 // Base atoms

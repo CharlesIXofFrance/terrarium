@@ -9,6 +9,7 @@ import {
   Title,
   Tooltip,
   Legend,
+  ChartOptions,
   Filler,
 } from 'chart.js';
 
@@ -42,7 +43,7 @@ export function LineChart({ data }: LineChartProps) {
 
   const chartData = data || defaultData;
 
-  const options = {
+  const options: ChartOptions<'line'> = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {

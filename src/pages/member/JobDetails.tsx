@@ -15,8 +15,19 @@ import { CareerConsult } from '@/components/features/jobs/CareerConsult';
 import { getRelatedJobs } from '@/lib/utils/jobs';
 import { Button } from '@/components/ui/atoms/Button';
 
-export function JobDetails() {
-  const { jobId, communitySlug } = useParams();
+interface JobDetailsProps {
+  jobId?: string;
+}
+
+export const JobDetails: React.FC<JobDetailsProps> = ({ jobId }) => {
+  // If jobId wasn't passed as a prop, try to get it from the URL params
+  const params = new URLSearchParams(window.location.search);
+  const subdomainParam = params.get('subdomain') || '';
+  const [, ...pathParts] = subdomainParam.split('/');
+  const urlJobId = pathParts[1]; // ['jobs', '2'] -> '2'
+
+  const finalJobId = jobId || urlJobId;
+
   const navigate = useNavigate();
   const [jobs] = useAtom(jobsAtom);
   const [isLoading, setIsLoading] = useState(true);
@@ -54,7 +65,7 @@ export function JobDetails() {
   }
 
   // Find the current job
-  const job = jobs?.find((j) => j.id === jobId);
+  const job = jobs?.find((j) => j.id === finalJobId);
 
   if (!job) {
     return (
@@ -65,7 +76,7 @@ export function JobDetails() {
           <Button
             variant="secondary"
             className="mt-4"
-            onClick={() => navigate(`/m/${communitySlug}/jobs`)}
+            onClick={() => navigate(`/m/${job.communitySlug}/jobs`)}
           >
             Back to Jobs
           </Button>
@@ -82,7 +93,7 @@ export function JobDetails() {
       <div className="bg-white border-b border-gray-100 sticky top-16 z-10">
         <div className="container mx-auto px-4 py-4">
           <button
-            onClick={() => navigate(`/m/${communitySlug}/jobs`)}
+            onClick={() => navigate(`/m/${job.communitySlug}/jobs`)}
             className="text-gray-600 hover:text-gray-900 flex items-center space-x-1"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -179,4 +190,4 @@ export function JobDetails() {
       )}
     </div>
   );
-}
+};

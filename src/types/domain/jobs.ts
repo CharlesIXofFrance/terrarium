@@ -6,19 +6,23 @@ export interface Job {
   type: string;
   description: string;
   requirements: string[];
-  salary_range?: {
+  salary?: {
     min: number;
     max: number;
     currency: string;
   };
-  posted_at: string;
-  expires_at: string;
+  postedAt: string;
+  expiresAt: string;
   status: 'active' | 'expired' | 'draft';
-  company_logo?: string;
-  company_description?: string;
-  apply_url?: string;
+  companyLogo?: string;
+  coverImage?: string;
+  companyDescription?: string;
+  applyUrl?: string;
   skills?: string[];
   benefits?: string[];
+  isEarlyApplicant?: boolean;
+  sisterScore?: number;
+  experience?: string;
 }
 
 export interface JobApplication {

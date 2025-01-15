@@ -17,11 +17,10 @@ Welcome to the Terrarium documentation. This documentation site contains compreh
 
 ## Quick Links
 
-- [Project Analysis](/docs/project-analysis)
-- [API Documentation](/docs/api/api)
-- [Security Guidelines](/docs/security)
-- [Implementation Guides](/docs/implementation)
-- [Development Workflows](/docs/workflows)
+- [Getting Started](/getting-started/installation)
+- [API Reference](/api/overview)
+- [API Playground](/api-playground)
+- [SDK Documentation](/sdk/overview)
 
 ## About Terrarium
 

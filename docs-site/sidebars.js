@@ -53,6 +53,8 @@ const sidebars = {
         'sdk/overview',
         'sdk/javascript',
         'sdk/python',
+        'sdk/ruby',
+        'sdk/go',
       ],
     },
   ],

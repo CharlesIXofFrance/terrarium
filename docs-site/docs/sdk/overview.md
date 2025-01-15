@@ -36,10 +36,10 @@ All our SDKs share these core features:
 
 Choose your preferred language to get started:
 
-- [JavaScript/TypeScript SDK](/docs/sdk/javascript)
-- [Python SDK](/docs/sdk/python)
-- [Ruby SDK](/docs/sdk/ruby)
-- [Go SDK](/docs/sdk/go)
+- [JavaScript/TypeScript SDK](/sdk/javascript)
+- [Python SDK](/sdk/python)
+- [Ruby SDK](/sdk/ruby)
+- [Go SDK](/sdk/go)
 
 ## Best Practices
 

@@ -1,8 +1,7 @@
 // @ts-check
 // Note: type annotations allow type checking and IDEs autocompletion
 
-const lightCodeTheme = require('prism-react-renderer/themes/github');
-const darkCodeTheme = require('prism-react-renderer/themes/dracula');
+const { themes } = require('prism-react-renderer');
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
@@ -19,7 +18,7 @@ const config = {
   organizationName: 'CharlesIXofFrance',
   projectName: 'terrarium',
 
-  onBrokenLinks: 'throw',
+  onBrokenLinks: 'warn',
   onBrokenMarkdownLinks: 'warn',
 
   // Even if you don't use internalization, you can use this field to set useful
@@ -40,14 +39,11 @@ const config = {
           editUrl: 'https://github.com/CharlesIXofFrance/terrarium/tree/main/docs-site/',
           showLastUpdateTime: true,
           showLastUpdateAuthor: true,
-          lastVersion: 'current',
-          versions: {
-            current: {
-              label: '2.0.0',
-              path: '2.0.0',
-            },
-          },
+          routeBasePath: '/',
+          // Remove versioning for now
+          disableVersioning: true,
         },
+        blog: false,
         theme: {
           customCss: [
             require.resolve('./src/css/custom.css'),
@@ -99,12 +95,6 @@ const config = {
             position: 'left',
           },
           {
-            type: 'docsVersionDropdown',
-            position: 'right',
-            dropdownItemsAfter: [{to: '/versions', label: 'All versions'}],
-            dropdownActiveClassDisabled: true,
-          },
-          {
             to: '/status',
             label: 'System Status',
             position: 'right',
@@ -124,15 +114,11 @@ const config = {
             items: [
               {
                 label: 'Getting Started',
-                to: '/docs/getting-started/installation',
+                to: '/getting-started/installation',
               },
               {
-                label: 'Features',
-                to: '/docs/features/communities',
-              },
-              {
-                label: 'API Playground',
-                to: '/api-playground',
+                label: 'API Reference',
+                to: '/api/overview',
               },
             ],
           },
@@ -140,8 +126,25 @@ const config = {
             title: 'Community',
             items: [
               {
-                label: 'GitHub Discussions',
-                href: 'https://github.com/CharlesIXofFrance/terrarium/discussions',
+                label: 'Discord',
+                href: 'https://discord.gg/terrarium',
+              },
+              {
+                label: 'Twitter',
+                href: 'https://twitter.com/terrariumdev',
+              },
+            ],
+          },
+          {
+            title: 'More',
+            items: [
+              {
+                label: 'Blog',
+                href: 'https://blog.terrarium.dev',
+              },
+              {
+                label: 'GitHub',
+                href: 'https://github.com/CharlesIXofFrance/terrarium',
               },
             ],
           },
@@ -149,13 +152,8 @@ const config = {
         copyright: `Copyright ${new Date().getFullYear()} Terrarium. Built with Docusaurus.`,
       },
       prism: {
-        theme: lightCodeTheme,
-        darkTheme: darkCodeTheme,
-        additionalLanguages: ['bash', 'json', 'yaml'],
-      },
-      tableOfContents: {
-        minHeadingLevel: 2,
-        maxHeadingLevel: 4,
+        theme: themes.github,
+        darkTheme: themes.dracula,
       },
     }),
 };

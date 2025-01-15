@@ -46,7 +46,15 @@ export const LoginForm: React.FC<LoginFormProps> = ({
       }
     } catch (err) {
       if (err instanceof Error) {
-        setError(err.message);
+        // Handle rate limit errors
+        if (
+          err.name === 'AuthenticationError' &&
+          err.message.includes('Too many attempts')
+        ) {
+          setError('Too many login attempts. Please try again later.');
+        } else {
+          setError(err.message);
+        }
       } else {
         setError('An unexpected error occurred');
       }

@@ -1,4 +1,9 @@
 import { supabase } from '../../lib/supabase';
+import {
+  RateLimiter,
+  rateLimitConfigs,
+  RateLimitError,
+} from './rate-limiter.service';
 import type {
   LoginCredentials,
   RegisterData,
@@ -21,20 +26,26 @@ class AuthenticationError extends Error implements AuthError {
 const MAX_PROFILE_RETRIES = 3;
 const PROFILE_RETRY_DELAY = 1000; // 1 second
 
+// Initialize rate limiters
+const loginLimiter = new RateLimiter(rateLimitConfigs.login);
+const registerLimiter = new RateLimiter(rateLimitConfigs.register);
+const resetPasswordLimiter = new RateLimiter(rateLimitConfigs.resetPassword);
+
 export const authService = {
   async login({ email, password }: LoginCredentials): Promise<AuthResult> {
     try {
+      // Check rate limit before attempting login
+      await loginLimiter.checkLimit(`login:${email.toLowerCase()}`);
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
-        throw new AuthenticationError(
-          error.name,
-          error.message,
-          { status: error.status }
-        );
+        throw new AuthenticationError(error.name, error.message, {
+          status: error.status,
+        });
       }
 
       // If we have a session but no user profile yet, wait briefly for it
@@ -52,7 +63,9 @@ export const authService = {
           if (profileError) {
             lastError = profileError;
             if (i < MAX_PROFILE_RETRIES - 1) {
-              await new Promise((resolve) => setTimeout(resolve, PROFILE_RETRY_DELAY));
+              await new Promise((resolve) =>
+                setTimeout(resolve, PROFILE_RETRY_DELAY)
+              );
               continue;
             }
             break;
@@ -64,7 +77,9 @@ export const authService = {
           }
 
           if (i < MAX_PROFILE_RETRIES - 1) {
-            await new Promise((resolve) => setTimeout(resolve, PROFILE_RETRY_DELAY));
+            await new Promise((resolve) =>
+              setTimeout(resolve, PROFILE_RETRY_DELAY)
+            );
           }
         }
 
@@ -92,6 +107,11 @@ export const authService = {
       if (error instanceof AuthenticationError) {
         throw error;
       }
+      if (error instanceof RateLimitError) {
+        throw new AuthenticationError('RATE_LIMIT_ERROR', error.message, {
+          originalError: error,
+        });
+      }
       throw new AuthenticationError(
         'LOGIN_ERROR',
         error instanceof Error ? error.message : 'Failed to login',
@@ -100,9 +120,14 @@ export const authService = {
     }
   },
 
-  async register(data: RegisterData): Promise<{ needsEmailVerification: boolean }> {
+  async register(
+    data: RegisterData
+  ): Promise<{ needsEmailVerification: boolean }> {
     try {
-      const { error } = await supabase.auth.signUp({
+      // Check rate limit before attempting registration
+      await registerLimiter.checkLimit(`register:${data.email.toLowerCase()}`);
+
+      const { data: authData, error } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
         options: {
@@ -115,17 +140,20 @@ export const authService = {
       });
 
       if (error) {
-        throw new AuthenticationError(
-          error.name,
-          error.message,
-          { status: error.status }
-        );
+        throw new AuthenticationError(error.name, error.message, {
+          status: error.status,
+        });
       }
 
       return { needsEmailVerification: true };
     } catch (error) {
       if (error instanceof AuthenticationError) {
         throw error;
+      }
+      if (error instanceof RateLimitError) {
+        throw new AuthenticationError('RATE_LIMIT_ERROR', error.message, {
+          originalError: error,
+        });
       }
       throw new AuthenticationError(
         'REGISTRATION_ERROR',
@@ -139,11 +167,9 @@ export const authService = {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) {
-        throw new AuthenticationError(
-          error.name,
-          error.message,
-          { status: error.status }
-        );
+        throw new AuthenticationError(error.name, error.message, {
+          status: error.status,
+        });
       }
     } catch (error) {
       if (error instanceof AuthenticationError) {
@@ -159,14 +185,15 @@ export const authService = {
 
   async getCurrentUser(): Promise<User | null> {
     try {
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
 
       if (sessionError) {
-        throw new AuthenticationError(
-          sessionError.name,
-          sessionError.message,
-          { status: sessionError.status }
-        );
+        throw new AuthenticationError(sessionError.name, sessionError.message, {
+          status: sessionError.status,
+        });
       }
 
       if (!session?.user) {
@@ -202,20 +229,26 @@ export const authService = {
 
   async resetPassword(email: string): Promise<void> {
     try {
+      // Check rate limit before attempting password reset
+      await resetPasswordLimiter.checkLimit(`reset:${email.toLowerCase()}`);
+
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/reset-password`,
       });
 
       if (error) {
-        throw new AuthenticationError(
-          error.name,
-          error.message,
-          { status: error.status }
-        );
+        throw new AuthenticationError(error.name, error.message, {
+          status: error.status,
+        });
       }
     } catch (error) {
       if (error instanceof AuthenticationError) {
         throw error;
+      }
+      if (error instanceof RateLimitError) {
+        throw new AuthenticationError('RATE_LIMIT_ERROR', error.message, {
+          originalError: error,
+        });
       }
       throw new AuthenticationError(
         'RESET_PASSWORD_ERROR',

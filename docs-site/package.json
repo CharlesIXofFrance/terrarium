@@ -12,7 +12,8 @@
     "clear": "docusaurus clear",
     "write-translations": "docusaurus write-translations",
     "write-heading-ids": "docusaurus write-heading-ids",
-    "postinstall": "node scripts/copy-openapi.js"
+    "postinstall": "node scripts/copy-openapi.js",
+    "docusaurus-version": "docusaurus docs:version"
   },
   "dependencies": {
     "@docusaurus/core": "2.4.1",

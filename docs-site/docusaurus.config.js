@@ -40,6 +40,13 @@ const config = {
           editUrl: 'https://github.com/CharlesIXofFrance/terrarium/tree/main/docs-site/',
           showLastUpdateTime: true,
           showLastUpdateAuthor: true,
+          lastVersion: 'current',
+          versions: {
+            current: {
+              label: '2.0.0',
+              path: '2.0.0',
+            },
+          },
         },
         theme: {
           customCss: [
@@ -90,6 +97,12 @@ const config = {
             to: '/api-playground',
             label: 'API Playground',
             position: 'left',
+          },
+          {
+            type: 'docsVersionDropdown',
+            position: 'right',
+            dropdownItemsAfter: [{to: '/versions', label: 'All versions'}],
+            dropdownActiveClassDisabled: true,
           },
           {
             href: 'https://github.com/CharlesIXofFrance/terrarium',

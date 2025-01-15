@@ -35,11 +35,12 @@ const config = {
       /** @type {import('@docusaurus/preset-classic').Options} */
       ({
         docs: {
+          path: 'docs',
+          routeBasePath: '/',
           sidebarPath: require.resolve('./sidebars.js'),
           editUrl: 'https://github.com/CharlesIXofFrance/terrarium/tree/main/docs-site/',
           showLastUpdateTime: true,
           showLastUpdateAuthor: true,
-          routeBasePath: '/',
           // Remove versioning for now
           disableVersioning: true,
         },

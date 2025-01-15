@@ -17,10 +17,10 @@ Welcome to the Terrarium documentation. This documentation site contains compreh
 
 ## Quick Links
 
-- [Getting Started](/getting-started/installation)
-- [API Reference](/api/overview)
-- [API Playground](/api-playground)
-- [SDK Documentation](/sdk/overview)
+- [Getting Started](getting-started/installation)
+- [API Reference](api/overview)
+- [API Playground](api-playground)
+- [SDK Documentation](sdk/overview)
 
 ## About Terrarium
 

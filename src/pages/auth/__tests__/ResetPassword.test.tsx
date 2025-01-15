@@ -1,5 +1,11 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import {
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+  act,
+} from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { BrowserRouter } from 'react-router-dom';
 import { ResetPassword } from '../ResetPassword';
@@ -9,9 +15,9 @@ import { supabase } from '@/lib/supabase';
 vi.mock('@/lib/supabase', () => ({
   supabase: {
     auth: {
+      exchangeCodeForSession: vi.fn(),
       updateUser: vi.fn(),
-      verifyOtp: vi.fn(),
-      setSession: vi.fn(),
+      signOut: vi.fn(),
     },
   },
 }));
@@ -42,8 +48,8 @@ describe('ResetPassword Component', () => {
       writable: true,
     });
 
-    // Mock successful token verification
-    vi.mocked(supabase.auth.verifyOtp).mockResolvedValue({
+    // Mock successful token exchange
+    vi.mocked(supabase.auth.exchangeCodeForSession).mockResolvedValue({
       data: {
         user: { id: 'test-user' },
         session: {
@@ -54,9 +60,8 @@ describe('ResetPassword Component', () => {
       error: null,
     });
 
-    // Mock successful session setup
-    vi.mocked(supabase.auth.setSession).mockResolvedValue({
-      data: { user: null, session: null },
+    // Mock successful sign out
+    vi.mocked(supabase.auth.signOut).mockResolvedValue({
       error: null,
     });
   });
@@ -69,21 +74,21 @@ describe('ResetPassword Component', () => {
         </BrowserRouter>
       );
 
-      await waitFor(() => {
-        expect(supabase.auth.verifyOtp).toHaveBeenCalled();
-      });
-
       await act(async () => {
         const passwordInput = screen.getByTestId('password-input');
-        const confirmPasswordInput = screen.getByTestId('confirm-password-input');
+        const confirmPasswordInput = screen.getByTestId(
+          'confirm-password-input'
+        );
         const submitButton = screen.getByTestId('submit-button');
 
         fireEvent.change(passwordInput, { target: { value: 'password123' } });
-        fireEvent.change(confirmPasswordInput, { target: { value: 'password456' } });
+        fireEvent.change(confirmPasswordInput, {
+          target: { value: 'password456' },
+        });
         fireEvent.click(submitButton);
       });
 
-      expect(screen.getByText("Passwords don't match")).toBeInTheDocument();
+      expect(screen.getByText('Passwords do not match')).toBeInTheDocument();
     });
 
     it('should show password length error', async () => {
@@ -93,13 +98,11 @@ describe('ResetPassword Component', () => {
         </BrowserRouter>
       );
 
-      await waitFor(() => {
-        expect(supabase.auth.verifyOtp).toHaveBeenCalled();
-      });
-
       await act(async () => {
         const passwordInput = screen.getByTestId('password-input');
-        const confirmPasswordInput = screen.getByTestId('confirm-password-input');
+        const confirmPasswordInput = screen.getByTestId(
+          'confirm-password-input'
+        );
         const submitButton = screen.getByTestId('submit-button');
 
         fireEvent.change(passwordInput, { target: { value: 'short' } });
@@ -107,7 +110,9 @@ describe('ResetPassword Component', () => {
         fireEvent.click(submitButton);
       });
 
-      expect(screen.getByText('Password must be at least 6 characters long')).toBeInTheDocument();
+      expect(
+        screen.getByText('Password must be at least 6 characters')
+      ).toBeInTheDocument();
     });
 
     it('should handle successful password reset', async () => {
@@ -122,17 +127,19 @@ describe('ResetPassword Component', () => {
         </BrowserRouter>
       );
 
-      await waitFor(() => {
-        expect(supabase.auth.verifyOtp).toHaveBeenCalled();
-      });
-
       await act(async () => {
         const passwordInput = screen.getByTestId('password-input');
-        const confirmPasswordInput = screen.getByTestId('confirm-password-input');
+        const confirmPasswordInput = screen.getByTestId(
+          'confirm-password-input'
+        );
         const submitButton = screen.getByTestId('submit-button');
 
-        fireEvent.change(passwordInput, { target: { value: 'newpassword123' } });
-        fireEvent.change(confirmPasswordInput, { target: { value: 'newpassword123' } });
+        fireEvent.change(passwordInput, {
+          target: { value: 'newpassword123' },
+        });
+        fireEvent.change(confirmPasswordInput, {
+          target: { value: 'newpassword123' },
+        });
         fireEvent.click(submitButton);
       });
 
@@ -143,13 +150,23 @@ describe('ResetPassword Component', () => {
       });
 
       await waitFor(() => {
-        expect(mockNavigate).toHaveBeenCalledWith('/onboarding', {
+        expect(mockNavigate).toHaveBeenCalledWith('/login', {
           replace: true,
+          state: {
+            message:
+              'Password updated successfully. Please log in with your new password.',
+            type: 'success',
+          },
         });
       });
     });
 
     it('should handle password update error', async () => {
+      vi.mocked(supabase.auth.exchangeCodeForSession).mockResolvedValueOnce({
+        data: { user: { id: 'test-user' }, session: null },
+        error: null,
+      });
+
       vi.mocked(supabase.auth.updateUser).mockResolvedValueOnce({
         data: { user: null },
         error: new Error('Update failed'),
@@ -161,22 +178,26 @@ describe('ResetPassword Component', () => {
         </BrowserRouter>
       );
 
-      await waitFor(() => {
-        expect(supabase.auth.verifyOtp).toHaveBeenCalled();
-      });
-
       await act(async () => {
         const passwordInput = screen.getByTestId('password-input');
-        const confirmPasswordInput = screen.getByTestId('confirm-password-input');
+        const confirmPasswordInput = screen.getByTestId(
+          'confirm-password-input'
+        );
         const submitButton = screen.getByTestId('submit-button');
 
-        fireEvent.change(passwordInput, { target: { value: 'newpassword123' } });
-        fireEvent.change(confirmPasswordInput, { target: { value: 'newpassword123' } });
+        fireEvent.change(passwordInput, {
+          target: { value: 'newpassword123' },
+        });
+        fireEvent.change(confirmPasswordInput, {
+          target: { value: 'newpassword123' },
+        });
         fireEvent.click(submitButton);
       });
 
       await waitFor(() => {
-        expect(screen.getByText('Failed to update password. Please try again.')).toBeInTheDocument();
+        expect(
+          screen.getByText('Failed to update password. Please try again.')
+        ).toBeInTheDocument();
       });
     });
   });

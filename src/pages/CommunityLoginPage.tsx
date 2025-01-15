@@ -14,15 +14,14 @@
  * separate component in features/ if it needs to be reused.
  */
 
-import React from 'react';
-import { Navigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useCommunityCustomization } from '../hooks/useCommunityCustomization';
 import { supabase } from '../lib/supabase';
-import type { Community } from '../lib/utils/community';
-import { parseDomain } from '../lib/utils/subdomain';
+import { Spinner } from '../components/ui/atoms/Spinner';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -36,6 +35,9 @@ interface CommunityLoginPageProps {
 }
 
 export function CommunityLoginPage({ communitySlug }: CommunityLoginPageProps) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const navigate = useNavigate();
+
   // Get community slug from props or subdomain
   const params = new URLSearchParams(window.location.search);
   const subdomainParam = params.get('subdomain') || '';
@@ -58,6 +60,7 @@ export function CommunityLoginPage({ communitySlug }: CommunityLoginPageProps) {
   });
 
   const onSubmit = async (data: LoginFormData) => {
+    setIsSubmitting(true);
     try {
       const { error } = await supabase.auth.signInWithPassword({
         email: data.email,
@@ -68,11 +71,16 @@ export function CommunityLoginPage({ communitySlug }: CommunityLoginPageProps) {
         setError('root', {
           message: error.message,
         });
+      } else {
+        // Navigate to dashboard on successful login
+        navigate(`/c/${slug}/dashboard`);
       }
     } catch (error) {
       setError('root', {
         message: 'An unexpected error occurred',
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -83,22 +91,23 @@ export function CommunityLoginPage({ communitySlug }: CommunityLoginPageProps) {
   if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+        <Spinner data-testid="spinner" />
       </div>
     );
   }
 
   if (customizationError) {
     console.error('Error loading community customization:', customizationError);
+    return <Navigate to="/login" replace />;
   }
 
   return (
     <div
       className="flex min-h-screen flex-col md:flex-row items-center justify-center"
-      style={{ backgroundColor: customization.backgroundColor }}
+      style={{ backgroundColor: customization?.backgroundColor || '#fff' }}
     >
       {/* Side Image */}
-      {customization.sideImageUrl && (
+      {customization?.sideImageUrl && (
         <div className="hidden md:block w-1/2 h-screen">
           <img
             src={customization.sideImageUrl}
@@ -111,12 +120,12 @@ export function CommunityLoginPage({ communitySlug }: CommunityLoginPageProps) {
       {/* Login Form */}
       <div
         className={`w-full ${
-          customization.sideImageUrl ? 'md:w-1/2' : ''
+          customization?.sideImageUrl ? 'md:w-1/2' : ''
         } h-screen flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8`}
       >
         <div className="w-full max-w-md space-y-8">
           {/* Logo */}
-          {customization.logoUrl && (
+          {customization?.logoUrl && (
             <div className="flex justify-center">
               <img
                 src={customization.logoUrl}
@@ -128,20 +137,20 @@ export function CommunityLoginPage({ communitySlug }: CommunityLoginPageProps) {
           <div className="text-center">
             <h2
               className="mt-6 text-3xl font-bold tracking-tight"
-              style={{ color: customization.textColor }}
+              style={{ color: customization?.textColor || '#000' }}
             >
-              {customization.title}
+              {customization?.title || 'Welcome Back'}
             </h2>
             <p
               className="mt-2 text-sm"
-              style={{ color: customization.textColor }}
+              style={{ color: customization?.textColor || '#000' }}
             >
-              {customization.subtitle}
+              {customization?.subtitle || 'Sign in to your account'}
             </p>
-            {customization.welcomeMessage && (
+            {customization?.welcomeMessage && (
               <p
                 className="mt-4 text-sm"
-                style={{ color: customization.textColor }}
+                style={{ color: customization?.textColor || '#000' }}
               >
                 {customization.welcomeMessage}
               </p>
@@ -160,7 +169,7 @@ export function CommunityLoginPage({ communitySlug }: CommunityLoginPageProps) {
                 <label
                   htmlFor="email"
                   className="sr-only"
-                  style={{ color: customization.textColor }}
+                  style={{ color: customization?.textColor || '#000' }}
                 >
                   Email address
                 </label>
@@ -168,6 +177,7 @@ export function CommunityLoginPage({ communitySlug }: CommunityLoginPageProps) {
                   {...register('email')}
                   type="email"
                   id="email"
+                  disabled={isSubmitting}
                   className="relative block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                   placeholder="Email address"
                 />
@@ -182,7 +192,7 @@ export function CommunityLoginPage({ communitySlug }: CommunityLoginPageProps) {
                 <label
                   htmlFor="password"
                   className="sr-only"
-                  style={{ color: customization.textColor }}
+                  style={{ color: customization?.textColor || '#000' }}
                 >
                   Password
                 </label>
@@ -190,6 +200,7 @@ export function CommunityLoginPage({ communitySlug }: CommunityLoginPageProps) {
                   {...register('password')}
                   type="password"
                   id="password"
+                  disabled={isSubmitting}
                   className="relative block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                   placeholder="Password"
                 />
@@ -204,9 +215,14 @@ export function CommunityLoginPage({ communitySlug }: CommunityLoginPageProps) {
             <div>
               <button
                 type="submit"
+                disabled={isSubmitting}
                 className="group relative flex w-full justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
               >
-                {customization.buttonText}
+                {isSubmitting ? (
+                  <Spinner data-testid="spinner" className="h-5 w-5" />
+                ) : (
+                  'Sign In'
+                )}
               </button>
             </div>
           </form>

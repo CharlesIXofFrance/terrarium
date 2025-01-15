@@ -10,7 +10,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 vi.mock('@/lib/hooks/useAuth');
 
 describe('Navigation Components', () => {
-  const mockUseAuth = useAuth as ReturnType<typeof vi.fn>;
+  const mockUseAuth = useAuth as jest.Mock;
 
   beforeEach(() => {
     vi.resetAllMocks();
@@ -29,7 +29,10 @@ describe('Navigation Components', () => {
         </BrowserRouter>
       );
 
-      const dashboardLink = screen.getByRole('link', { name: /dashboard/i });
+      const dashboardButton = screen.getByRole('button', {
+        name: /dashboard/i,
+      });
+      const dashboardLink = dashboardButton.closest('a');
       expect(dashboardLink).toHaveAttribute('href', '/platform');
     });
 
@@ -45,7 +48,10 @@ describe('Navigation Components', () => {
         </BrowserRouter>
       );
 
-      const dashboardLink = screen.getByRole('link', { name: /dashboard/i });
+      const dashboardButton = screen.getByRole('button', {
+        name: /dashboard/i,
+      });
+      const dashboardLink = dashboardButton.closest('a');
       expect(dashboardLink).toHaveAttribute('href', '/m/dashboard');
     });
   });
@@ -62,8 +68,8 @@ describe('Navigation Components', () => {
         </BrowserRouter>
       );
 
+      expect(screen.getByText('Dashboard')).toBeInTheDocument();
       expect(screen.getByText('Communities')).toBeInTheDocument();
-      expect(screen.getByText('Users')).toBeInTheDocument();
       expect(screen.getByText('Settings')).toBeInTheDocument();
     });
 
@@ -78,9 +84,10 @@ describe('Navigation Components', () => {
         </BrowserRouter>
       );
 
+      expect(screen.getByText('Dashboard')).toBeInTheDocument();
       expect(screen.getByText('Members')).toBeInTheDocument();
       expect(screen.getByText('Jobs')).toBeInTheDocument();
-      expect(screen.getByText('Branding')).toBeInTheDocument();
+      expect(screen.getByText('Employers')).toBeInTheDocument();
       expect(screen.getByText('Settings')).toBeInTheDocument();
     });
   });

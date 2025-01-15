@@ -1,7 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { useAtom } from 'jotai';
-import { userAtom } from '@/lib/stores/auth';
+import { useAuth } from '@/lib/hooks/useAuth';
 import { Button } from '@/components/ui/atoms/Button';
 
 interface NavbarProps {
@@ -9,7 +8,12 @@ interface NavbarProps {
 }
 
 export function Navbar({ onDashboardClick }: NavbarProps) {
-  const [user] = useAtom(userAtom);
+  const { user } = useAuth();
+
+  const getDashboardLink = () => {
+    if (!user) return '/login';
+    return user.role === 'platform_owner' ? '/platform' : '/m/dashboard';
+  };
 
   return (
     <nav className="bg-white shadow-sm">
@@ -25,13 +29,15 @@ export function Navbar({ onDashboardClick }: NavbarProps) {
 
           <div className="flex items-center space-x-4">
             {user ? (
-              <Button
-                onClick={onDashboardClick}
-                variant="default"
-                className="bg-indigo-600 text-white hover:bg-indigo-700"
-              >
-                Dashboard
-              </Button>
+              <Link to={getDashboardLink()}>
+                <Button
+                  onClick={onDashboardClick}
+                  variant="default"
+                  className="bg-indigo-600 text-white hover:bg-indigo-700"
+                >
+                  Dashboard
+                </Button>
+              </Link>
             ) : (
               <>
                 <Link to="/login">

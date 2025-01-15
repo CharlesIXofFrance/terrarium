@@ -1,16 +1,17 @@
 import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { Spinner } from '@/components/ui/atoms/Spinner';
 
 export function VerifyCallback() {
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     const handleCallback = async () => {
       try {
         // Get URL parameters using URLSearchParams
-        const urlParams = new URLSearchParams(window.location.search);
+        const urlParams = new URLSearchParams(location.search);
         const token = urlParams.get('token');
         const type = urlParams.get('type');
         const redirectTo = urlParams.get('redirect_to');
@@ -24,27 +25,25 @@ export function VerifyCallback() {
         });
 
         if (!token || !type) {
-          throw new Error('Missing token or type in URL');
+          navigate('/login', {
+            state: { error: 'Invalid or expired verification link' },
+          });
+          return;
         }
 
         // Let Supabase handle the verification and redirect
-        const { error } = await supabase.auth.verifyOtp({
+        const { data, error } = await supabase.auth.verifyOtp({
           type: type as 'recovery',
           token,
-          email: null,
           options: {
-            redirectTo
-          }
+            redirectTo,
+          },
         });
 
-        if (error) {
-          throw error;
-        }
-
-        // Check if session was created
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
-          navigate('/login');
+        if (error || !data?.session) {
+          navigate('/login', {
+            state: { error: 'Invalid or expired verification link' },
+          });
           return;
         }
 
@@ -56,12 +55,14 @@ export function VerifyCallback() {
         }
       } catch (error) {
         console.error('Verify Callback - Error:', error);
-        navigate('/login', { state: { error: 'Invalid or expired verification link' } });
+        navigate('/login', {
+          state: { error: 'Invalid or expired verification link' },
+        });
       }
     };
 
     handleCallback();
-  }, [navigate]);
+  }, [navigate, location]);
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center items-center">

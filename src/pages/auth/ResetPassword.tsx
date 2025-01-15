@@ -6,16 +6,12 @@ import { Input } from '@/components/ui/atoms/Input';
 import { Alert } from '@/components/ui/atoms/Alert';
 import { Spinner } from '@/components/ui/atoms/Spinner';
 import { supabase } from '@/lib/supabase';
-import { useAtom } from 'jotai';
-import { userAtom } from '@/lib/stores/auth';
 
 export function ResetPassword() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [user] = useAtom(userAtom);
   const [recoveryToken, setRecoveryToken] = useState<string | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
@@ -24,28 +20,32 @@ export function ResetPassword() {
     const setupRecovery = async () => {
       try {
         console.log('Reset Password - Full URL:', window.location.href);
-        
+
         // Get recovery token from URL hash
-        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const hashParams = new URLSearchParams(
+          window.location.hash.substring(1)
+        );
         const token = hashParams.get('access_token');
         const type = hashParams.get('type');
-        
-        console.log('Reset Password - Hash Params:', Object.fromEntries(hashParams.entries()));
+
+        console.log(
+          'Reset Password - Hash Params:',
+          Object.fromEntries(hashParams.entries())
+        );
 
         if (!token || type !== 'recovery') {
           throw new Error('Invalid reset password link');
         }
 
         setRecoveryToken(token);
-        setIsProcessing(false);
       } catch (error) {
         console.error('Reset Password - Setup error:', error);
         navigate('/login', {
           replace: true,
           state: {
             message: 'Please use the password reset link from your email.',
-            type: 'error'
-          }
+            type: 'error',
+          },
         });
       }
     };
@@ -55,7 +55,7 @@ export function ResetPassword() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (password !== confirmPassword) {
       setError('Passwords do not match');
       return;
@@ -66,18 +66,24 @@ export function ResetPassword() {
       return;
     }
 
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
+
     try {
-      setIsProcessing(true);
+      setIsLoading(true);
       setError(null);
 
       // Exchange the recovery token for a session
-      const { data: sessionData, error: sessionError } = await supabase.auth.exchangeCodeForSession(recoveryToken);
+      const { data: sessionData, error: sessionError } =
+        await supabase.auth.exchangeCodeForSession(recoveryToken);
 
       if (sessionError) throw sessionError;
 
       // Update the password
       const { error: updateError } = await supabase.auth.updateUser({
-        password: password
+        password: password,
       });
 
       if (updateError) throw updateError;
@@ -89,18 +95,20 @@ export function ResetPassword() {
       navigate('/login', {
         replace: true,
         state: {
-          message: 'Password updated successfully. Please log in with your new password.',
-          type: 'success'
-        }
+          message:
+            'Password updated successfully. Please log in with your new password.',
+          type: 'success',
+        },
       });
     } catch (error) {
       console.error('Reset Password - Update error:', error);
       setError('Failed to update password. Please try again.');
-      setIsProcessing(false);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  if (isProcessing) {
+  if (!recoveryToken) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col justify-center items-center">
         <Spinner size="lg" />
@@ -132,7 +140,10 @@ export function ResetPassword() {
           )}
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-700"
+              >
                 New password
               </label>
               <div className="mt-1">
@@ -150,7 +161,10 @@ export function ResetPassword() {
             </div>
 
             <div>
-              <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="confirm-password"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Confirm new password
               </label>
               <div className="mt-1">
@@ -171,7 +185,7 @@ export function ResetPassword() {
               <Button
                 type="submit"
                 className="w-full"
-                isLoading={isProcessing}
+                isLoading={isLoading}
                 data-testid="submit-button"
               >
                 Update password

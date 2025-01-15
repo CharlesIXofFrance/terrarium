@@ -1,121 +1,96 @@
 import React from 'react';
-import { describe, it, expect, vi } from 'vitest';
-import { render, waitFor } from '@testing-library/react';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { Provider } from 'jotai';
-import { userAtom } from '@/lib/stores/auth';
+import { render, screen } from '@testing-library/react';
+import { MemoryRouter, Routes, Route } from 'react-router-dom';
+import { vi } from 'vitest';
+import { useAuth } from '@/lib/hooks/useAuth';
 import { PublicOnlyRoute } from '../PublicOnlyRoute';
 
-// Mock components for testing
+// Mock useAuth hook
+vi.mock('@/lib/hooks/useAuth');
+
 const TestComponent = () => <div>Test Component</div>;
-const DashboardComponent = () => <div>Dashboard</div>;
 
 describe('PublicOnlyRoute', () => {
+  const renderWithRouter = (initialRoute = '/') => {
+    return render(
+      <MemoryRouter initialEntries={[initialRoute]}>
+        <Routes>
+          <Route
+            path="/"
+            element={
+              <PublicOnlyRoute>
+                <TestComponent />
+              </PublicOnlyRoute>
+            }
+          />
+          <Route path="/dashboard" element={<div>Dashboard</div>} />
+          <Route path="/onboarding" element={<div>Onboarding</div>} />
+          <Route
+            path="/c/:slug/dashboard"
+            element={<div>Community Dashboard</div>}
+          />
+        </Routes>
+      </MemoryRouter>
+    );
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it('renders children when user is not logged in', () => {
-    const { getByText } = render(
-      <Provider initialValues={[[userAtom, null]]}>
-        <MemoryRouter>
-          <PublicOnlyRoute>
-            <TestComponent />
-          </PublicOnlyRoute>
-        </MemoryRouter>
-      </Provider>
-    );
+    vi.mocked(useAuth).mockReturnValue({
+      user: null,
+      isLoading: false,
+    });
 
-    expect(getByText('Test Component')).toBeInTheDocument();
+    renderWithRouter();
+    expect(screen.getByText('Test Component')).toBeInTheDocument();
   });
 
-  it('redirects to dashboard when user is logged in', async () => {
-    const mockUser = {
-      id: '123',
-      email: 'test@example.com',
-      onboarding_completed: true,
-    };
-
-    const { queryByText } = render(
-      <Provider initialValues={[[userAtom, mockUser]]}>
-        <MemoryRouter initialEntries={['/login']}>
-          <Routes>
-            <Route
-              path="/login"
-              element={
-                <PublicOnlyRoute>
-                  <TestComponent />
-                </PublicOnlyRoute>
-              }
-            />
-            <Route path="/dashboard" element={<DashboardComponent />} />
-          </Routes>
-        </MemoryRouter>
-      </Provider>
-    );
-
-    await waitFor(() => {
-      expect(queryByText('Test Component')).not.toBeInTheDocument();
-      expect(queryByText('Dashboard')).toBeInTheDocument();
+  it('redirects to dashboard when user is logged in', () => {
+    vi.mocked(useAuth).mockReturnValue({
+      user: {
+        id: '123',
+        role: 'member',
+        onboardingComplete: true,
+      },
+      isLoading: false,
     });
+
+    renderWithRouter();
+    expect(screen.getByText('Dashboard')).toBeInTheDocument();
+    expect(screen.queryByText('Test Component')).not.toBeInTheDocument();
   });
 
-  it('redirects to onboarding when user has not completed onboarding', async () => {
-    const mockUser = {
-      id: '123',
-      email: 'test@example.com',
-      onboarding_completed: false,
-    };
-
-    const { queryByText } = render(
-      <Provider initialValues={[[userAtom, mockUser]]}>
-        <MemoryRouter initialEntries={['/login']}>
-          <Routes>
-            <Route
-              path="/login"
-              element={
-                <PublicOnlyRoute>
-                  <TestComponent />
-                </PublicOnlyRoute>
-              }
-            />
-            <Route path="/onboarding" element={<div>Onboarding</div>} />
-          </Routes>
-        </MemoryRouter>
-      </Provider>
-    );
-
-    await waitFor(() => {
-      expect(queryByText('Test Component')).not.toBeInTheDocument();
-      expect(queryByText('Onboarding')).toBeInTheDocument();
+  it('redirects to onboarding when user has not completed onboarding', () => {
+    vi.mocked(useAuth).mockReturnValue({
+      user: {
+        id: '123',
+        role: 'member',
+        onboardingComplete: false,
+      },
+      isLoading: false,
     });
+
+    renderWithRouter();
+    expect(screen.getByText('Onboarding')).toBeInTheDocument();
+    expect(screen.queryByText('Test Component')).not.toBeInTheDocument();
   });
 
-  it('redirects to community dashboard when user has a community', async () => {
-    const mockUser = {
-      id: '123',
-      email: 'test@example.com',
-      onboarding_completed: true,
-      community_slug: 'test-community',
-    };
-
-    const { queryByText } = render(
-      <Provider initialValues={[[userAtom, mockUser]]}>
-        <MemoryRouter initialEntries={['/login']}>
-          <Routes>
-            <Route
-              path="/login"
-              element={
-                <PublicOnlyRoute>
-                  <TestComponent />
-                </PublicOnlyRoute>
-              }
-            />
-            <Route path="/c/:slug/dashboard" element={<div>Community Dashboard</div>} />
-          </Routes>
-        </MemoryRouter>
-      </Provider>
-    );
-
-    await waitFor(() => {
-      expect(queryByText('Test Component')).not.toBeInTheDocument();
-      expect(queryByText('Community Dashboard')).toBeInTheDocument();
+  it('redirects to community dashboard when user has a community', () => {
+    vi.mocked(useAuth).mockReturnValue({
+      user: {
+        id: '123',
+        role: 'member',
+        onboardingComplete: true,
+        community_slug: 'test-community',
+      },
+      isLoading: false,
     });
+
+    renderWithRouter();
+    expect(screen.getByText('Community Dashboard')).toBeInTheDocument();
+    expect(screen.queryByText('Test Component')).not.toBeInTheDocument();
   });
 });

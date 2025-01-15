@@ -1,6 +1,31 @@
 import '@testing-library/jest-dom';
 import { vi } from 'vitest';
 import { TextEncoder, TextDecoder } from 'util';
+import { cleanup } from '@testing-library/react';
+import { QueryClient } from '@tanstack/react-query';
+
+// Mock environment variables
+process.env.VITE_SUPABASE_URL = 'https://test.supabase.co';
+process.env.VITE_SUPABASE_ANON_KEY = 'test-key';
+
+// Create a new QueryClient for each test
+beforeEach(() => {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+      },
+    },
+  });
+});
+
+// Clean up after each test
+afterEach(() => {
+  cleanup();
+  vi.clearAllMocks();
+  localStorageMock.clear();
+  sessionStorageMock.clear();
+});
 
 // Mock fetch
 global.fetch = vi.fn(() =>
@@ -49,43 +74,32 @@ class ResizeObserverMock {
   disconnect = vi.fn();
 }
 
-window.ResizeObserver = ResizeObserverMock;
+global.ResizeObserver = ResizeObserverMock;
 
-// Mock Supabase client
-const mockSupabaseClient = {
-  auth: {
-    signInWithPassword: vi.fn(),
-    signUp: vi.fn(),
-    signOut: vi.fn(),
-    getSession: vi.fn(),
-    onAuthStateChange: vi.fn(),
-  },
-  from: vi.fn(() => ({
-    select: vi.fn().mockReturnThis(),
-    insert: vi.fn().mockReturnThis(),
-    update: vi.fn().mockReturnThis(),
-    eq: vi.fn().mockReturnThis(),
-    single: vi.fn().mockReturnThis(),
+// Mock IntersectionObserver
+class IntersectionObserverMock {
+  constructor(callback: any) {
+    this.callback = callback;
+  }
+  callback: any;
+  observe = vi.fn();
+  unobserve = vi.fn();
+  disconnect = vi.fn();
+}
+
+global.IntersectionObserver = IntersectionObserverMock;
+
+// Mock window.matchMedia
+Object.defineProperty(window, 'matchMedia', {
+  writable: true,
+  value: vi.fn().mockImplementation((query) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
   })),
-  storage: {
-    createBucket: vi.fn(),
-    getBucket: vi.fn(),
-    listBuckets: vi.fn(),
-    deleteBucket: vi.fn(),
-    emptyBucket: vi.fn(),
-    from: vi.fn(),
-  },
-};
-
-vi.mock('@supabase/supabase-js', () => ({
-  createClient: vi.fn(() => mockSupabaseClient),
-}));
-
-// Clean up mocks after each test
-afterEach(() => {
-  vi.clearAllMocks();
-  localStorageMock.clear();
-  sessionStorageMock.clear();
 });
-
-export { mockSupabaseClient };

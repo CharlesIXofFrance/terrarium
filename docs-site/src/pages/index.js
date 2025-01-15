@@ -15,7 +15,7 @@ function HomepageHeader() {
         <div className={styles.buttons}>
           <Link
             className="button button--secondary button--lg"
-            to="/docs/">
+            to="/docs">
             Read Documentation
           </Link>
         </div>
@@ -28,28 +28,32 @@ export default function Home() {
   const {siteConfig} = useDocusaurusContext();
   return (
     <Layout
-      title={siteConfig.title}
-      description="Documentation for the Terrarium Platform">
+      title={`${siteConfig.title}`}
+      description="Documentation for the Terrarium community platform">
       <HomepageHeader />
       <main>
-        <section className={styles.features}>
-          <div className="container">
-            <div className="row">
-              <div className="col col--4">
-                <h3>For Community Owners</h3>
-                <p>Learn how to create and manage your community space, customize your job board, and analyze engagement.</p>
-              </div>
-              <div className="col col--4">
-                <h3>For Job Seekers</h3>
-                <p>Discover how to set up your profile, search for jobs, and engage with your community.</p>
-              </div>
-              <div className="col col--4">
-                <h3>For Employers</h3>
-                <p>Find out how to post jobs, manage listings, and connect with potential candidates.</p>
-              </div>
+        <div className="container margin-vert--lg">
+          <div className="row">
+            <div className="col col--6">
+              <h2>Getting Started</h2>
+              <p>
+                New to Terrarium? Our getting started guide will help you set up your first community.
+              </p>
+              <Link to="/docs/getting-started/installation" className="button button--primary">
+                Get Started
+              </Link>
+            </div>
+            <div className="col col--6">
+              <h2>API Reference</h2>
+              <p>
+                Looking for detailed API documentation? Check out our comprehensive API reference.
+              </p>
+              <Link to="/docs/api/overview" className="button button--primary">
+                View API Docs
+              </Link>
             </div>
           </div>
-        </section>
+        </div>
       </main>
     </Layout>
   );

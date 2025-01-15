@@ -12,7 +12,7 @@ const config = {
   // Set the production url of your site here
   url: 'https://docs.terrarium.dev',
   // Set the /<baseUrl>/ pathname under which your site is served
-  baseUrl: '/docs/',
+  baseUrl: '/',
 
   // GitHub pages deployment config
   organizationName: 'CharlesIXofFrance',
@@ -36,7 +36,7 @@ const config = {
       ({
         docs: {
           path: 'docs',
-          routeBasePath: '/',
+          routeBasePath: 'docs',
           sidebarPath: require.resolve('./sidebars.js'),
           editUrl: 'https://github.com/CharlesIXofFrance/terrarium/tree/main/docs-site/',
           showLastUpdateTime: true,
@@ -51,19 +51,6 @@ const config = {
             require.resolve('./src/css/swagger-ui.css'),
           ],
         },
-      }),
-    ],
-  ],
-
-  plugins: [
-    [
-      require.resolve("@easyops-cn/docusaurus-search-local"),
-      /** @type {import("@easyops-cn/docusaurus-search-local").PluginOptions} */
-      ({
-        hashed: true,
-        language: ["en"],
-        highlightSearchTermsOnTargetPage: true,
-        explicitSearchResultPath: true,
       }),
     ],
   ],
@@ -115,11 +102,11 @@ const config = {
             items: [
               {
                 label: 'Getting Started',
-                to: '/getting-started/installation',
+                to: '/docs/getting-started/installation',
               },
               {
                 label: 'API Reference',
-                to: '/api/overview',
+                to: '/docs/api/overview',
               },
             ],
           },

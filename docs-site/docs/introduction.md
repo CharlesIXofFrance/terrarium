@@ -2,7 +2,7 @@
 id: introduction
 title: Introduction
 sidebar_label: Introduction
-slug: /
+slug: /docs
 ---
 
 # Terrarium Documentation
@@ -17,18 +17,21 @@ Welcome to the Terrarium documentation. This documentation site contains compreh
 
 ## Quick Links
 
-- [Getting Started](getting-started/installation)
-- [API Reference](api/overview)
-- [API Playground](api-playground)
-- [SDK Documentation](sdk/overview)
+- [Getting Started](/docs/getting-started/installation)
+- [API Reference](/docs/api/overview)
 
-## About Terrarium
+## Features
 
-Terrarium is a multi-tenant community platform that enables:
+- **Multi-tenant Communities**: Create and manage multiple communities under one platform
+- **Custom Job Boards**: Each community can have its own customized job board
+- **Analytics Dashboard**: Track engagement and growth with detailed analytics
+- **Branding Controls**: Customize the look and feel for each community
 
-- Custom Job Boards
-- Community Management
-- Analytics Dashboard
-- Branding Controls
+## Getting Help
 
-Stay tuned for more detailed documentation!
+If you need help, you can:
+
+1. Check our [Getting Started](/docs/getting-started/installation) guide
+2. Browse the [API Reference](/docs/api/overview)
+3. Join our [Discord community](https://discord.gg/terrarium)
+4. Follow us on [Twitter](https://twitter.com/terrariumdev)

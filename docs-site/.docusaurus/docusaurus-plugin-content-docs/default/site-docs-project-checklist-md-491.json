@@ -1,0 +1,18 @@
+{
+  "unversionedId": "PROJECT_CHECKLIST",
+  "id": "PROJECT_CHECKLIST",
+  "title": "Project Implementation Checklist",
+  "description": "1. Project Setup and Configuration",
+  "source": "@site/docs/PROJECT_CHECKLIST.md",
+  "sourceDirName": ".",
+  "slug": "/PROJECT_CHECKLIST",
+  "permalink": "/docs/PROJECT_CHECKLIST",
+  "draft": false,
+  "editUrl": "https://github.com/CharlesIXofFrance/terrarium/tree/main/docs-site/docs/PROJECT_CHECKLIST.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": "samgonzalez",
+  "lastUpdatedAt": 1736902236,
+  "formattedLastUpdatedAt": "Jan 15, 2025",
+  "frontMatter": {}
+}

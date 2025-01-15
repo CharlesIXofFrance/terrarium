@@ -1,0 +1,18 @@
+{
+  "unversionedId": "FILE_ORGANIZATION",
+  "id": "FILE_ORGANIZATION",
+  "title": "Terrarium Project File Organization",
+  "description": "Project Structure Overview",
+  "source": "@site/docs/FILE_ORGANIZATION.md",
+  "sourceDirName": ".",
+  "slug": "/FILE_ORGANIZATION",
+  "permalink": "/docs/FILE_ORGANIZATION",
+  "draft": false,
+  "editUrl": "https://github.com/CharlesIXofFrance/terrarium/tree/main/docs-site/docs/FILE_ORGANIZATION.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": "samgonzalez",
+  "lastUpdatedAt": 1736902236,
+  "formattedLastUpdatedAt": "Jan 15, 2025",
+  "frontMatter": {}
+}

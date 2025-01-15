@@ -1,0 +1,18 @@
+{
+  "unversionedId": "ROLE_RENAME_PROCESS",
+  "id": "ROLE_RENAME_PROCESS",
+  "title": "Role Renaming Process: Admin to Owner",
+  "description": "This document outlines the process of renaming roles in the Terrarium platform from \"Admin\" to \"Owner\" to better reflect responsibilities and reduce confusion.",
+  "source": "@site/docs/ROLE_RENAME_PROCESS.md",
+  "sourceDirName": ".",
+  "slug": "/ROLE_RENAME_PROCESS",
+  "permalink": "/docs/ROLE_RENAME_PROCESS",
+  "draft": false,
+  "editUrl": "https://github.com/CharlesIXofFrance/terrarium/tree/main/docs-site/docs/ROLE_RENAME_PROCESS.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": "samgonzalez",
+  "lastUpdatedAt": 1736902236,
+  "formattedLastUpdatedAt": "Jan 15, 2025",
+  "frontMatter": {}
+}

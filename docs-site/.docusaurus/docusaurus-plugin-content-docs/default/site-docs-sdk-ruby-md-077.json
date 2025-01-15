@@ -1,0 +1,30 @@
+{
+  "unversionedId": "sdk/ruby",
+  "id": "sdk/ruby",
+  "title": "Ruby SDK (Beta)",
+  "description": "Our Ruby SDK provides a Ruby-native way to interact with the Terrarium API.",
+  "source": "@site/docs/sdk/ruby.md",
+  "sourceDirName": "sdk",
+  "slug": "/sdk/ruby",
+  "permalink": "/docs/sdk/ruby",
+  "draft": false,
+  "editUrl": "https://github.com/CharlesIXofFrance/terrarium/tree/main/docs-site/docs/sdk/ruby.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": "samgonzalez",
+  "lastUpdatedAt": 1736901154,
+  "formattedLastUpdatedAt": "Jan 15, 2025",
+  "sidebarPosition": 4,
+  "frontMatter": {
+    "sidebar_position": 4
+  },
+  "sidebar": "docs",
+  "previous": {
+    "title": "Python SDK",
+    "permalink": "/docs/sdk/python"
+  },
+  "next": {
+    "title": "Go SDK (Beta)",
+    "permalink": "/docs/sdk/go"
+  }
+}

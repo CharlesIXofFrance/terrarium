@@ -1,0 +1,30 @@
+{
+  "unversionedId": "sdk/python",
+  "id": "sdk/python",
+  "title": "Python SDK",
+  "description": "Our Python SDK provides a Pythonic interface to interact with the Terrarium API.",
+  "source": "@site/docs/sdk/python.md",
+  "sourceDirName": "sdk",
+  "slug": "/sdk/python",
+  "permalink": "/docs/sdk/python",
+  "draft": false,
+  "editUrl": "https://github.com/CharlesIXofFrance/terrarium/tree/main/docs-site/docs/sdk/python.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": "samgonzalez",
+  "lastUpdatedAt": 1736900342,
+  "formattedLastUpdatedAt": "Jan 15, 2025",
+  "sidebarPosition": 3,
+  "frontMatter": {
+    "sidebar_position": 3
+  },
+  "sidebar": "docs",
+  "previous": {
+    "title": "JavaScript/TypeScript SDK",
+    "permalink": "/docs/sdk/javascript"
+  },
+  "next": {
+    "title": "Ruby SDK (Beta)",
+    "permalink": "/docs/sdk/ruby"
+  }
+}

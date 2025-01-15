@@ -1,0 +1,30 @@
+{
+  "unversionedId": "sdk/overview",
+  "id": "sdk/overview",
+  "title": "Terrarium SDKs",
+  "description": "Terrarium provides official SDKs for multiple programming languages to help you integrate with our platform easily.",
+  "source": "@site/docs/sdk/overview.md",
+  "sourceDirName": "sdk",
+  "slug": "/sdk/overview",
+  "permalink": "/docs/sdk/overview",
+  "draft": false,
+  "editUrl": "https://github.com/CharlesIXofFrance/terrarium/tree/main/docs-site/docs/sdk/overview.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": "samgonzalez",
+  "lastUpdatedAt": 1736901154,
+  "formattedLastUpdatedAt": "Jan 15, 2025",
+  "sidebarPosition": 1,
+  "frontMatter": {
+    "sidebar_position": 1
+  },
+  "sidebar": "docs",
+  "previous": {
+    "title": "Users API",
+    "permalink": "/docs/api/endpoints/users"
+  },
+  "next": {
+    "title": "JavaScript/TypeScript SDK",
+    "permalink": "/docs/sdk/javascript"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "unversionedId": "PROJECT_ANALYSIS",
+  "id": "PROJECT_ANALYSIS",
+  "title": "Terrarium Project Analysis",
+  "description": "Version: 1.0.1 (January 2025)",
+  "source": "@site/docs/PROJECT_ANALYSIS.md",
+  "sourceDirName": ".",
+  "slug": "/PROJECT_ANALYSIS",
+  "permalink": "/docs/PROJECT_ANALYSIS",
+  "draft": false,
+  "editUrl": "https://github.com/CharlesIXofFrance/terrarium/tree/main/docs-site/docs/PROJECT_ANALYSIS.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": "samgonzalez",
+  "lastUpdatedAt": 1736902236,
+  "formattedLastUpdatedAt": "Jan 15, 2025",
+  "frontMatter": {}
+}

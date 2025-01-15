@@ -1,0 +1,30 @@
+{
+  "unversionedId": "api/endpoints/jobs",
+  "id": "api/endpoints/jobs",
+  "title": "Jobs API",
+  "description": "Manage job listings through the API.",
+  "source": "@site/docs/api/endpoints/jobs.md",
+  "sourceDirName": "api/endpoints",
+  "slug": "/api/endpoints/jobs",
+  "permalink": "/docs/api/endpoints/jobs",
+  "draft": false,
+  "editUrl": "https://github.com/CharlesIXofFrance/terrarium/tree/main/docs-site/docs/api/endpoints/jobs.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": "samgonzalez",
+  "lastUpdatedAt": 1736899431,
+  "formattedLastUpdatedAt": "Jan 15, 2025",
+  "sidebarPosition": 2,
+  "frontMatter": {
+    "sidebar_position": 2
+  },
+  "sidebar": "docs",
+  "previous": {
+    "title": "Communities API",
+    "permalink": "/docs/api/endpoints/communities"
+  },
+  "next": {
+    "title": "Users API",
+    "permalink": "/docs/api/endpoints/users"
+  }
+}

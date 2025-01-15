@@ -1,0 +1,18 @@
+{
+  "unversionedId": "CHANGELOG",
+  "id": "CHANGELOG",
+  "title": "Changelog",
+  "description": "All notable changes to this project will be documented in this file.",
+  "source": "@site/docs/CHANGELOG.md",
+  "sourceDirName": ".",
+  "slug": "/CHANGELOG",
+  "permalink": "/docs/CHANGELOG",
+  "draft": false,
+  "editUrl": "https://github.com/CharlesIXofFrance/terrarium/tree/main/docs-site/docs/CHANGELOG.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": "samgonzalez",
+  "lastUpdatedAt": 1736902236,
+  "formattedLastUpdatedAt": "Jan 15, 2025",
+  "frontMatter": {}
+}

@@ -1,0 +1,18 @@
+{
+  "unversionedId": "IMPLEMENTATION_STATUS",
+  "id": "IMPLEMENTATION_STATUS",
+  "title": "Implementation Status",
+  "description": "Core Features",
+  "source": "@site/docs/IMPLEMENTATION_STATUS.md",
+  "sourceDirName": ".",
+  "slug": "/IMPLEMENTATION_STATUS",
+  "permalink": "/docs/IMPLEMENTATION_STATUS",
+  "draft": false,
+  "editUrl": "https://github.com/CharlesIXofFrance/terrarium/tree/main/docs-site/docs/IMPLEMENTATION_STATUS.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": "samgonzalez",
+  "lastUpdatedAt": 1736902236,
+  "formattedLastUpdatedAt": "Jan 15, 2025",
+  "frontMatter": {}
+}

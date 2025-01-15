@@ -1,0 +1,18 @@
+{
+  "unversionedId": "BACKEND_IMPLEMENTATION_PLAN",
+  "id": "BACKEND_IMPLEMENTATION_PLAN",
+  "title": "Backend Implementation Plan",
+  "description": "Strategy Overview",
+  "source": "@site/docs/BACKEND_IMPLEMENTATION_PLAN.md",
+  "sourceDirName": ".",
+  "slug": "/BACKEND_IMPLEMENTATION_PLAN",
+  "permalink": "/docs/BACKEND_IMPLEMENTATION_PLAN",
+  "draft": false,
+  "editUrl": "https://github.com/CharlesIXofFrance/terrarium/tree/main/docs-site/docs/BACKEND_IMPLEMENTATION_PLAN.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": "samgonzalez",
+  "lastUpdatedAt": 1736902236,
+  "formattedLastUpdatedAt": "Jan 15, 2025",
+  "frontMatter": {}
+}

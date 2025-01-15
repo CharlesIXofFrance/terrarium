@@ -1,0 +1,30 @@
+{
+  "unversionedId": "features/analytics",
+  "id": "features/analytics",
+  "title": "Analytics",
+  "description": "Track and analyze your community's performance.",
+  "source": "@site/docs/features/analytics.md",
+  "sourceDirName": "features",
+  "slug": "/features/analytics",
+  "permalink": "/docs/features/analytics",
+  "draft": false,
+  "editUrl": "https://github.com/CharlesIXofFrance/terrarium/tree/main/docs-site/docs/features/analytics.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": "samgonzalez",
+  "lastUpdatedAt": 1736898956,
+  "formattedLastUpdatedAt": "Jan 14, 2025",
+  "sidebarPosition": 3,
+  "frontMatter": {
+    "sidebar_position": 3
+  },
+  "sidebar": "docs",
+  "previous": {
+    "title": "Job Boards",
+    "permalink": "/docs/features/job-boards"
+  },
+  "next": {
+    "title": "API Overview",
+    "permalink": "/docs/api/overview"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "unversionedId": "storage-security",
+  "id": "storage-security",
+  "title": "Storage Security Implementation",
+  "description": "Current Working Version (With Community Isolation and Member Access)",
+  "source": "@site/docs/storage-security.md",
+  "sourceDirName": ".",
+  "slug": "/storage-security",
+  "permalink": "/docs/storage-security",
+  "draft": false,
+  "editUrl": "https://github.com/CharlesIXofFrance/terrarium/tree/main/docs-site/docs/storage-security.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": "samgonzalez",
+  "lastUpdatedAt": 1736902236,
+  "formattedLastUpdatedAt": "Jan 15, 2025",
+  "frontMatter": {}
+}

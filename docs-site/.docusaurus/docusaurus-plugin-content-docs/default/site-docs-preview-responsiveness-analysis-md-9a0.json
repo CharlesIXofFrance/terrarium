@@ -1,0 +1,18 @@
+{
+  "unversionedId": "PREVIEW_RESPONSIVENESS_ANALYSIS",
+  "id": "PREVIEW_RESPONSIVENESS_ANALYSIS",
+  "title": "Preview Responsiveness Analysis",
+  "description": "Problem Description",
+  "source": "@site/docs/PREVIEW_RESPONSIVENESS_ANALYSIS.md",
+  "sourceDirName": ".",
+  "slug": "/PREVIEW_RESPONSIVENESS_ANALYSIS",
+  "permalink": "/docs/PREVIEW_RESPONSIVENESS_ANALYSIS",
+  "draft": false,
+  "editUrl": "https://github.com/CharlesIXofFrance/terrarium/tree/main/docs-site/docs/PREVIEW_RESPONSIVENESS_ANALYSIS.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": "samgonzalez",
+  "lastUpdatedAt": 1736902236,
+  "formattedLastUpdatedAt": "Jan 15, 2025",
+  "frontMatter": {}
+}

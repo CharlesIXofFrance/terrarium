@@ -1,0 +1,128 @@
+{
+  "docusaurus-plugin-content-docs": {
+    "default": {
+      "path": "/docs",
+      "versions": [
+        {
+          "name": "current",
+          "label": "Next",
+          "isLast": true,
+          "path": "/docs",
+          "mainDocId": "introduction",
+          "docs": [
+            {
+              "id": "api/auth/overview",
+              "path": "/docs/api/auth/overview",
+              "sidebar": "docs"
+            },
+            {
+              "id": "api/auth/security",
+              "path": "/docs/api/auth/security",
+              "sidebar": "docs"
+            },
+            {
+              "id": "api/auth/tokens",
+              "path": "/docs/api/auth/tokens",
+              "sidebar": "docs"
+            },
+            {
+              "id": "api/authentication",
+              "path": "/docs/api/authentication",
+              "sidebar": "docs"
+            },
+            {
+              "id": "api/endpoints/communities",
+              "path": "/docs/api/endpoints/communities",
+              "sidebar": "docs"
+            },
+            {
+              "id": "api/endpoints/jobs",
+              "path": "/docs/api/endpoints/jobs",
+              "sidebar": "docs"
+            },
+            {
+              "id": "api/endpoints/users",
+              "path": "/docs/api/endpoints/users",
+              "sidebar": "docs"
+            },
+            {
+              "id": "api/overview",
+              "path": "/docs/api/overview",
+              "sidebar": "docs"
+            },
+            {
+              "id": "api/playground",
+              "path": "/docs/api/playground",
+              "sidebar": "docs"
+            },
+            {
+              "id": "features/analytics",
+              "path": "/docs/features/analytics",
+              "sidebar": "docs"
+            },
+            {
+              "id": "features/communities",
+              "path": "/docs/features/communities",
+              "sidebar": "docs"
+            },
+            {
+              "id": "features/job-boards",
+              "path": "/docs/features/job-boards",
+              "sidebar": "docs"
+            },
+            {
+              "id": "getting-started/configuration",
+              "path": "/docs/getting-started/configuration",
+              "sidebar": "docs"
+            },
+            {
+              "id": "getting-started/installation",
+              "path": "/docs/getting-started/installation",
+              "sidebar": "docs"
+            },
+            {
+              "id": "introduction",
+              "path": "/docs/docs",
+              "sidebar": "docs"
+            },
+            {
+              "id": "sdk/go",
+              "path": "/docs/sdk/go",
+              "sidebar": "docs"
+            },
+            {
+              "id": "sdk/javascript",
+              "path": "/docs/sdk/javascript",
+              "sidebar": "docs"
+            },
+            {
+              "id": "sdk/overview",
+              "path": "/docs/sdk/overview",
+              "sidebar": "docs"
+            },
+            {
+              "id": "sdk/python",
+              "path": "/docs/sdk/python",
+              "sidebar": "docs"
+            },
+            {
+              "id": "sdk/ruby",
+              "path": "/docs/sdk/ruby",
+              "sidebar": "docs"
+            }
+          ],
+          "draftIds": [],
+          "sidebars": {
+            "docs": {
+              "link": {
+                "path": "/docs/docs",
+                "label": "introduction"
+              }
+            }
+          }
+        }
+      ],
+      "breadcrumbs": true
+    }
+  }
+}

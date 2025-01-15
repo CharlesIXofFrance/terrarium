@@ -1,0 +1,18 @@
+{
+  "unversionedId": "PROPOSED_RESTRUCTURE",
+  "id": "PROPOSED_RESTRUCTURE",
+  "title": "Terrarium Codebase Restructuring",
+  "description": "Current Status (as of December 26, 2024)",
+  "source": "@site/docs/PROPOSED_RESTRUCTURE.md",
+  "sourceDirName": ".",
+  "slug": "/PROPOSED_RESTRUCTURE",
+  "permalink": "/docs/PROPOSED_RESTRUCTURE",
+  "draft": false,
+  "editUrl": "https://github.com/CharlesIXofFrance/terrarium/tree/main/docs-site/docs/PROPOSED_RESTRUCTURE.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": "samgonzalez",
+  "lastUpdatedAt": 1736902236,
+  "formattedLastUpdatedAt": "Jan 15, 2025",
+  "frontMatter": {}
+}

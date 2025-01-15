@@ -1,0 +1,28 @@
+{
+  "unversionedId": "introduction",
+  "id": "introduction",
+  "title": "Introduction",
+  "description": "Welcome to the Terrarium documentation. This documentation site contains comprehensive information about the Terrarium platform, including:",
+  "source": "@site/docs/introduction.md",
+  "sourceDirName": ".",
+  "slug": "/docs",
+  "permalink": "/docs/docs",
+  "draft": false,
+  "editUrl": "https://github.com/CharlesIXofFrance/terrarium/tree/main/docs-site/docs/introduction.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": "samgonzalez",
+  "lastUpdatedAt": 1736901477,
+  "formattedLastUpdatedAt": "Jan 15, 2025",
+  "frontMatter": {
+    "id": "introduction",
+    "title": "Introduction",
+    "sidebar_label": "Introduction",
+    "slug": "/docs"
+  },
+  "sidebar": "docs",
+  "next": {
+    "title": "Installation",
+    "permalink": "/docs/getting-started/installation"
+  }
+}

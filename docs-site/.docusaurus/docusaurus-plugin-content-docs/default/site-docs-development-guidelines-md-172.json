@@ -1,0 +1,18 @@
+{
+  "unversionedId": "DEVELOPMENT_GUIDELINES",
+  "id": "DEVELOPMENT_GUIDELINES",
+  "title": "Development Guidelines and Standards",
+  "description": "1. Project Structure and Organization",
+  "source": "@site/docs/DEVELOPMENT_GUIDELINES.md",
+  "sourceDirName": ".",
+  "slug": "/DEVELOPMENT_GUIDELINES",
+  "permalink": "/docs/DEVELOPMENT_GUIDELINES",
+  "draft": false,
+  "editUrl": "https://github.com/CharlesIXofFrance/terrarium/tree/main/docs-site/docs/DEVELOPMENT_GUIDELINES.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": "samgonzalez",
+  "lastUpdatedAt": 1736902236,
+  "formattedLastUpdatedAt": "Jan 15, 2025",
+  "frontMatter": {}
+}

@@ -1,0 +1,26 @@
+{
+  "unversionedId": "sdk/go",
+  "id": "sdk/go",
+  "title": "Go SDK (Beta)",
+  "description": "Our Go SDK provides a type-safe way to interact with the Terrarium API.",
+  "source": "@site/docs/sdk/go.md",
+  "sourceDirName": "sdk",
+  "slug": "/sdk/go",
+  "permalink": "/docs/sdk/go",
+  "draft": false,
+  "editUrl": "https://github.com/CharlesIXofFrance/terrarium/tree/main/docs-site/docs/sdk/go.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": "samgonzalez",
+  "lastUpdatedAt": 1736901154,
+  "formattedLastUpdatedAt": "Jan 15, 2025",
+  "sidebarPosition": 5,
+  "frontMatter": {
+    "sidebar_position": 5
+  },
+  "sidebar": "docs",
+  "previous": {
+    "title": "Ruby SDK (Beta)",
+    "permalink": "/docs/sdk/ruby"
+  }
+}

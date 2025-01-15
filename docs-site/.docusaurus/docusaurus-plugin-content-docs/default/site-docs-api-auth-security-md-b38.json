@@ -1,0 +1,30 @@
+{
+  "unversionedId": "api/auth/security",
+  "id": "api/auth/security",
+  "title": "Security Best Practices",
+  "description": "Learn how to secure your Terrarium API integration.",
+  "source": "@site/docs/api/auth/security.md",
+  "sourceDirName": "api/auth",
+  "slug": "/api/auth/security",
+  "permalink": "/docs/api/auth/security",
+  "draft": false,
+  "editUrl": "https://github.com/CharlesIXofFrance/terrarium/tree/main/docs-site/docs/api/auth/security.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": "samgonzalez",
+  "lastUpdatedAt": 1736899908,
+  "formattedLastUpdatedAt": "Jan 15, 2025",
+  "sidebarPosition": 3,
+  "frontMatter": {
+    "sidebar_position": 3
+  },
+  "sidebar": "docs",
+  "previous": {
+    "title": "Managing Tokens",
+    "permalink": "/docs/api/auth/tokens"
+  },
+  "next": {
+    "title": "Authentication",
+    "permalink": "/docs/api/authentication"
+  }
+}

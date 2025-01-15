@@ -1,0 +1,30 @@
+{
+  "unversionedId": "api/auth/overview",
+  "id": "api/auth/overview",
+  "title": "Authentication Overview",
+  "description": "Terrarium uses JSON Web Tokens (JWT) for API authentication. This guide will walk you through the authentication process and best practices.",
+  "source": "@site/docs/api/auth/overview.md",
+  "sourceDirName": "api/auth",
+  "slug": "/api/auth/overview",
+  "permalink": "/docs/api/auth/overview",
+  "draft": false,
+  "editUrl": "https://github.com/CharlesIXofFrance/terrarium/tree/main/docs-site/docs/api/auth/overview.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": "samgonzalez",
+  "lastUpdatedAt": 1736899908,
+  "formattedLastUpdatedAt": "Jan 15, 2025",
+  "sidebarPosition": 1,
+  "frontMatter": {
+    "sidebar_position": 1
+  },
+  "sidebar": "docs",
+  "previous": {
+    "title": "API Playground",
+    "permalink": "/docs/api/playground"
+  },
+  "next": {
+    "title": "Managing Tokens",
+    "permalink": "/docs/api/auth/tokens"
+  }
+}

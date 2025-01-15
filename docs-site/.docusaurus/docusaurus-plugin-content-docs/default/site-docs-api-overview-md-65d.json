@@ -1,0 +1,30 @@
+{
+  "unversionedId": "api/overview",
+  "id": "api/overview",
+  "title": "API Overview",
+  "description": "Terrarium provides a RESTful API that enables you to programmatically manage your communities, job boards, and user data.",
+  "source": "@site/docs/api/overview.md",
+  "sourceDirName": "api",
+  "slug": "/api/overview",
+  "permalink": "/docs/api/overview",
+  "draft": false,
+  "editUrl": "https://github.com/CharlesIXofFrance/terrarium/tree/main/docs-site/docs/api/overview.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": "samgonzalez",
+  "lastUpdatedAt": 1736899431,
+  "formattedLastUpdatedAt": "Jan 15, 2025",
+  "sidebarPosition": 1,
+  "frontMatter": {
+    "sidebar_position": 1
+  },
+  "sidebar": "docs",
+  "previous": {
+    "title": "Analytics",
+    "permalink": "/docs/features/analytics"
+  },
+  "next": {
+    "title": "API Playground",
+    "permalink": "/docs/api/playground"
+  }
+}

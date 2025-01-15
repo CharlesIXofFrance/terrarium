@@ -1,0 +1,18 @@
+{
+  "unversionedId": "ONBOARDING_GUIDE",
+  "id": "ONBOARDING_GUIDE",
+  "title": "Terrarium Onboarding Guide",
+  "description": "Quick Start",
+  "source": "@site/docs/ONBOARDING_GUIDE.md",
+  "sourceDirName": ".",
+  "slug": "/ONBOARDING_GUIDE",
+  "permalink": "/docs/ONBOARDING_GUIDE",
+  "draft": false,
+  "editUrl": "https://github.com/CharlesIXofFrance/terrarium/tree/main/docs-site/docs/ONBOARDING_GUIDE.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": "samgonzalez",
+  "lastUpdatedAt": 1736902236,
+  "formattedLastUpdatedAt": "Jan 15, 2025",
+  "frontMatter": {}
+}

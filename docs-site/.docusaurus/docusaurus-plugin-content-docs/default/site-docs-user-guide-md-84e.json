@@ -1,0 +1,18 @@
+{
+  "unversionedId": "USER_GUIDE",
+  "id": "USER_GUIDE",
+  "title": "Terrarium User Guide",
+  "description": "Introduction",
+  "source": "@site/docs/USER_GUIDE.md",
+  "sourceDirName": ".",
+  "slug": "/USER_GUIDE",
+  "permalink": "/docs/USER_GUIDE",
+  "draft": false,
+  "editUrl": "https://github.com/CharlesIXofFrance/terrarium/tree/main/docs-site/docs/USER_GUIDE.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": "samgonzalez",
+  "lastUpdatedAt": 1736902236,
+  "formattedLastUpdatedAt": "Jan 15, 2025",
+  "frontMatter": {}
+}

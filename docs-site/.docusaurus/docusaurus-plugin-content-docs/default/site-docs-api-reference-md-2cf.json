@@ -1,0 +1,18 @@
+{
+  "unversionedId": "API_REFERENCE",
+  "id": "API_REFERENCE",
+  "title": "API_REFERENCE",
+  "description": "Authentication & Authorization",
+  "source": "@site/docs/API_REFERENCE.md",
+  "sourceDirName": ".",
+  "slug": "/API_REFERENCE",
+  "permalink": "/docs/API_REFERENCE",
+  "draft": false,
+  "editUrl": "https://github.com/CharlesIXofFrance/terrarium/tree/main/docs-site/docs/API_REFERENCE.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": "samgonzalez",
+  "lastUpdatedAt": 1736902236,
+  "formattedLastUpdatedAt": "Jan 15, 2025",
+  "frontMatter": {}
+}

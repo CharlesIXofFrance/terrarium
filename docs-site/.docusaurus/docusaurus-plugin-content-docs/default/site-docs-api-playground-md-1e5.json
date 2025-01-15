@@ -1,0 +1,30 @@
+{
+  "unversionedId": "api/playground",
+  "id": "api/playground",
+  "title": "API Playground",
+  "description": "Try out our API endpoints directly in the documentation. Each playground includes a live editor where you can modify the request and see the response in real-time.",
+  "source": "@site/docs/api/playground.md",
+  "sourceDirName": "api",
+  "slug": "/api/playground",
+  "permalink": "/docs/api/playground",
+  "draft": false,
+  "editUrl": "https://github.com/CharlesIXofFrance/terrarium/tree/main/docs-site/docs/api/playground.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": "samgonzalez",
+  "lastUpdatedAt": 1736900223,
+  "formattedLastUpdatedAt": "Jan 15, 2025",
+  "sidebarPosition": 3,
+  "frontMatter": {
+    "sidebar_position": 3
+  },
+  "sidebar": "docs",
+  "previous": {
+    "title": "API Overview",
+    "permalink": "/docs/api/overview"
+  },
+  "next": {
+    "title": "Authentication Overview",
+    "permalink": "/docs/api/auth/overview"
+  }
+}

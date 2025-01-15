@@ -1,0 +1,18 @@
+{
+  "unversionedId": "SECURITY_AND_CODING_PROTOCOLS",
+  "id": "SECURITY_AND_CODING_PROTOCOLS",
+  "title": "Security and Coding Protocols for Multi-Tenant Architecture",
+  "description": "Multi-Tenant Security Model",
+  "source": "@site/docs/SECURITY_AND_CODING_PROTOCOLS.md",
+  "sourceDirName": ".",
+  "slug": "/SECURITY_AND_CODING_PROTOCOLS",
+  "permalink": "/docs/SECURITY_AND_CODING_PROTOCOLS",
+  "draft": false,
+  "editUrl": "https://github.com/CharlesIXofFrance/terrarium/tree/main/docs-site/docs/SECURITY_AND_CODING_PROTOCOLS.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": "samgonzalez",
+  "lastUpdatedAt": 1736902236,
+  "formattedLastUpdatedAt": "Jan 15, 2025",
+  "frontMatter": {}
+}

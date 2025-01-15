@@ -1,0 +1,30 @@
+{
+  "unversionedId": "api/endpoints/communities",
+  "id": "api/endpoints/communities",
+  "title": "Communities API",
+  "description": "Manage your communities through the API.",
+  "source": "@site/docs/api/endpoints/communities.md",
+  "sourceDirName": "api/endpoints",
+  "slug": "/api/endpoints/communities",
+  "permalink": "/docs/api/endpoints/communities",
+  "draft": false,
+  "editUrl": "https://github.com/CharlesIXofFrance/terrarium/tree/main/docs-site/docs/api/endpoints/communities.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": "samgonzalez",
+  "lastUpdatedAt": 1736899798,
+  "formattedLastUpdatedAt": "Jan 15, 2025",
+  "sidebarPosition": 1,
+  "frontMatter": {
+    "sidebar_position": 1
+  },
+  "sidebar": "docs",
+  "previous": {
+    "title": "Authentication",
+    "permalink": "/docs/api/authentication"
+  },
+  "next": {
+    "title": "Jobs API",
+    "permalink": "/docs/api/endpoints/jobs"
+  }
+}

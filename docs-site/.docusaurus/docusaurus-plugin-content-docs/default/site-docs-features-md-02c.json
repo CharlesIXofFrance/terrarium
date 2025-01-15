@@ -1,0 +1,18 @@
+{
+  "unversionedId": "FEATURES",
+  "id": "FEATURES",
+  "title": "Terrarium Features Documentation",
+  "description": "User Roles and Capabilities",
+  "source": "@site/docs/FEATURES.md",
+  "sourceDirName": ".",
+  "slug": "/FEATURES",
+  "permalink": "/docs/FEATURES",
+  "draft": false,
+  "editUrl": "https://github.com/CharlesIXofFrance/terrarium/tree/main/docs-site/docs/FEATURES.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": "samgonzalez",
+  "lastUpdatedAt": 1736902236,
+  "formattedLastUpdatedAt": "Jan 15, 2025",
+  "frontMatter": {}
+}

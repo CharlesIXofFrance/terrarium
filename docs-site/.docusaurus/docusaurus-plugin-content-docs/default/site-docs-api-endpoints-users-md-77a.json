@@ -1,0 +1,30 @@
+{
+  "unversionedId": "api/endpoints/users",
+  "id": "api/endpoints/users",
+  "title": "Users API",
+  "description": "Manage users and profiles through the API.",
+  "source": "@site/docs/api/endpoints/users.md",
+  "sourceDirName": "api/endpoints",
+  "slug": "/api/endpoints/users",
+  "permalink": "/docs/api/endpoints/users",
+  "draft": false,
+  "editUrl": "https://github.com/CharlesIXofFrance/terrarium/tree/main/docs-site/docs/api/endpoints/users.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": "samgonzalez",
+  "lastUpdatedAt": 1736899431,
+  "formattedLastUpdatedAt": "Jan 15, 2025",
+  "sidebarPosition": 3,
+  "frontMatter": {
+    "sidebar_position": 3
+  },
+  "sidebar": "docs",
+  "previous": {
+    "title": "Jobs API",
+    "permalink": "/docs/api/endpoints/jobs"
+  },
+  "next": {
+    "title": "Terrarium SDKs",
+    "permalink": "/docs/sdk/overview"
+  }
+}

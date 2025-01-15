@@ -1,0 +1,30 @@
+{
+  "unversionedId": "api/auth/tokens",
+  "id": "api/auth/tokens",
+  "title": "Managing Tokens",
+  "description": "Learn how to effectively manage your API tokens in Terrarium.",
+  "source": "@site/docs/api/auth/tokens.md",
+  "sourceDirName": "api/auth",
+  "slug": "/api/auth/tokens",
+  "permalink": "/docs/api/auth/tokens",
+  "draft": false,
+  "editUrl": "https://github.com/CharlesIXofFrance/terrarium/tree/main/docs-site/docs/api/auth/tokens.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": "samgonzalez",
+  "lastUpdatedAt": 1736899908,
+  "formattedLastUpdatedAt": "Jan 15, 2025",
+  "sidebarPosition": 2,
+  "frontMatter": {
+    "sidebar_position": 2
+  },
+  "sidebar": "docs",
+  "previous": {
+    "title": "Authentication Overview",
+    "permalink": "/docs/api/auth/overview"
+  },
+  "next": {
+    "title": "Security Best Practices",
+    "permalink": "/docs/api/auth/security"
+  }
+}

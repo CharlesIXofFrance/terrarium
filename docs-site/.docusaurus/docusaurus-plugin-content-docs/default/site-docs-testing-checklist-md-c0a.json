@@ -1,0 +1,18 @@
+{
+  "unversionedId": "TESTING_CHECKLIST",
+  "id": "TESTING_CHECKLIST",
+  "title": "Testing Checklist",
+  "description": "Authentication",
+  "source": "@site/docs/TESTING_CHECKLIST.md",
+  "sourceDirName": ".",
+  "slug": "/TESTING_CHECKLIST",
+  "permalink": "/docs/TESTING_CHECKLIST",
+  "draft": false,
+  "editUrl": "https://github.com/CharlesIXofFrance/terrarium/tree/main/docs-site/docs/TESTING_CHECKLIST.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": "samgonzalez",
+  "lastUpdatedAt": 1736902236,
+  "formattedLastUpdatedAt": "Jan 15, 2025",
+  "frontMatter": {}
+}

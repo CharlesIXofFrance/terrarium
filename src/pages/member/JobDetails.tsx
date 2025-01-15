@@ -24,7 +24,11 @@ export function JobDetails() {
   const params = new URLSearchParams(window.location.search);
   const subdomainParam = params.get('subdomain') || '';
   const pathParts = subdomainParam.split('/');
-  const jobId = pathParts[pathParts.length - 1];
+  const jobId = pathParts[2]; // jobs/2 -> get the "2"
+
+  // Add console.log for debugging
+  console.log('Job ID:', jobId);
+  console.log('Path parts:', pathParts);
 
   const { job, isLoading, error } = useJob(jobId);
 

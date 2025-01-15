@@ -1,0 +1,30 @@
+{
+  "unversionedId": "features/communities",
+  "id": "features/communities",
+  "title": "Communities",
+  "description": "Learn how to manage your communities in Terrarium.",
+  "source": "@site/docs/features/communities.md",
+  "sourceDirName": "features",
+  "slug": "/features/communities",
+  "permalink": "/docs/features/communities",
+  "draft": false,
+  "editUrl": "https://github.com/CharlesIXofFrance/terrarium/tree/main/docs-site/docs/features/communities.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": "samgonzalez",
+  "lastUpdatedAt": 1736898956,
+  "formattedLastUpdatedAt": "Jan 14, 2025",
+  "sidebarPosition": 1,
+  "frontMatter": {
+    "sidebar_position": 1
+  },
+  "sidebar": "docs",
+  "previous": {
+    "title": "Configuration",
+    "permalink": "/docs/getting-started/configuration"
+  },
+  "next": {
+    "title": "Job Boards",
+    "permalink": "/docs/features/job-boards"
+  }
+}

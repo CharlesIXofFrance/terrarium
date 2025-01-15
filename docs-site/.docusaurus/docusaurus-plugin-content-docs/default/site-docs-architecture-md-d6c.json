@@ -1,0 +1,18 @@
+{
+  "unversionedId": "ARCHITECTURE",
+  "id": "ARCHITECTURE",
+  "title": "Architecture Overview",
+  "description": "System Overview",
+  "source": "@site/docs/ARCHITECTURE.md",
+  "sourceDirName": ".",
+  "slug": "/ARCHITECTURE",
+  "permalink": "/docs/ARCHITECTURE",
+  "draft": false,
+  "editUrl": "https://github.com/CharlesIXofFrance/terrarium/tree/main/docs-site/docs/ARCHITECTURE.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": "samgonzalez",
+  "lastUpdatedAt": 1736902236,
+  "formattedLastUpdatedAt": "Jan 15, 2025",
+  "frontMatter": {}
+}

@@ -1,0 +1,30 @@
+{
+  "unversionedId": "api/authentication",
+  "id": "api/authentication",
+  "title": "Authentication",
+  "description": "Learn how to authenticate your API requests.",
+  "source": "@site/docs/api/authentication.md",
+  "sourceDirName": "api",
+  "slug": "/api/authentication",
+  "permalink": "/docs/api/authentication",
+  "draft": false,
+  "editUrl": "https://github.com/CharlesIXofFrance/terrarium/tree/main/docs-site/docs/api/authentication.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": "samgonzalez",
+  "lastUpdatedAt": 1736899431,
+  "formattedLastUpdatedAt": "Jan 15, 2025",
+  "sidebarPosition": 2,
+  "frontMatter": {
+    "sidebar_position": 2
+  },
+  "sidebar": "docs",
+  "previous": {
+    "title": "Security Best Practices",
+    "permalink": "/docs/api/auth/security"
+  },
+  "next": {
+    "title": "Communities API",
+    "permalink": "/docs/api/endpoints/communities"
+  }
+}

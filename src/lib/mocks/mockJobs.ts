@@ -950,6 +950,43 @@ export const MOCK_JOBS: Job[] = [
   },
 ];
 
+export const mockJobs: Record<string, Job> = {
+  '1': {
+    id: '1',
+    title: 'Software Engineer',
+    company: 'TechCorp',
+    companyLogo: 'https://example.com/logo1.png',
+    location: 'San Francisco',
+    type: 'Full-time',
+    salary: {
+      min: 120000,
+      max: 180000,
+      currency: 'USD',
+    },
+    experience: '3-5 years',
+    description: 'Join our engineering team...',
+    requirements: ['React', 'TypeScript', 'Node.js'],
+    postedAt: new Date('2024-01-01').toISOString(),
+  },
+  '2': {
+    id: '2',
+    title: 'Product Manager',
+    company: 'InnovateCo',
+    companyLogo: 'https://example.com/logo2.png',
+    location: 'New York',
+    type: 'Full-time',
+    salary: {
+      min: 130000,
+      max: 190000,
+      currency: 'USD',
+    },
+    experience: '5+ years',
+    description: 'Lead product development...',
+    requirements: ['Product Management', 'Agile', 'Technical Background'],
+    postedAt: new Date('2024-01-02').toISOString(),
+  },
+};
+
 // Testimonials remain unchanged, no image repetition issue there
 export const JOB_TESTIMONIALS = {
   'FinTech Product Manager': [

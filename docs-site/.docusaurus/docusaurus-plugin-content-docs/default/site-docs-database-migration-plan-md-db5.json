@@ -1,0 +1,18 @@
+{
+  "unversionedId": "DATABASE_MIGRATION_PLAN",
+  "id": "DATABASE_MIGRATION_PLAN",
+  "title": "Database Migration Plan",
+  "description": "Current to Future State Migration",
+  "source": "@site/docs/DATABASE_MIGRATION_PLAN.md",
+  "sourceDirName": ".",
+  "slug": "/DATABASE_MIGRATION_PLAN",
+  "permalink": "/docs/DATABASE_MIGRATION_PLAN",
+  "draft": false,
+  "editUrl": "https://github.com/CharlesIXofFrance/terrarium/tree/main/docs-site/docs/DATABASE_MIGRATION_PLAN.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": "samgonzalez",
+  "lastUpdatedAt": 1736902236,
+  "formattedLastUpdatedAt": "Jan 15, 2025",
+  "frontMatter": {}
+}

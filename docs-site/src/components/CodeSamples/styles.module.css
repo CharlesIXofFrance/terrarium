@@ -1,0 +1,63 @@
+.codeContainer {
+  margin: 2rem 0;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.codeContainer pre {
+  margin: 0;
+  padding: 1rem;
+  background-color: var(--ifm-background-surface-color);
+}
+
+.codeContainer code {
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+/* Dark mode adjustments */
+[data-theme='dark'] .codeContainer {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Language tab styles */
+.codeContainer [role='tablist'] {
+  background-color: var(--ifm-background-surface-color);
+  border-bottom: 1px solid var(--ifm-color-emphasis-300);
+}
+
+.codeContainer [role='tab'] {
+  padding: 0.75rem 1.5rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--ifm-color-emphasis-700);
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.codeContainer [role='tab'][aria-selected='true'] {
+  color: var(--ifm-color-primary);
+  border-bottom-color: var(--ifm-color-primary);
+}
+
+/* Copy button styles */
+.codeContainer .copyButton {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8rem;
+  color: var(--ifm-color-emphasis-600);
+  background-color: var(--ifm-background-surface-color);
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.codeContainer .copyButton:hover {
+  color: var(--ifm-color-primary);
+  border-color: var(--ifm-color-primary);
+}

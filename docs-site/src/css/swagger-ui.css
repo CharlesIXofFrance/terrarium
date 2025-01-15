@@ -1,0 +1,64 @@
+/* Custom styles for Swagger UI */
+.swagger-ui-container {
+  margin-top: 2rem;
+  padding: 2rem;
+  background: var(--ifm-background-color);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Dark mode adjustments */
+[data-theme='dark'] .swagger-ui {
+  filter: invert(0.9) hue-rotate(180deg);
+}
+
+[data-theme='dark'] .swagger-ui img {
+  filter: invert(1) hue-rotate(180deg);
+}
+
+/* Make the UI more compact */
+.swagger-ui .opblock {
+  margin: 0 0 15px;
+  border-radius: 4px;
+  box-shadow: 0 0 3px rgba(0, 0, 0, 0.1);
+}
+
+.swagger-ui .opblock .opblock-summary {
+  padding: 8px;
+}
+
+/* Better typography */
+.swagger-ui .opblock-tag {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--ifm-color-primary);
+}
+
+.swagger-ui .opblock .opblock-summary-operation-id {
+  font-size: 0.9rem;
+}
+
+/* Better buttons */
+.swagger-ui .btn {
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.swagger-ui .btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+/* Response section */
+.swagger-ui .responses-wrapper {
+  padding: 15px;
+  background: var(--ifm-background-surface-color);
+  border-radius: 4px;
+}
+
+/* Code samples */
+.swagger-ui .highlight-code {
+  background: var(--ifm-background-surface-color);
+  border-radius: 4px;
+  padding: 15px;
+}

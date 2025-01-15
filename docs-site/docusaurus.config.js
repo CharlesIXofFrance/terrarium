@@ -42,7 +42,10 @@ const config = {
           showLastUpdateAuthor: true,
         },
         theme: {
-          customCss: require.resolve('./src/css/custom.css'),
+          customCss: [
+            require.resolve('./src/css/custom.css'),
+            require.resolve('./src/css/swagger-ui.css'),
+          ],
         },
       }),
     ],
@@ -84,6 +87,11 @@ const config = {
             label: 'Documentation',
           },
           {
+            to: '/api-playground',
+            label: 'API Playground',
+            position: 'left',
+          },
+          {
             href: 'https://github.com/CharlesIXofFrance/terrarium',
             label: 'GitHub',
             position: 'right',
@@ -103,6 +111,10 @@ const config = {
               {
                 label: 'Features',
                 to: '/docs/features/communities',
+              },
+              {
+                label: 'API Playground',
+                to: '/api-playground',
               },
             ],
           },

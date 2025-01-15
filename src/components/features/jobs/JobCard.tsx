@@ -1,6 +1,6 @@
 import React from 'react';
 import { MapPin, Building2, Clock, Euro, BriefcaseIcon } from 'lucide-react';
-import { Link, useParams } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import type { Job } from '../../../types/domain/jobs';
 import { useImageLoader } from '../../../lib/hooks/useImageLoader';
 import { scrollToTop } from '../../../lib/utils/scroll';
@@ -46,7 +46,10 @@ export function JobCard({
   },
   className = '',
 }: JobCardProps) {
-  const { communitySlug } = useParams();
+  const params = new URLSearchParams(window.location.search);
+  const subdomainParam = params.get('subdomain') || '';
+  const [community] = subdomainParam.split('/');
+
   const { optimizeImageUrl } = useImageLoader();
 
   const typeColors =
@@ -55,7 +58,7 @@ export function JobCard({
 
   return (
     <Link
-      to={`/m/${communitySlug}/jobs/${job.id}`}
+      to={`/?subdomain=${community}/jobs/${job.id}`}
       onClick={scrollToTop}
       className={`block h-full max-w-[372px] ${className}`}
     >
@@ -64,7 +67,10 @@ export function JobCard({
         {job.coverImage && variant !== 'compact' && (
           <div className="w-full h-48 relative">
             <img
-              src={optimizeImageUrl(job.coverImage, { width: 800, height: 400 })}
+              src={optimizeImageUrl(job.coverImage, {
+                width: 800,
+                height: 400,
+              })}
               alt={`${job.company} team`}
               className="w-full h-full object-cover rounded-t-xl"
             />
@@ -111,7 +117,9 @@ export function JobCard({
 
           {/* Job Title and Company */}
           <div className="mb-4">
-            <h3 className="text-xl font-bold text-gray-900 mb-1">{job.title}</h3>
+            <h3 className="text-xl font-bold text-gray-900 mb-1">
+              {job.title}
+            </h3>
             <p className="text-gray-600">{job.company}</p>
           </div>
 

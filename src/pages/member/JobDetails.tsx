@@ -14,13 +14,19 @@ import { WorkingAtCompany } from '@/components/features/jobs/WorkingAtCompany';
 import { CareerConsult } from '@/components/features/jobs/CareerConsult';
 import { getRelatedJobs } from '@/lib/utils/jobs';
 import { Button } from '@/components/ui/atoms/Button';
+import { useJob } from '@/lib/hooks/useJob';
 
 export function JobDetails() {
-  const { jobId, communitySlug } = useParams();
   const navigate = useNavigate();
-  const [jobs] = useAtom(jobsAtom);
-  const [isLoading, setIsLoading] = useState(true);
   const [showScrollTop, setShowScrollTop] = useState(false);
+
+  // Get the job ID from the subdomain path
+  const params = new URLSearchParams(window.location.search);
+  const subdomainParam = params.get('subdomain') || '';
+  const pathParts = subdomainParam.split('/');
+  const jobId = pathParts[pathParts.length - 1];
+
+  const { job, isLoading, error } = useJob(jobId);
 
   // Handle scroll for back to top button
   useEffect(() => {
@@ -36,12 +42,6 @@ export function JobDetails() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Simulate loading state
-  React.useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 500);
-    return () => clearTimeout(timer);
-  }, []);
-
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -53,10 +53,7 @@ export function JobDetails() {
     );
   }
 
-  // Find the current job
-  const job = jobs?.find((j) => j.id === jobId);
-
-  if (!job) {
+  if (error || !job) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -65,7 +62,7 @@ export function JobDetails() {
           <Button
             variant="secondary"
             className="mt-4"
-            onClick={() => navigate(`/m/${communitySlug}/jobs`)}
+            onClick={() => navigate('/jobs')}
           >
             Back to Jobs
           </Button>
@@ -74,7 +71,7 @@ export function JobDetails() {
     );
   }
 
-  const relatedJobs = getRelatedJobs(jobs, job.id);
+  const relatedJobs = getRelatedJobs([], job.id);
 
   return (
     <div className="min-h-screen bg-gray-50 pb-12">
@@ -82,7 +79,7 @@ export function JobDetails() {
       <div className="bg-white border-b border-gray-100 sticky top-16 z-10">
         <div className="container mx-auto px-4 py-4">
           <button
-            onClick={() => navigate(`/m/${communitySlug}/jobs`)}
+            onClick={() => navigate('/jobs')}
             className="text-gray-600 hover:text-gray-900 flex items-center space-x-1"
           >
             <ArrowLeft className="w-4 h-4" />

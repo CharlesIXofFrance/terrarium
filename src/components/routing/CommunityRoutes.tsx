@@ -83,6 +83,13 @@ export const CommunityRoutes: React.FC = () => {
     '/jobs/:id': <JobDetails />,
   };
 
+  const findMatchingRoute = (
+    routes: Record<string, React.ReactNode>,
+    path: string
+  ) => {
+    return routes[path];
+  };
+
   // Redirect to onboarding if not complete and user is admin
   if (
     hasAdminAccess &&
@@ -96,24 +103,38 @@ export const CommunityRoutes: React.FC = () => {
     <CommunityAccessGuard>
       {hasAdminAccess ? (
         <Routes>
-          <Route element={<CommunityLayout />}>
-            {/* Onboarding Route */}
-            <Route path="/onboarding" element={<OwnerOnboarding />} />
-
-            {/* Handle subdomain-based routes */}
-            <Route
-              path="*"
-              element={
-                adminRoutes[path] || (
-                  <Navigate
-                    to={`/?subdomain=${community}/settings`}
-                    replace
-                    state={{ from: location }}
-                  />
-                )
-              }
-            />
-          </Route>
+          {path.startsWith('/settings') ? (
+            <Route element={<CommunityLayout />}>
+              <Route path="/onboarding" element={<OwnerOnboarding />} />
+              <Route
+                path="*"
+                element={
+                  adminRoutes[path] || (
+                    <Navigate
+                      to={`/?subdomain=${community}/settings`}
+                      replace
+                      state={{ from: location }}
+                    />
+                  )
+                }
+              />
+            </Route>
+          ) : (
+            <Route element={<MemberLayout />}>
+              <Route
+                path="*"
+                element={
+                  findMatchingRoute(memberRoutes, path) || (
+                    <Navigate
+                      to={`/?subdomain=${community}`}
+                      replace
+                      state={{ from: location }}
+                    />
+                  )
+                }
+              />
+            </Route>
+          )}
         </Routes>
       ) : (
         <Routes>
@@ -121,7 +142,7 @@ export const CommunityRoutes: React.FC = () => {
             <Route
               path="*"
               element={
-                memberRoutes[path] || (
+                findMatchingRoute(memberRoutes, path) || (
                   <Navigate
                     to={`/?subdomain=${community}`}
                     replace

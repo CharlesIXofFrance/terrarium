@@ -46,6 +46,15 @@ const sidebars = {
         },
       ],
     },
+    {
+      type: 'category',
+      label: 'SDKs',
+      items: [
+        'sdk/overview',
+        'sdk/javascript',
+        'sdk/python',
+      ],
+    },
   ],
 };
 

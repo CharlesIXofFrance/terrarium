@@ -24,6 +24,15 @@ const sidebars = {
       label: 'API Reference',
       items: [
         'api/overview',
+        {
+          type: 'category',
+          label: 'Authentication',
+          items: [
+            'api/auth/overview',
+            'api/auth/tokens',
+            'api/auth/security',
+          ],
+        },
         'api/authentication',
         {
           type: 'category',

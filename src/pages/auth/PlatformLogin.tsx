@@ -3,7 +3,7 @@ import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { Globe2 } from 'lucide-react';
 import { LoginForm } from '@/components/features/auth/LoginForm';
 
-export function Login() {
+export function PlatformLogin() {
   const [searchParams] = useSearchParams();
   const error = searchParams.get('error');
   const navigate = useNavigate();

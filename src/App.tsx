@@ -11,8 +11,8 @@ import { currentCommunityAtom } from './lib/stores/community';
 import { supabase } from './lib/supabase';
 import { ErrorBoundary } from '@/components/layout/molecules/ErrorBoundary';
 import { LandingPage } from './pages/LandingPage';
-import { Login } from './pages/auth/Login';
-import { Register } from './pages/auth/Register';
+import { PlatformLogin } from './pages/auth/PlatformLogin';
+import { PlatformRegister } from './pages/auth/PlatformRegister';
 import { ForgotPassword } from './pages/auth/ForgotPassword';
 import { ResetPassword } from './pages/auth/ResetPassword';
 import { ResetPasswordCallback } from './pages/auth/ResetPasswordCallback';
@@ -292,7 +292,7 @@ function App() {
             path="/login"
             element={
               <PublicOnlyRoute>
-                <Login />
+                <PlatformLogin />
               </PublicOnlyRoute>
             }
           />
@@ -300,7 +300,7 @@ function App() {
             path="/register"
             element={
               <PublicOnlyRoute>
-                <Register />
+                <PlatformRegister />
               </PublicOnlyRoute>
             }
           />

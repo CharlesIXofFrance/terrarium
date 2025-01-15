@@ -80,7 +80,43 @@ export const CommunityRoutes: React.FC = () => {
     '/events': <Events />,
     '/feed': <Feed />,
     '/profile': <MemberProfile />,
-    '/jobs/:id': <JobDetails />,
+    '/jobs/:jobId': <JobDetails />,
+  };
+
+  // Helper function to check if path matches a dynamic route pattern
+  const matchDynamicPath = (currentPath: string, pattern: string): boolean => {
+    const patternParts = pattern.split('/');
+    const pathParts = currentPath.split('/');
+
+    if (patternParts.length !== pathParts.length) return false;
+
+    return patternParts.every((part, i) => {
+      if (part.startsWith(':')) return true;
+      return part === pathParts[i];
+    });
+  };
+
+  // Helper function to find matching route
+  const findMatchingRoute = (
+    routes: Record<string, React.ReactNode>,
+    currentPath: string
+  ) => {
+    // First try exact match
+    if (routes[currentPath]) return routes[currentPath];
+
+    // Then try dynamic routes
+    for (const [pattern, element] of Object.entries(routes)) {
+      if (matchDynamicPath(currentPath, pattern)) {
+        // For JobDetails, pass the job ID as a parameter
+        if (pattern === '/jobs/:jobId') {
+          const jobId = currentPath.split('/').pop();
+          return React.cloneElement(element as React.ReactElement, { jobId });
+        }
+        return element;
+      }
+    }
+
+    return null;
   };
 
   // Redirect to onboarding if not complete and user is admin
@@ -96,24 +132,38 @@ export const CommunityRoutes: React.FC = () => {
     <CommunityAccessGuard>
       {hasAdminAccess ? (
         <Routes>
-          <Route element={<CommunityLayout />}>
-            {/* Onboarding Route */}
-            <Route path="/onboarding" element={<OwnerOnboarding />} />
-
-            {/* Handle subdomain-based routes */}
-            <Route
-              path="*"
-              element={
-                adminRoutes[path] || (
-                  <Navigate
-                    to={`/?subdomain=${community}/settings`}
-                    replace
-                    state={{ from: location }}
-                  />
-                )
-              }
-            />
-          </Route>
+          {path.startsWith('/settings') ? (
+            <Route element={<CommunityLayout />}>
+              <Route path="/onboarding" element={<OwnerOnboarding />} />
+              <Route
+                path="*"
+                element={
+                  adminRoutes[path] || (
+                    <Navigate
+                      to={`/?subdomain=${community}/settings`}
+                      replace
+                      state={{ from: location }}
+                    />
+                  )
+                }
+              />
+            </Route>
+          ) : (
+            <Route element={<MemberLayout />}>
+              <Route
+                path="*"
+                element={
+                  findMatchingRoute(memberRoutes, path) || (
+                    <Navigate
+                      to={`/?subdomain=${community}`}
+                      replace
+                      state={{ from: location }}
+                    />
+                  )
+                }
+              />
+            </Route>
+          )}
         </Routes>
       ) : (
         <Routes>
@@ -121,7 +171,7 @@ export const CommunityRoutes: React.FC = () => {
             <Route
               path="*"
               element={
-                memberRoutes[path] || (
+                findMatchingRoute(memberRoutes, path) || (
                   <Navigate
                     to={`/?subdomain=${community}`}
                     replace

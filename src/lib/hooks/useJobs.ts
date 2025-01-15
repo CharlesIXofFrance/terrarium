@@ -1,6 +1,6 @@
 import { useAtom } from 'jotai';
 import { jobsStateAtom, filteredJobsAtom } from '../stores/jobs';
-import type { Job } from '../types/domain/jobs';
+import type { Job } from '../types/jobs';
 
 export function useJobs(communitySlug?: string) {
   const [{ jobs, isLoading, error }] = useAtom(jobsStateAtom);

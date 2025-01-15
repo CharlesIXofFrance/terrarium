@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { JobCard } from '@/components/features/jobs/JobCard';
 import { scrollToTop } from '@/lib/utils/scroll';
@@ -75,7 +75,7 @@ export function RelatedJobs({ currentJobId, limit = 3 }: RelatedJobsProps) {
             onClick={() => scroll('left')}
             className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 w-8 h-8 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gray-50 md:hidden"
           >
-            <ChevronLeft className="h-5 w-5 text-gray-600" />
+            <ChevronLeftIcon className="h-5 w-5 text-gray-600" />
           </button>
         )}
 
@@ -85,14 +85,11 @@ export function RelatedJobs({ currentJobId, limit = 3 }: RelatedJobsProps) {
           style={{
             scrollbarWidth: 'none',
             msOverflowStyle: 'none',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(286px, 1fr))'
+            gridTemplateColumns: 'repeat(auto-fit, minmax(286px, 1fr))',
           }}
         >
           {relatedJobs.map((job) => (
-            <div
-              key={job.id}
-              onClick={() => handleJobClick(job.id)}
-            >
+            <div key={job.id} onClick={() => handleJobClick(job.id)}>
               <JobCard
                 job={job}
                 onApply={handleApply}
@@ -109,7 +106,7 @@ export function RelatedJobs({ currentJobId, limit = 3 }: RelatedJobsProps) {
             onClick={() => scroll('right')}
             className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 w-8 h-8 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gray-50 md:hidden"
           >
-            <ChevronRight className="h-5 w-5 text-gray-600" />
+            <ChevronRightIcon className="h-5 w-5 text-gray-600" />
           </button>
         )}
       </div>

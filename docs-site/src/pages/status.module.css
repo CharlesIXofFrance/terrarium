@@ -1,0 +1,263 @@
+.container {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.lastUpdated {
+  color: var(--ifm-color-emphasis-600);
+  font-size: 0.9rem;
+}
+
+/* Metrics Grid */
+.metricsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+}
+
+.metricsCard {
+  padding: 1.5rem;
+  border-radius: 8px;
+  background: var(--ifm-background-surface-color);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  position: relative;
+}
+
+.metricsCard h3 {
+  margin: 0 0 1rem;
+  font-size: 1rem;
+  color: var(--ifm-color-emphasis-700);
+}
+
+.metricValue {
+  font-size: 2rem;
+  font-weight: 600;
+  color: var(--ifm-color-primary);
+}
+
+.metricUnit {
+  font-size: 1rem;
+  color: var(--ifm-color-emphasis-600);
+  margin-left: 0.5rem;
+}
+
+.trend {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  font-size: 1.2rem;
+}
+
+.trendUp {
+  color: var(--ifm-color-success);
+}
+
+.trendDown {
+  color: var(--ifm-color-danger);
+}
+
+.trendNeutral {
+  color: var(--ifm-color-emphasis-600);
+}
+
+/* Status Grid */
+.statusGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+}
+
+.statusCard {
+  padding: 1.5rem;
+  border-radius: 8px;
+  background: var(--ifm-background-surface-color);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.statusCard h3 {
+  margin: 0 0 0.5rem;
+}
+
+.statusCard p {
+  margin: 0 0 1rem;
+  color: var(--ifm-color-emphasis-600);
+}
+
+/* Status Indicator */
+.statusIndicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+}
+
+.statusDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.statusOperational .statusDot {
+  background-color: var(--ifm-color-success);
+}
+
+.statusDegraded .statusDot {
+  background-color: var(--ifm-color-warning);
+}
+
+.statusOutage .statusDot {
+  background-color: var(--ifm-color-danger);
+}
+
+.statusUnknown .statusDot {
+  background-color: var(--ifm-color-emphasis-500);
+}
+
+.statusOperational {
+  color: var(--ifm-color-success);
+}
+
+.statusDegraded {
+  color: var(--ifm-color-warning);
+}
+
+.statusOutage {
+  color: var(--ifm-color-danger);
+}
+
+.statusUnknown {
+  color: var(--ifm-color-emphasis-500);
+}
+
+/* Incidents Section */
+.incidentsSection {
+  margin-top: 3rem;
+}
+
+.incidentsList {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.incidentItem {
+  padding: 1.5rem;
+  border-radius: 8px;
+  background: var(--ifm-background-surface-color);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.incidentHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.incidentHeader h4 {
+  margin: 0;
+}
+
+.incidentStatus {
+  padding: 0.25rem 0.75rem;
+  border-radius: 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.resolved {
+  background: var(--ifm-color-success-contrast-background);
+  color: var(--ifm-color-success-contrast-foreground);
+}
+
+.investigating {
+  background: var(--ifm-color-warning-contrast-background);
+  color: var(--ifm-color-warning-contrast-foreground);
+}
+
+.identified {
+  background: var(--ifm-color-info-contrast-background);
+  color: var(--ifm-color-info-contrast-foreground);
+}
+
+.incidentDate {
+  color: var(--ifm-color-emphasis-600);
+  font-size: 0.875rem;
+  margin: 0 0 1rem;
+}
+
+.incidentUpdates {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--ifm-color-emphasis-200);
+}
+
+.incidentUpdate {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.updateTime {
+  color: var(--ifm-color-emphasis-600);
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
+
+/* Loading State */
+.loadingContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+}
+
+.loader {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--ifm-color-emphasis-200);
+  border-top-color: var(--ifm-color-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Dark Mode Adjustments */
+[data-theme='dark'] .statusCard,
+[data-theme='dark'] .metricsCard,
+[data-theme='dark'] .incidentItem {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .container {
+    padding: 1rem;
+  }
+
+  .metricsGrid,
+  .statusGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .incidentHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+}

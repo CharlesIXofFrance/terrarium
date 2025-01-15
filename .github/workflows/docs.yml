@@ -1,0 +1,61 @@
+name: Documentation Checks
+
+on:
+  pull_request:
+    paths:
+      - 'docs/**'
+      - '**/*.md'
+  push:
+    branches: [main]
+    paths:
+      - 'docs/**'
+      - '**/*.md'
+
+jobs:
+  docs-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: |
+          npm install -g markdownlint-cli
+          npm install -g markdown-link-check
+          npm install -g remark-cli remark-validate-links
+
+      - name: Check Markdown formatting
+        run: markdownlint '**/*.md' --ignore node_modules
+
+      - name: Check for broken links
+        run: |
+          find . -name "*.md" -not -path "./node_modules/*" -exec markdown-link-check {} \;
+
+      - name: Validate documentation version
+        run: |
+          # Custom script to check if version is updated when content changes
+          node .github/scripts/check-docs-version.js
+
+      - name: Check API documentation coverage
+        run: |
+          # Custom script to ensure all APIs are documented
+          node .github/scripts/check-api-coverage.js
+
+      - name: Generate documentation report
+        run: |
+          echo "# Documentation Status Report" > docs-report.md
+          echo "## Last Check: $(date)" >> docs-report.md
+          echo "## Files Checked:" >> docs-report.md
+          find . -name "*.md" -not -path "./node_modules/*" | while read -r file; do
+            echo "- $file" >> docs-report.md
+          done
+
+      - name: Upload documentation report
+        uses: actions/upload-artifact@v3
+        with:
+          name: docs-report
+          path: docs-report.md

@@ -46,8 +46,15 @@ export function JobCard({
   },
   className = '',
 }: JobCardProps) {
-  const { communitySlug } = useParams();
   const { optimizeImageUrl } = useImageLoader();
+
+  // Get the community slug from the subdomain parameter
+  const params = new URLSearchParams(window.location.search);
+  const subdomainParam = params.get('subdomain') || '';
+  const [community] = subdomainParam.split('/');
+
+  const { companyLogo, coverImage, salary, isEarlyApplicant, sisterScore } =
+    job;
 
   const typeColors =
     TYPE_COLORS[job.type as keyof typeof TYPE_COLORS] ||
@@ -55,18 +62,18 @@ export function JobCard({
 
   return (
     <Link
-      to={`/m/${communitySlug}/jobs/${job.id}`}
+      to={`/?subdomain=${community}/jobs/${job.id}`}
       onClick={scrollToTop}
       className={`block h-full max-w-[372px] ${className}`}
     >
       <div className="relative min-w-[286px] bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200 h-full flex flex-col">
         {/* Cover Image */}
-        {job.coverImage && variant !== 'compact' && (
+        {coverImage && variant !== 'compact' && (
           <div className="w-full h-48 relative">
             <img
-              src={optimizeImageUrl(job.coverImage, { width: 800, height: 400 })}
-              alt={`${job.company} team`}
-              className="w-full h-full object-cover rounded-t-xl"
+              src={optimizeImageUrl(coverImage, { width: 800, height: 400 })}
+              alt={`${job.title} at ${job.company}`}
+              className="w-full h-full object-cover rounded-t-lg"
             />
           </div>
         )}
@@ -76,14 +83,14 @@ export function JobCard({
           <div className="flex items-center justify-between -mt-12 mb-4 relative z-[5]">
             <div className="flex items-center space-x-3">
               <div className="w-16 h-16 bg-white rounded-lg flex items-center justify-center shadow-sm p-2">
-                {job.companyLogo ? (
+                {companyLogo ? (
                   <img
-                    src={optimizeImageUrl(job.companyLogo, {
-                      width: 64,
-                      height: 64,
+                    src={optimizeImageUrl(companyLogo, {
+                      width: 48,
+                      height: 48,
                     })}
-                    alt={job.company}
-                    className="w-full h-full object-contain"
+                    alt={`${job.company} logo`}
+                    className="w-full h-full object-contain rounded-full"
                   />
                 ) : (
                   renderLogo({
@@ -99,7 +106,7 @@ export function JobCard({
                 <span className="badge bg-[#e7f8ec] text-[#166534] hover:bg-[#dcf5e3]">
                   {job.type}
                 </span>
-                {job.isEarlyApplicant && (
+                {isEarlyApplicant && (
                   <span className="badge inline-flex items-center bg-[#D9F1D9] text-[#2E7D32] hover:bg-[#ceeace]">
                     <Clock className="w-4 h-4 mr-1" />
                     Early applicant
@@ -111,7 +118,9 @@ export function JobCard({
 
           {/* Job Title and Company */}
           <div className="mb-4">
-            <h3 className="text-xl font-bold text-gray-900 mb-1">{job.title}</h3>
+            <h3 className="text-xl font-bold text-gray-900 mb-1">
+              {job.title}
+            </h3>
             <p className="text-gray-600">{job.company}</p>
           </div>
 
@@ -132,12 +141,11 @@ export function JobCard({
             )}
 
             {/* Salary */}
-            {job.salary && (
+            {salary && (
               <div className="flex items-center text-gray-600">
                 <Euro className="h-5 w-5 mr-2" />
                 <span>
-                  {job.salary.min / 1000}-{job.salary.max / 1000}k{' '}
-                  {job.salary.currency}
+                  {salary.min / 1000}-{salary.max / 1000}k {salary.currency}
                 </span>
               </div>
             )}
@@ -146,7 +154,7 @@ export function JobCard({
           {/* Footer */}
           <div className="flex items-center justify-between mt-6 pt-6 border-t border-gray-100">
             {/* Sister Score */}
-            {job.sisterScore && (
+            {sisterScore && (
               <div className="flex items-center space-x-3">
                 <div className="relative">
                   <svg className="w-12 h-12 transform -rotate-90">
@@ -165,11 +173,11 @@ export function JobCard({
                       fill="none"
                       stroke="#7C3AED"
                       strokeWidth="4"
-                      strokeDasharray={`${(job.sisterScore / 100) * 125.6} 125.6`}
+                      strokeDasharray={`${(sisterScore / 100) * 125.6} 125.6`}
                     />
                   </svg>
                   <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-purple-600">
-                    {job.sisterScore}%
+                    {sisterScore}%
                   </span>
                 </div>
                 <div className="text-sm">

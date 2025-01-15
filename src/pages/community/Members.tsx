@@ -10,6 +10,7 @@ import { Section } from '@/components/ui/molecules/Section';
 import type { User } from '@/lib/types';
 
 /**
+ * AI CONTEXT - DON'T DELETE
  * AI Context: Community Management
  * User Types: COMMUNITY_OWNER
  *

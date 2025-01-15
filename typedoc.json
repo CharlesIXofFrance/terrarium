@@ -1,0 +1,36 @@
+{
+  "entryPoints": ["src/**/*.ts", "src/**/*.tsx"],
+  "entryPointStrategy": "expand",
+  "exclude": ["**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts", "**/*.spec.tsx", "**/node_modules/**"],
+  "out": "docs-site/docs/api-reference",
+  "theme": "markdown",
+  "name": "Terrarium API Reference",
+  "excludePrivate": true,
+  "excludeProtected": true,
+  "excludeExternals": true,
+  "includeVersion": true,
+  "hideGenerator": true,
+  "searchInComments": true,
+  "defaultCategory": "Other",
+  "categoryOrder": [
+    "Components",
+    "Hooks",
+    "Services",
+    "Utils",
+    "Types",
+    "Other"
+  ],
+  "categorizeByGroup": true,
+  "sort": ["source-order"],
+  "gitRevision": "main",
+  "githubPages": false,
+  "cleanOutputDir": true,
+  "readme": "none",
+  "plugin": [
+    "typedoc-plugin-markdown"
+  ],
+  "validation": {
+    "invalidLink": true,
+    "notExported": true
+  }
+}

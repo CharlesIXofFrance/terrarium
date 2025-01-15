@@ -19,6 +19,23 @@ const sidebars = {
         'features/analytics',
       ],
     },
+    {
+      type: 'category',
+      label: 'API Reference',
+      items: [
+        'api/overview',
+        'api/authentication',
+        {
+          type: 'category',
+          label: 'Endpoints',
+          items: [
+            'api/endpoints/communities',
+            'api/endpoints/jobs',
+            'api/endpoints/users',
+          ],
+        },
+      ],
+    },
   ],
 };
 

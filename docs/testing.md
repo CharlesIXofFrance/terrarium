@@ -82,6 +82,81 @@ it('loads data asynchronously', async () => {
 });
 ```
 
+## Testing Environments
+
+### Overview
+
+The Terrarium project uses a two-environment setup:
+
+1. Development - for all development and testing
+2. Production - for live application
+
+### 1. Production Environment
+
+- **URL**: [Production URL - TBD]
+- **Purpose**: Live application serving real users
+- **Security**: Strict security policies enforced (see `storage-security-requirements.md`)
+- **Access**: Limited to production credentials
+- **Not used for testing**
+
+### 2. Development Environment
+
+- **URL**: https://terrarium.supabase.co
+- **Purpose**: All development and testing
+- **Security**: Standard development security policies
+- **Access**: Development credentials
+
+### Environment Variables
+
+Each environment requires specific configuration through environment variables:
+
+```bash
+# Supabase Configuration
+SUPABASE_URL=your_supabase_url
+SUPABASE_ANON_KEY=your_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+
+# Storage Configuration
+STORAGE_BUCKET=your_storage_bucket
+STORAGE_REGION=your_storage_region
+
+# Feature Flags
+ENABLE_ANALYTICS=true_or_false
+ENABLE_NOTIFICATIONS=true_or_false
+```
+
+### Test Data Management
+
+1. **Development Environment**:
+
+   - Test data is regularly refreshed
+   - Developers can create and modify test data
+   - Automated cleanup runs daily
+
+2. **Production Environment**:
+   - Contains only real user data
+   - No test data allowed
+   - Regular backups performed
+
+### Environment-Specific Testing
+
+1. **Unit Tests**:
+
+   - Run in CI environment
+   - Use mocked data
+   - Independent of any environment
+
+2. **Integration Tests**:
+
+   - Run against development environment
+   - Use test database
+   - Require development credentials
+
+3. **E2E Tests**:
+   - Run against development environment
+   - Use dedicated test accounts
+   - Reset test data after each run
+
 ## Best Practices
 
 1. **Use Data-testid Sparingly**: Prefer using accessible queries (getByRole, getByLabelText) over data-testid

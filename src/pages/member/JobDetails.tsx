@@ -20,15 +20,11 @@ export function JobDetails() {
   const navigate = useNavigate();
   const [showScrollTop, setShowScrollTop] = useState(false);
 
-  // Get the job ID from the subdomain path
+  // Get the job ID from the path
   const params = new URLSearchParams(window.location.search);
   const subdomainParam = params.get('subdomain') || '';
   const pathParts = subdomainParam.split('/');
-  const jobId = pathParts[2]; // jobs/2 -> get the "2"
-
-  // Add console.log for debugging
-  console.log('Job ID:', jobId);
-  console.log('Path parts:', pathParts);
+  const jobId = pathParts[2]; // /jobs/2 -> ['orange', 'jobs', '2']
 
   const { job, isLoading, error } = useJob(jobId);
 

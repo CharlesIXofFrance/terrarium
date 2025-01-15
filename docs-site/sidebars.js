@@ -24,6 +24,7 @@ const sidebars = {
       label: 'API Reference',
       items: [
         'api/overview',
+        'api/playground',
         {
           type: 'category',
           label: 'Authentication',

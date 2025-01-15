@@ -6,7 +6,7 @@ sidebar_label: Testing
 
 # Testing Guide
 
-This guide covers testing practices and patterns used in the Terrarium project.
+This guide provides an overview of testing practices in the Terrarium project.
 
 ## Testing Stack
 
@@ -20,182 +20,34 @@ This guide covers testing practices and patterns used in the Terrarium project.
 
 ### Unit Tests
 
-Unit tests focus on testing individual functions and components in isolation.
-
-```typescript
-// services/auth.test.ts
-describe('AuthService', () => {
-  describe('validatePassword', () => {
-    it('should pass for valid passwords', () => {
-      expect(validatePassword('StrongPass123!')).toBe(true);
-    });
-
-    it('should fail for weak passwords', () => {
-      expect(validatePassword('weak')).toBe(false);
-    });
-  });
-});
-```
+Unit tests verify individual components and functions in isolation. We use React Testing Library to ensure tests focus on user behavior rather than implementation details.
 
 ### Integration Tests
 
-Integration tests verify that different parts of the application work together correctly.
-
-```typescript
-// features/jobs/JobSearch.test.tsx
-describe('JobSearch', () => {
-  it('should filter jobs based on search input', async () => {
-    render(<JobSearch />);
-
-    // Enter search term
-    fireEvent.change(
-      screen.getByPlaceholderText('Search jobs...'),
-      { target: { value: 'React Developer' } }
-    );
-
-    // Wait for filtered results
-    await waitFor(() => {
-      expect(screen.getByText('Senior React Developer')).toBeInTheDocument();
-    });
-  });
-});
-```
+Integration tests verify that multiple components or systems work together correctly. These tests often involve testing complete features like authentication or community management.
 
 ### E2E Tests
 
-End-to-end tests verify complete user flows using Playwright.
+End-to-end tests use Playwright to simulate real user interactions across multiple pages. These tests verify critical user flows like signup, login, and community creation.
 
-```typescript
-// e2e/job-application.spec.ts
-test('user can apply for a job', async ({ page }) => {
-  // Login
-  await page.goto('/login');
-  await page.fill('[name="email"]', 'test@example.com');
-  await page.fill('[name="password"]', 'password123');
-  await page.click('button[type="submit"]');
+## Testing Philosophy
 
-  // Navigate to jobs
-  await page.click('text=Jobs');
+We follow these key principles:
 
-  // Apply for a job
-  await page.click('text=Senior React Developer');
-  await page.click('text=Apply Now');
+1. Test behavior, not implementation
+2. Write tests that resemble how users interact with the app
+3. Focus on critical user flows and edge cases
+4. Maintain high test coverage for core features
 
-  // Fill application
-  await page.fill('[name="coverLetter"]', 'My application...');
-  await page.click('text=Submit Application');
+## Coverage Requirements
 
-  // Verify success
-  await expect(page.locator('.success-message')).toContainText(
-    'Application submitted'
-  );
-});
-```
-
-## Testing Best Practices
-
-### Component Testing
-
-1. **Test Behavior, Not Implementation**
-
-```typescript
-// ✅ Good: Test what the user sees
-test('shows error message on invalid input', async () => {
-  render(<LoginForm />);
-
-  fireEvent.click(screen.getByText('Submit'));
-
-  expect(await screen.findByText('Email is required'))
-    .toBeInTheDocument();
-});
-
-// ❌ Bad: Testing implementation details
-test('sets error state on invalid input', () => {
-  const { result } = renderHook(() => useState(''));
-  expect(result.current[0]).toBe('');
-});
-```
-
-2. **Use Testing Library Queries Properly**
-
-```typescript
-// ✅ Good: Use semantic queries
-const submitButton = screen.getByRole('button', { name: /submit/i });
-
-// ❌ Bad: Avoid testid when possible
-const submitButton = screen.getByTestId('submit-button');
-```
-
-### API Mocking
-
-Use MSW to mock API responses:
-
-```typescript
-// mocks/handlers.ts
-import { rest } from 'msw';
-
-export const handlers = [
-  rest.get('/api/jobs', (req, res, ctx) => {
-    return res(
-      ctx.status(200),
-      ctx.json([
-        {
-          id: '1',
-          title: 'Senior React Developer',
-          company: 'TechCorp',
-        },
-      ])
-    );
-  }),
-];
-```
-
-### Test Organization
-
-```typescript
-describe('JobBoard', () => {
-  // Setup
-  beforeEach(() => {
-    // Common setup
-  });
-
-  // Happy path tests
-  describe('when jobs are available', () => {
-    it('displays job listings');
-    it('allows filtering jobs');
-  });
-
-  // Error cases
-  describe('when API fails', () => {
-    it('shows error message');
-    it('allows retry');
-  });
-
-  // Edge cases
-  describe('edge cases', () => {
-    it('handles empty search results');
-    it('handles network timeout');
-  });
-});
-```
-
-## Test Coverage
-
-We aim for high test coverage while focusing on critical paths:
+We maintain high test coverage to ensure code quality:
 
 - Business logic: 90%+ coverage
 - UI components: 80%+ coverage
 - Utility functions: 70%+ coverage
 
-Run coverage reports:
-
-```bash
-# Run tests with coverage
-npm run test:coverage
-
-# View coverage report
-npm run coverage:report
-```
+Coverage reports are automatically generated during CI/CD runs.
 
 ## Continuous Integration
 

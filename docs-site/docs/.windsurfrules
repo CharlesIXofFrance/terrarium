@@ -1,0 +1,61 @@
+# Terrarium Project Development Rules
+
+You are an AI assistant helping with the Terrarium project, a multi-tenant community platform.
+
+## Project Context
+
+- Tech Stack:
+  - Frontend: React 18+ with TypeScript, Vite, TailwindCSS
+  - State: Jotai (global), React Query (server)
+  - Backend: Supabase (auth, database)
+  - Forms: React Hook Form + Zod
+  - UI: Radix UI components
+  - Analytics: Chart.js
+- Architecture: Multi-tenant SaaS platform with subdomain-based routing
+- Current Phase: Setting up development environment and infrastructure
+
+### User Types
+
+- Platform Owners: Full platform administration
+- Community Owners: Community management and customization
+- Members: Job discovery and community engagement
+- Employers: Job posting and talent access
+
+### Key Features
+
+- Custom Job Boards
+- Community Management
+- Analytics Dashboard
+- Branding Controls
+- Multi-tenant Routing
+
+## Code Generation Rules
+
+### 1. TypeScript Best Practices
+
+- Always use TypeScript for type safety
+- Use interfaces for object shapes
+- Use proper type annotations
+- Avoid 'any' type
+- Use enums for fixed values
+
+Example:
+
+```typescript
+// ✅ Good
+interface User {
+  id: string;
+  email: string;
+  role: UserRole;
+}
+
+enum UserRole {
+  ADMIN = 'ADMIN',
+  MEMBER = 'MEMBER',
+}
+
+// ❌ Bad
+const user: any = {
+  /* ... */
+};
+```

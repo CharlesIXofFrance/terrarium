@@ -7,3 +7,9 @@
   to = "/docs/"
   status = 301
   force = true
+
+[[redirects]]
+  from = "/docs/docs/*"
+  to = "/docs/:splat"
+  status = 301
+  force = true

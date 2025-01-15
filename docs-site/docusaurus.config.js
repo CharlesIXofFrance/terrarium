@@ -38,10 +38,25 @@ const config = {
         docs: {
           sidebarPath: require.resolve('./sidebars.js'),
           editUrl: 'https://github.com/CharlesIXofFrance/terrarium/tree/main/docs-site/',
+          showLastUpdateTime: true,
+          showLastUpdateAuthor: true,
         },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
         },
+      }),
+    ],
+  ],
+
+  plugins: [
+    [
+      require.resolve("@easyops-cn/docusaurus-search-local"),
+      /** @type {import("@easyops-cn/docusaurus-search-local").PluginOptions} */
+      ({
+        hashed: true,
+        language: ["en"],
+        highlightSearchTermsOnTargetPage: true,
+        explicitSearchResultPath: true,
       }),
     ],
   ],
@@ -51,6 +66,10 @@ const config = {
     ({
       // Replace with your project's social card
       image: 'img/social-card.jpg',
+      metadata: [
+        {name: 'keywords', content: 'terrarium, documentation, api, community platform'},
+        {name: 'description', content: 'Official documentation for the Terrarium community platform'},
+      ],
       navbar: {
         title: 'Terrarium',
         logo: {
@@ -102,6 +121,11 @@ const config = {
       prism: {
         theme: lightCodeTheme,
         darkTheme: darkCodeTheme,
+        additionalLanguages: ['bash', 'json', 'yaml'],
+      },
+      tableOfContents: {
+        minHeadingLevel: 2,
+        maxHeadingLevel: 4,
       },
     }),
 };

@@ -20,13 +20,18 @@ export function JobDetails() {
   const navigate = useNavigate();
   const [showScrollTop, setShowScrollTop] = useState(false);
 
-  // Get the job ID from the path
+  // Get the job ID from the subdomain path
   const params = new URLSearchParams(window.location.search);
   const subdomainParam = params.get('subdomain') || '';
   const pathParts = subdomainParam.split('/');
-  const jobId = pathParts[2]; // /jobs/2 -> ['orange', 'jobs', '2']
+  const jobId = pathParts[pathParts.length - 1];
 
-  const { job, isLoading, error } = useJob(jobId);
+  // Get jobs from global state
+  const [jobs] = useAtom(jobsAtom);
+  const { isLoading, error } = useJob(jobId);
+
+  // Find the current job
+  const job = jobs?.find((j) => j.id === jobId);
 
   // Handle scroll for back to top button
   useEffect(() => {

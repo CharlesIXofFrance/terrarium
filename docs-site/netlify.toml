@@ -3,13 +3,7 @@
   command = "npm run build"
 
 [[redirects]]
-  from = "/docs/*"
-  to = "/:splat"
-  status = 301
-  force = true
-
-[[redirects]]
-  from = "/docs"
-  to = "/"
+  from = "/"
+  to = "/docs/"
   status = 301
   force = true

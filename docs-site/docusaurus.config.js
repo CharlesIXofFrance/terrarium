@@ -12,7 +12,7 @@ const config = {
   // Set the production url of your site here
   url: 'https://docs.terrarium.dev',
   // Set the /<baseUrl>/ pathname under which your site is served
-  baseUrl: '/',
+  baseUrl: '/docs/',
 
   // GitHub pages deployment config
   organizationName: 'CharlesIXofFrance',

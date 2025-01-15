@@ -77,17 +77,46 @@ export const CommunityRoutes: React.FC = () => {
   const memberRoutes: Record<string, React.ReactNode> = {
     '/': <MemberHub />,
     '/jobs': <JobBoard />,
+    '/jobs/:id': <JobDetails />,
     '/events': <Events />,
     '/feed': <Feed />,
     '/profile': <MemberProfile />,
-    '/jobs/:id': <JobDetails />,
   };
 
   const findMatchingRoute = (
     routes: Record<string, React.ReactNode>,
     path: string
   ) => {
-    return routes[path];
+    // First try exact match
+    if (routes[path]) {
+      return routes[path];
+    }
+
+    // Check for dynamic routes
+    const pathSegments = path.split('/');
+    for (const [routePath, component] of Object.entries(routes)) {
+      const routeSegments = routePath.split('/');
+
+      if (pathSegments.length !== routeSegments.length) {
+        continue;
+      }
+
+      let matches = true;
+      for (let i = 0; i < routeSegments.length; i++) {
+        if (routeSegments[i].startsWith(':')) {
+          continue; // Skip parameter segments
+        }
+        if (routeSegments[i] !== pathSegments[i]) {
+          matches = false;
+          break;
+        }
+      }
+
+      if (matches) {
+        return component;
+      }
+    }
+    return null;
   };
 
   // Redirect to onboarding if not complete and user is admin

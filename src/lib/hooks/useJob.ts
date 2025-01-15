@@ -1,6 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import type { Job } from '../../types/domain/jobs';
-import { mockJobs } from '../mocks/mockJobs';
+import type { Job } from '../types';
 
 const MOCK_JOBS: Record<string, Job> = {
   '1': {
@@ -31,71 +30,37 @@ const MOCK_JOBS: Record<string, Job> = {
     communityId: 'women-in-fintech',
     isEarlyApplicant: true,
     sisterScore: 81,
-    benefits: [
-      { icon: '🏥', label: 'Health Insurance' },
-      { icon: '🌴', label: 'Unlimited PTO' },
-      { icon: '💻', label: 'Remote Work Options' },
-      { icon: '📚', label: 'Learning Budget' },
-    ],
-    companyInsights: {
-      founded: 2015,
-      size: '11-50',
-      funding: 'Series A',
-      industry: 'Venture Capital',
-    },
-    scores: {
-      culture: 85,
-      fairness: 78,
-      leadership: 82,
-      workLife: 79,
-    },
+    benefits: [],
   },
   '2': {
     id: '2',
-    title: 'Private Equity Analyst',
-    company: 'PGIM',
-    companyLogo: 'https://example.com/logos/pgim.png',
+    title: 'Software Engineer',
+    company: 'TechCorp',
+    companyLogo: 'https://example.com/logos/techcorp.png',
     coverImage:
-      'https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=600&h=400&fit=crop',
-    location: 'Paris',
-    type: 'Full-Time',
+      'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=600&h=400&fit=crop',
+    location: 'Remote',
+    type: 'Full-time',
     salary: {
-      min: 75000,
-      max: 90000,
+      min: 80000,
+      max: 120000,
       currency: 'EUR',
     },
-    experience: '2-4 Years of Experience',
+    experience: '2+ Years',
     description:
-      'Exciting opportunity to work with one of the largest investment management firms, focusing on private equity investments in Europe.',
+      'Join our engineering team building the next generation of web applications.',
     requirements: [
-      'Bachelors degree in Finance or related field',
-      'Experience in private equity or investment banking',
-      'Strong financial modeling skills',
-      'Fluent in English and French',
+      'Experience with React and TypeScript',
+      'Strong understanding of web technologies',
+      'Good communication skills',
+      'Experience with cloud platforms',
     ],
     status: 'active',
     postedAt: new Date().toISOString(),
-    communityId: 'women-in-fintech',
-    isEarlyApplicant: true,
-    sisterScore: 78,
-    benefits: [
-      { icon: '🏥', label: 'Health Insurance' },
-      { icon: '💰', label: 'Performance Bonus' },
-      { icon: '🎓', label: 'Education Support' },
-      { icon: '🏋️', label: 'Gym Membership' },
-    ],
-    companyInsights: {
-      founded: 1875,
-      size: '1000+',
-      funding: 'Public',
-      industry: 'Financial Services',
-    },
-    scores: {
-      culture: 80,
-      fairness: 75,
-      leadership: 85,
-      workLife: 72,
-    },
+    communityId: 'orange',
+    isEarlyApplicant: false,
+    sisterScore: 75,
+    benefits: [],
   },
   '3': {
     id: '3',
@@ -150,8 +115,13 @@ export function useJob(jobId: string) {
   return useQuery({
     queryKey: ['job', jobId],
     queryFn: async () => {
-      console.log('Fetching job:', jobId);
-      return mockJobs[jobId] || null;
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      const job = MOCK_JOBS[jobId];
+      if (!job) throw new Error('Job not found');
+      return job;
     },
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    cacheTime: 1000 * 60 * 30, // 30 minutes
   });
 }

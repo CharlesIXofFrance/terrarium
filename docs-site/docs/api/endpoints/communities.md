@@ -2,17 +2,19 @@
 sidebar_position: 1
 ---
 
+import CodeSamples from '@site/src/components/CodeSamples';
+
 # Communities API
 
 Manage your communities through the API.
 
 ## List Communities
 
-```http
-GET /v1/communities
-```
-
 List all communities you have access to.
+
+### Endpoint
+
+`GET /v1/communities`
 
 ### Query Parameters
 
@@ -21,6 +23,22 @@ List all communities you have access to.
 | `page`    | number | Page number for pagination          |
 | `limit`   | number | Number of items per page            |
 | `status`  | string | Filter by status (active, archived) |
+
+### Example Request
+
+<CodeSamples
+endpoint="/v1/communities"
+method="get"
+headers={{
+    "Authorization": "Bearer YOUR_API_TOKEN",
+    "Content-Type": "application/json"
+  }}
+params={{
+    "page": 1,
+    "limit": 10,
+    "status": "active"
+  }}
+/>
 
 ### Response
 
@@ -44,11 +62,11 @@ List all communities you have access to.
 
 ## Create Community
 
-```http
-POST /v1/communities
-```
-
 Create a new community.
+
+### Endpoint
+
+`POST /v1/communities`
 
 ### Request Body
 
@@ -62,6 +80,25 @@ Create a new community.
   }
 }
 ```
+
+### Example Request
+
+<CodeSamples
+endpoint="/v1/communities"
+method="post"
+headers={{
+    "Authorization": "Bearer YOUR_API_TOKEN",
+    "Content-Type": "application/json"
+  }}
+params={{
+    "name": "Tech Community",
+    "description": "A community for tech enthusiasts",
+    "settings": {
+      "privacy": "public",
+      "join_mode": "approval"
+    }
+  }}
+/>
 
 ### Response
 

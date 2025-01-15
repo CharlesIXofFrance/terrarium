@@ -105,6 +105,11 @@ const config = {
             dropdownActiveClassDisabled: true,
           },
           {
+            to: '/status',
+            label: 'System Status',
+            position: 'right',
+          },
+          {
             href: 'https://github.com/CharlesIXofFrance/terrarium',
             label: 'GitHub',
             position: 'right',

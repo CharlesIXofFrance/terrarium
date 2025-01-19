@@ -22,13 +22,20 @@ import { z } from 'zod';
 import { useCommunityCustomization } from '../hooks/useCommunityCustomization';
 import { supabase } from '../lib/supabase';
 import { Spinner } from '../components/ui/atoms/Spinner';
+import { Button } from '../components/ui/atoms/Button';
+import type { Role } from '@/backend/types/rbac.types';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+});
+
+const signupSchema = loginSchema.extend({
+  first_name: z.string().min(1, 'First name is required'),
+  last_name: z.string().min(1, 'Last name is required'),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
+type SignupFormData = z.infer<typeof signupSchema>;
 
 interface CommunityLoginPageProps {
   communitySlug?: string;
@@ -36,6 +43,8 @@ interface CommunityLoginPageProps {
 
 export function CommunityLoginPage({ communitySlug }: CommunityLoginPageProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSignup, setIsSignup] = useState(false);
+  const [verificationSent, setVerificationSent] = useState(false);
   const navigate = useNavigate();
 
   // Get community slug from props or subdomain
@@ -55,30 +64,61 @@ export function CommunityLoginPage({ communitySlug }: CommunityLoginPageProps) {
     handleSubmit,
     formState: { errors },
     setError,
-  } = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema),
+  } = useForm<SignupFormData>({
+    resolver: zodResolver(isSignup ? signupSchema : loginSchema),
   });
 
-  const onSubmit = async (data: LoginFormData) => {
+  const onSubmit = async (data: SignupFormData) => {
     setIsSubmitting(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: data.email,
-        password: data.password,
-      });
-
-      if (error) {
-        setError('root', {
-          message: error.message,
+      if (isSignup) {
+        // Sign up with email verification
+        const { error } = await supabase.auth.signInWithOtp({
+          email: data.email,
+          options: {
+            emailRedirectTo: `${window.location.origin}/?subdomain=${slug}/onboarding`,
+            data: {
+              first_name: data.first_name,
+              last_name: data.last_name,
+              role: 'member' as Role, // Explicitly type as Role
+              email: data.email,
+              profile_complete: false,
+            },
+          },
         });
+
+        if (error) {
+          setError('root', { message: error.message });
+        } else {
+          setVerificationSent(true);
+        }
       } else {
-        // Navigate to dashboard on successful login
-        navigate(`/c/${slug}/dashboard`);
+        // For login, first check if the user exists
+        const { data: existingUser } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('email', data.email)
+          .single();
+
+        if (existingUser) {
+          // User exists, send magic link
+          const { error } = await supabase.auth.signInWithOtp({
+            email: data.email,
+            options: {
+              emailRedirectTo: `${window.location.origin}/?subdomain=${slug}`,
+            },
+          });
+
+          if (error) {
+            setError('root', { message: error.message });
+          }
+        }
+
+        // Always show verification sent message for privacy
+        setVerificationSent(true);
       }
     } catch (error) {
-      setError('root', {
-        message: 'An unexpected error occurred',
-      });
+      setError('root', { message: 'An unexpected error occurred' });
     } finally {
       setIsSubmitting(false);
     }
@@ -117,7 +157,7 @@ export function CommunityLoginPage({ communitySlug }: CommunityLoginPageProps) {
         </div>
       )}
 
-      {/* Login Form */}
+      {/* Login/Signup Form */}
       <div
         className={`w-full ${
           customization?.sideImageUrl ? 'md:w-1/2' : ''
@@ -134,98 +174,154 @@ export function CommunityLoginPage({ communitySlug }: CommunityLoginPageProps) {
               />
             </div>
           )}
-          <div className="text-center">
-            <h2
-              className="mt-6 text-3xl font-bold tracking-tight"
-              style={{ color: customization?.textColor || '#000' }}
-            >
-              {customization?.title || 'Welcome Back'}
-            </h2>
-            <p
-              className="mt-2 text-sm"
-              style={{ color: customization?.textColor || '#000' }}
-            >
-              {customization?.subtitle || 'Sign in to your account'}
-            </p>
-            {customization?.welcomeMessage && (
-              <p
-                className="mt-4 text-sm"
-                style={{ color: customization?.textColor || '#000' }}
-              >
-                {customization.welcomeMessage}
+
+          {verificationSent ? (
+            <div className="text-center">
+              <h2 className="text-2xl font-bold mb-4">Check Your Email</h2>
+              <p className="text-gray-600">
+                We've sent you a verification code. Please check your email and
+                enter the code to{' '}
+                {isSignup ? 'complete your registration' : 'sign in'}.
               </p>
-            )}
-          </div>
-
-          <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
-            {errors.root && (
-              <div className="rounded-md bg-red-50 p-4">
-                <p className="text-sm text-red-700">{errors.root.message}</p>
-              </div>
-            )}
-
-            <div className="space-y-4">
-              <div>
-                <label
-                  htmlFor="email"
-                  className="sr-only"
-                  style={{ color: customization?.textColor || '#000' }}
-                >
-                  Email address
-                </label>
-                <input
-                  {...register('email')}
-                  type="email"
-                  id="email"
-                  disabled={isSubmitting}
-                  className="relative block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                  placeholder="Email address"
-                />
-                {errors.email && (
-                  <p className="mt-1 text-sm text-red-600">
-                    {errors.email.message}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label
-                  htmlFor="password"
-                  className="sr-only"
-                  style={{ color: customization?.textColor || '#000' }}
-                >
-                  Password
-                </label>
-                <input
-                  {...register('password')}
-                  type="password"
-                  id="password"
-                  disabled={isSubmitting}
-                  className="relative block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                  placeholder="Password"
-                />
-                {errors.password && (
-                  <p className="mt-1 text-sm text-red-600">
-                    {errors.password.message}
-                  </p>
-                )}
-              </div>
             </div>
+          ) : (
+            <>
+              <div className="text-center">
+                <h2
+                  className="mt-6 text-3xl font-bold tracking-tight"
+                  style={{ color: customization?.textColor || '#000' }}
+                >
+                  {isSignup
+                    ? 'Join the Community'
+                    : customization?.title || 'Welcome Back'}
+                </h2>
+                <p
+                  className="mt-2 text-sm"
+                  style={{ color: customization?.textColor || '#000' }}
+                >
+                  {isSignup
+                    ? 'Create your account'
+                    : customization?.subtitle || 'Sign in to your account'}
+                </p>
+              </div>
 
-            <div>
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="group relative flex w-full justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+              <form
+                className="mt-8 space-y-6"
+                onSubmit={handleSubmit(onSubmit)}
               >
-                {isSubmitting ? (
-                  <Spinner data-testid="spinner" className="h-5 w-5" />
-                ) : (
-                  'Sign In'
+                {errors.root && (
+                  <div className="rounded-md bg-red-50 p-4">
+                    <p className="text-sm text-red-700">
+                      {errors.root.message}
+                    </p>
+                  </div>
                 )}
-              </button>
-            </div>
-          </form>
+
+                <div className="space-y-4">
+                  {isSignup && (
+                    <>
+                      <div>
+                        <label
+                          htmlFor="first_name"
+                          className="block text-sm font-medium"
+                          style={{ color: customization?.textColor || '#000' }}
+                        >
+                          First Name
+                        </label>
+                        <input
+                          {...register('first_name')}
+                          type="text"
+                          id="first_name"
+                          disabled={isSubmitting}
+                          className="mt-1 relative block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                          placeholder="First Name"
+                        />
+                        {errors.first_name && (
+                          <p className="mt-1 text-sm text-red-600">
+                            {errors.first_name.message}
+                          </p>
+                        )}
+                      </div>
+
+                      <div>
+                        <label
+                          htmlFor="last_name"
+                          className="block text-sm font-medium"
+                          style={{ color: customization?.textColor || '#000' }}
+                        >
+                          Last Name
+                        </label>
+                        <input
+                          {...register('last_name')}
+                          type="text"
+                          id="last_name"
+                          disabled={isSubmitting}
+                          className="mt-1 relative block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                          placeholder="Last Name"
+                        />
+                        {errors.last_name && (
+                          <p className="mt-1 text-sm text-red-600">
+                            {errors.last_name.message}
+                          </p>
+                        )}
+                      </div>
+                    </>
+                  )}
+
+                  <div>
+                    <label
+                      htmlFor="email"
+                      className="block text-sm font-medium"
+                      style={{ color: customization?.textColor || '#000' }}
+                    >
+                      Email address
+                    </label>
+                    <input
+                      {...register('email')}
+                      type="email"
+                      id="email"
+                      disabled={isSubmitting}
+                      className="mt-1 relative block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                      placeholder="Email address"
+                    />
+                    {errors.email && (
+                      <p className="mt-1 text-sm text-red-600">
+                        {errors.email.message}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? (
+                      <Spinner className="h-5 w-5" />
+                    ) : isSignup ? (
+                      'Sign Up'
+                    ) : (
+                      'Sign In'
+                    )}
+                  </Button>
+                </div>
+              </form>
+
+              <div className="text-center mt-4">
+                <button
+                  type="button"
+                  onClick={() => setIsSignup(!isSignup)}
+                  className="text-sm text-indigo-600 hover:text-indigo-500"
+                >
+                  {isSignup
+                    ? 'Already have an account? Sign in'
+                    : "Don't have an account? Sign up"}
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

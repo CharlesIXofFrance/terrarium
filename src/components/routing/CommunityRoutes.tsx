@@ -20,6 +20,7 @@ import { useAuth } from '@/lib/hooks/useAuth';
 import { useAtom } from 'jotai';
 import { userCommunityAtom } from '@/lib/stores/auth';
 import { OwnerOnboarding } from '../features/onboarding/OwnerOnboarding';
+import { CommunityMemberOnboarding } from '../features/onboarding/community-member/CommunityMemberOnboarding';
 import { DataSettings } from '@/pages/community/DataSettings';
 
 export const CommunityRoutes: React.FC = () => {
@@ -100,12 +101,18 @@ export const CommunityRoutes: React.FC = () => {
     return null;
   };
 
-  // Redirect to onboarding if not complete and user is admin
-  if (
-    hasAdminAccess &&
-    !isOnboardingComplete &&
-    !path.includes('/onboarding')
-  ) {
+  // Handle onboarding routes
+  if (path === '/onboarding') {
+    // If we're on a community subdomain, always show member onboarding
+    if (community) {
+      return <CommunityMemberOnboarding />;
+    }
+    // Otherwise, show owner onboarding for admins
+    return <OwnerOnboarding />;
+  }
+
+  // Redirect to onboarding if not complete
+  if (!isOnboardingComplete && !path.includes('/onboarding')) {
     return <Navigate to={`/?subdomain=${community}/onboarding`} replace />;
   }
 
@@ -115,7 +122,6 @@ export const CommunityRoutes: React.FC = () => {
         <Routes>
           {path.startsWith('/settings') ? (
             <Route element={<CommunityLayout />}>
-              <Route path="/onboarding" element={<OwnerOnboarding />} />
               <Route
                 path="*"
                 element={

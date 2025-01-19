@@ -1,3 +1,9 @@
+-- Enable the pgcrypto extension
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+-- Enable the cron extension
+CREATE EXTENSION IF NOT EXISTS pg_cron;
+
 -- Create rate limits table
 create table if not exists public.rate_limits (
   id uuid default gen_random_uuid() primary key,

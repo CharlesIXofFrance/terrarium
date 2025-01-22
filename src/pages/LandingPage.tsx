@@ -44,47 +44,47 @@ export function LandingPage() {
     }
 
     // First check if user has completed onboarding
+    // Check if user is a community owner
+    const { data: ownedCommunity } = await supabase
+      .from('communities')
+      .select('slug, onboarding_completed')
+      .eq('owner_id', user.id)
+      .single();
+
+    if (ownedCommunity) {
+      // Community owner flow
+      if (!ownedCommunity.onboarding_completed) {
+        navigate('/onboarding');
+        return;
+      }
+      navigate(`/?subdomain=${ownedCommunity.slug}/settings/dashboard`);
+      return;
+    }
+
+    // Member flow - check profile onboarding
     const { data: profile } = await supabase
       .from('profiles')
       .select('onboarding_completed')
       .eq('id', user.id)
       .single();
 
-    const userMetadata = user.user_metadata || {};
-    const onboardingCompleted =
-      profile?.onboarding_completed && userMetadata.onboarding_completed;
-
-    if (!onboardingCompleted) {
+    if (!profile?.onboarding_completed) {
       navigate('/onboarding');
       return;
     }
 
-    // Check if user is a community owner
-    const { data: ownedCommunity, error } = await supabase
-      .from('communities')
-      .select('slug')
-      .eq('owner_id', user.id)
+    // User is a member and has completed onboarding
+    const { data: memberCommunity } = await supabase
+      .from('community_members')
+      .select('communities:communities(slug)')
+      .eq('profile_id', user.id)
       .single();
 
-    if (error) {
-      console.error('Error checking community ownership:', error);
-      // If not a community owner, redirect to member hub
-      const { data: memberCommunity } = await supabase
-        .from('community_members')
-        .select('communities:communities(slug)')
-        .eq('profile_id', user.id)
-        .single();
-
-      if (memberCommunity?.communities?.slug) {
-        navigate(`/?subdomain=${memberCommunity.communities.slug}`);
-      } else {
-        navigate('/login');
-      }
-      return;
+    if (memberCommunity?.communities?.slug) {
+      navigate(`/?subdomain=${memberCommunity.communities.slug}`);
+    } else {
+      navigate('/login');
     }
-
-    // User is a community owner and has completed onboarding
-    navigate(`/?subdomain=${ownedCommunity.slug}/settings/dashboard`);
   };
 
   const loginAs = (role: 'member' | 'platform_owner') => {

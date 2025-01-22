@@ -46,7 +46,7 @@ const onboardingSteps = ['welcome', 'identity', 'profile', 'community'];
 export function CommunityMemberOnboarding() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [user, setUser] = useAtom(userAtom);
+  const [user] = useAtom(userAtom);
   const [onboardingState, setOnboardingState] = useAtom(
     communityMemberOnboardingAtom
   );
@@ -118,48 +118,22 @@ export function CommunityMemberOnboarding() {
       // Get current step index
       const currentStepIndex = onboardingSteps.indexOf(step as any) + 1;
       const isLastStep = currentStepIndex === onboardingSteps.length;
-      const currentStep = isLastStep ? 'completed' : step;
 
       // Merge with existing form data for complete profile update
-      const profileData = {
+      const updatedData = {
         ...formData, // Include existing form data
         ...data, // Include new form data
+        onboarding_step: currentStepIndex,
+        onboarding_completed: isLastStep,
       };
 
-      // Update profile with onboarding completion
-      const { error: updateError } = await supabase
+      // Save to database
+      const { error } = await supabase
         .from('profiles')
-        .update({
-          onboarding_completed: isLastStep,
-          onboarding_step: currentStep,
-          ...profileData,
-        })
-        .eq('id', user.id);
+        .update(updatedData)
+        .eq('id', user?.id);
 
-      if (updateError) {
-        console.error('Error updating profile:', updateError);
-        throw updateError;
-      }
-
-      // Update user metadata
-      const { error: metadataError } = await supabase.auth.updateUser({
-        data: {
-          onboarding_completed: isLastStep,
-        },
-      });
-
-      if (metadataError) {
-        console.error('Error updating user metadata:', metadataError);
-        throw metadataError;
-      }
-
-      // Update local user state
-      setUser({
-        ...user,
-        onboarding_completed: isLastStep,
-        onboarding_step: currentStep,
-        ...profileData,
-      });
+      if (error) throw error;
 
       // Show rewards if applicable
       if (step === 'welcome') {

@@ -21,33 +21,38 @@ export function AuthCallback() {
 
         if (error) throw error;
 
-        if (session) {
+        if (session?.user) {
+          // If we have a next route, use it
+          if (next) {
+            navigate(next, { replace: true });
+            return;
+          }
+
+          // Otherwise, redirect based on user state
+          if (session.user.user_metadata?.community_id) {
+            navigate(
+              `/c/${session.user.user_metadata.community_id}/dashboard`,
+              { replace: true }
+            );
+            return;
+          }
+
           // Check if user is a community owner
-          const { data: community } = await supabase
+          const { data: ownedCommunity } = await supabase
             .from('communities')
-            .select('id, onboarding_completed, slug')
+            .select('id, onboarding_completed')
             .eq('owner_id', session.user.id)
             .single();
 
-          if (community) {
+          if (ownedCommunity) {
             // Community owner flow
-            if (!community.onboarding_completed) {
-              // Redirect to community owner onboarding
-              navigate('/onboarding');
+            if (!ownedCommunity.onboarding_completed) {
+              navigate('/onboarding', { replace: true });
             } else {
-              // Redirect to community dashboard
-              const isLocalhost =
-                window.location.hostname.includes('localhost');
-              const path = '/settings/dashboard';
-
-              if (isLocalhost) {
-                navigate(`/?subdomain=${community.slug}${path}`);
-              } else {
-                window.location.href = `${window.location.protocol}//${community.slug}.${import.meta.env.VITE_APP_DOMAIN}${path}`;
-              }
+              navigate(`/c/${ownedCommunity.id}/dashboard`, { replace: true });
             }
           } else {
-            // Member flow
+            // Member flow - check profile onboarding
             const { data: profile } = await supabase
               .from('profiles')
               .select('onboarding_completed')
@@ -55,11 +60,9 @@ export function AuthCallback() {
               .single();
 
             if (!profile?.onboarding_completed) {
-              // Redirect to member onboarding
-              navigate('/onboarding');
+              navigate('/onboarding', { replace: true });
             } else {
-              // Redirect to member dashboard
-              navigate('/dashboard');
+              navigate('/dashboard', { replace: true });
             }
           }
         } else {

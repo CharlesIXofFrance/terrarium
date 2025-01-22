@@ -1,49 +1,65 @@
--- Consolidate onboarding flags
-
--- First, check if profile_complete exists and migrate data if it does
-DO $$
+-- Create a function to migrate user metadata onboarding status to profiles
+CREATE OR REPLACE FUNCTION migrate_onboarding_status()
+RETURNS void AS $$
+DECLARE
+    user_record RECORD;
 BEGIN
-    IF EXISTS (
-        SELECT 1
-        FROM information_schema.columns
-        WHERE table_schema = 'public'
-        AND table_name = 'profiles'
-        AND column_name = 'profile_complete'
-    ) THEN
-        -- Migrate data from profile_complete to onboarding_completed
-        UPDATE profiles 
-        SET onboarding_completed = TRUE 
-        WHERE profile_complete = TRUE 
-        AND onboarding_completed = FALSE;
-    END IF;
-END $$;
+    -- Migrate onboarding status from user metadata to profiles
+    FOR user_record IN 
+        SELECT 
+            au.id,
+            au.raw_user_meta_data->>'onboarding_completed' as meta_onboarding,
+            p.onboarding_completed as profile_onboarding
+        FROM auth.users au
+        LEFT JOIN profiles p ON p.id = au.id
+        WHERE au.raw_user_meta_data->>'onboarding_completed' IS NOT NULL
+    LOOP
+        -- Update profile onboarding status if metadata shows completed
+        IF user_record.meta_onboarding::boolean = true AND 
+           (user_record.profile_onboarding IS NULL OR user_record.profile_onboarding = false) THEN
+            UPDATE profiles 
+            SET onboarding_completed = true
+            WHERE id = user_record.id;
+        END IF;
+    END LOOP;
+END;
+$$ LANGUAGE plpgsql;
 
--- Add a comment to onboarding_completed to clarify its purpose
-COMMENT ON COLUMN profiles.onboarding_completed IS 'Indicates whether a member has completed their onboarding process';
+-- Execute the migration function
+SELECT migrate_onboarding_status();
 
--- Create a function to migrate profile_complete to onboarding_completed
-CREATE OR REPLACE FUNCTION maintain_profile_complete()
+-- Drop the migration function as it's no longer needed
+DROP FUNCTION migrate_onboarding_status();
+
+-- Add a trigger to maintain backward compatibility
+CREATE OR REPLACE FUNCTION sync_user_metadata_onboarding()
 RETURNS TRIGGER AS $$
 BEGIN
-    -- Only try to update profile_complete if the column exists
-    IF EXISTS (
-        SELECT 1
-        FROM information_schema.columns
-        WHERE table_schema = 'public'
-        AND table_name = 'profiles'
-        AND column_name = 'profile_complete'
-    ) THEN
-        IF NEW.onboarding_completed IS TRUE THEN
-            NEW.profile_complete := TRUE;
-        END IF;
+    -- Only sync if onboarding_completed has changed
+    IF OLD.onboarding_completed IS DISTINCT FROM NEW.onboarding_completed THEN
+        -- Update user metadata
+        UPDATE auth.users
+        SET raw_user_meta_data = 
+            CASE 
+                WHEN raw_user_meta_data IS NULL THEN 
+                    jsonb_build_object('onboarding_completed', NEW.onboarding_completed)
+                ELSE
+                    raw_user_meta_data || 
+                    jsonb_build_object('onboarding_completed', NEW.onboarding_completed)
+            END
+        WHERE id = NEW.id;
     END IF;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
--- Create trigger to keep profile_complete in sync during transition
-DROP TRIGGER IF EXISTS sync_profile_complete ON profiles;
-CREATE TRIGGER sync_profile_complete
-    BEFORE UPDATE ON profiles
+-- Create trigger to keep user metadata in sync
+DROP TRIGGER IF EXISTS sync_onboarding_to_metadata ON profiles;
+CREATE TRIGGER sync_onboarding_to_metadata
+    AFTER UPDATE OF onboarding_completed ON profiles
     FOR EACH ROW
-    EXECUTE FUNCTION maintain_profile_complete();
+    EXECUTE FUNCTION sync_user_metadata_onboarding();
+
+-- Add comments to clarify usage
+COMMENT ON COLUMN profiles.onboarding_completed IS 'Indicates whether a member has completed their profile onboarding';
+COMMENT ON COLUMN communities.onboarding_completed IS 'Indicates whether a community has completed their setup/onboarding process';

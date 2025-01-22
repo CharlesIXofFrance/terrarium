@@ -712,28 +712,49 @@ export function OwnerOnboarding() {
         // If this is the last step, update profile completion and redirect
         if (currentStep === steps.length - 1) {
           try {
-            // Update profile completion status
-            const { error: profileUpdateError } = await supabase
-              .from('profiles')
-              .update({ profile_complete: true })
-              .eq('id', user.id);
-
-            if (profileUpdateError) throw profileUpdateError;
-
-            // Update local user state
-            setUser({
-              ...user,
-              profile_complete: true,
-            });
-
             // Get the latest community data
-            const { data: community } = await supabase
+            const { data: community, error: communityError } = await supabase
               .from('communities')
               .select('*')
               .eq('owner_id', user.id)
               .single();
 
+            if (communityError) throw communityError;
             if (!community) throw new Error('Community not found');
+
+            // Update community to mark onboarding as completed
+            const { error: updateError } = await supabase
+              .from('communities')
+              .update({
+                onboarding_completed: true,
+                settings: {
+                  ...community.settings,
+                  setup_completed_at: new Date().toISOString(),
+                },
+              })
+              .eq('id', community.id);
+
+            if (updateError) throw updateError;
+
+            // Update user metadata to mark onboarding as completed
+            const { error: metadataError } = await supabase.auth.updateUser({
+              data: {
+                onboarding_completed: true,
+                community_id: community.id,
+              },
+            });
+
+            if (metadataError) throw metadataError;
+
+            // Update local user state
+            setUser({
+              ...user,
+              user_metadata: {
+                ...user.user_metadata,
+                onboarding_completed: true,
+                community_id: community.id,
+              },
+            });
 
             // Navigate to the community dashboard
             console.log('Redirecting to dashboard...');

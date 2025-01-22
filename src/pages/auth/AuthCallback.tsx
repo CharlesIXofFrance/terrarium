@@ -14,24 +14,53 @@ export function AuthCallback() {
         const next = searchParams.get('next');
 
         // Get the session
-        const { data: { session }, error } = await supabase.auth.getSession();
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession();
 
         if (error) throw error;
 
-        if (session?.user) {
-          // If we have a next route, use it
-          if (next) {
-            navigate(next, { replace: true });
-            return;
-          }
+        if (session) {
+          // Check if user is a community owner
+          const { data: community } = await supabase
+            .from('communities')
+            .select('id, onboarding_completed, slug')
+            .eq('owner_id', session.user.id)
+            .single();
 
-          // Otherwise, redirect based on user state
-          if (session.user.user_metadata?.community_id) {
-            navigate(`/c/${session.user.user_metadata.community_id}/dashboard`, { replace: true });
-          } else if (!session.user.user_metadata?.onboarding_completed) {
-            navigate('/onboarding', { replace: true });
+          if (community) {
+            // Community owner flow
+            if (!community.onboarding_completed) {
+              // Redirect to community owner onboarding
+              navigate('/onboarding');
+            } else {
+              // Redirect to community dashboard
+              const isLocalhost =
+                window.location.hostname.includes('localhost');
+              const path = '/settings/dashboard';
+
+              if (isLocalhost) {
+                navigate(`/?subdomain=${community.slug}${path}`);
+              } else {
+                window.location.href = `${window.location.protocol}//${community.slug}.${import.meta.env.VITE_APP_DOMAIN}${path}`;
+              }
+            }
           } else {
-            navigate('/dashboard', { replace: true });
+            // Member flow
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('onboarding_completed')
+              .eq('id', session.user.id)
+              .single();
+
+            if (!profile?.onboarding_completed) {
+              // Redirect to member onboarding
+              navigate('/onboarding');
+            } else {
+              // Redirect to member dashboard
+              navigate('/dashboard');
+            }
           }
         } else {
           navigate('/login', { replace: true });

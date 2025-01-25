@@ -42,7 +42,8 @@ export function ForgotPassword() {
             Check your email
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            We've sent you a password reset link. Please check your email and follow the instructions.
+            We've sent you a password reset link. Please check your email and
+            follow the instructions.
           </p>
           <div className="mt-4 text-center">
             <Link to="/login" className="text-indigo-600 hover:text-indigo-500">
@@ -64,7 +65,8 @@ export function ForgotPassword() {
           Reset your password
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600">
-          Enter your email address and we'll send you a link to reset your password.
+          Enter your email address and we'll send you a link to reset your
+          password.
         </p>
       </div>
 
@@ -77,7 +79,10 @@ export function ForgotPassword() {
           )}
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Email address
               </label>
               <div className="mt-1">

@@ -17,6 +17,12 @@ export default defineConfig({
     // Support for TypeScript path aliases
     tsconfigPaths(),
   ],
+  css: {
+    postcss: './postcss.config.js',
+    modules: {
+      localsConvention: 'camelCase',
+    },
+  },
   resolve: {
     alias: {
       '@': resolve(__dirname, './src'),
@@ -92,6 +98,8 @@ export default defineConfig({
     },
     // Configure port
     port: 3000,
+    host: true,
+    strictPort: true,
     // Enable CORS
     cors: true,
   },

@@ -67,18 +67,11 @@ export const jobService = {
   },
 
   async createJob(communitySlug: string, data: CreateJobData) {
-    const response = await api.post(
-      `/communities/${communitySlug}/jobs`,
-      data
-    );
+    const response = await api.post(`/communities/${communitySlug}/jobs`, data);
     return response.data;
   },
 
-  async updateJob(
-    communitySlug: string,
-    jobId: string,
-    data: UpdateJobData
-  ) {
+  async updateJob(communitySlug: string, jobId: string, data: UpdateJobData) {
     const response = await api.patch(
       `/communities/${communitySlug}/jobs/${jobId}`,
       data

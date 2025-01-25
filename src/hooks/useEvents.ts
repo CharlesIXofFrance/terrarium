@@ -8,9 +8,10 @@ const MOCK_EVENTS: Event[] = [
     date: '2024-01-05',
     location: 'London',
     type: 'online',
-    image: 'https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=300&h=200&fit=crop',
+    image:
+      'https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=300&h=200&fit=crop',
     capacity: 100,
-    attendees: 45
+    attendees: 45,
   },
   {
     id: '2',
@@ -19,9 +20,10 @@ const MOCK_EVENTS: Event[] = [
     date: '2024-10-22',
     location: 'London',
     type: 'in-person',
-    image: 'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=300&h=200&fit=crop',
+    image:
+      'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=300&h=200&fit=crop',
     capacity: 50,
-    attendees: 32
+    attendees: 32,
   },
   {
     id: '3',
@@ -29,9 +31,10 @@ const MOCK_EVENTS: Event[] = [
     date: '2024-10-26',
     location: 'London',
     type: 'in-person',
-    image: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=300&h=200&fit=crop',
+    image:
+      'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=300&h=200&fit=crop',
     capacity: 75,
-    attendees: 60
+    attendees: 60,
   },
   {
     id: '4',
@@ -39,10 +42,11 @@ const MOCK_EVENTS: Event[] = [
     date: '2024-10-29',
     location: 'London',
     type: 'in-person',
-    image: 'https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?w=300&h=200&fit=crop',
+    image:
+      'https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?w=300&h=200&fit=crop',
     capacity: 200,
-    attendees: 150
-  }
+    attendees: 150,
+  },
 ];
 
 export function useEvents() {
@@ -50,9 +54,9 @@ export function useEvents() {
     queryKey: ['events'],
     queryFn: async () => {
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, 500));
       return MOCK_EVENTS;
     },
-    initialData: MOCK_EVENTS // Provide initial data to avoid loading state
+    initialData: MOCK_EVENTS, // Provide initial data to avoid loading state
   });
 }

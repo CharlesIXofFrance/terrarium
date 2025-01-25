@@ -12,15 +12,27 @@ export function useScrollSync(refs: RefObject<HTMLElement>[]) {
 
     const handleWheel = (event: WheelEvent) => {
       // Get the scrollable area of the filters
-      const filtersArea = source.querySelector('.filters-scroll-area') as HTMLElement;
+      const filtersArea = source.querySelector(
+        '.filters-scroll-area'
+      ) as HTMLElement;
       if (!filtersArea) return;
 
-      const { scrollHeight: filterHeight, scrollTop: filterTop, clientHeight: filterClient } = filtersArea;
-      const { scrollHeight: targetHeight, scrollTop: targetTop, clientHeight: targetClient } = target;
-      
-      const filterAtBottom = Math.abs(filterHeight - filterTop - filterClient) <= 1;
+      const {
+        scrollHeight: filterHeight,
+        scrollTop: filterTop,
+        clientHeight: filterClient,
+      } = filtersArea;
+      const {
+        scrollHeight: targetHeight,
+        scrollTop: targetTop,
+        clientHeight: targetClient,
+      } = target;
+
+      const filterAtBottom =
+        Math.abs(filterHeight - filterTop - filterClient) <= 1;
       const filterAtTop = filterTop <= 0;
-      const targetAtBottom = Math.abs(targetHeight - targetTop - targetClient) <= 1;
+      const targetAtBottom =
+        Math.abs(targetHeight - targetTop - targetClient) <= 1;
       const targetAtTop = targetTop <= 0;
 
       // When scrolling up
@@ -31,7 +43,7 @@ export function useScrollSync(refs: RefObject<HTMLElement>[]) {
           target.scrollBy({ top: event.deltaY });
           return;
         }
-        
+
         // If job list is at top, then scroll filters
         if (targetAtTop && !filterAtTop) {
           event.preventDefault();

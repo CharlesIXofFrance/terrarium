@@ -1,5 +1,10 @@
 // Mock jobs data constants
-export const JOB_TYPES = ['Full-Time', 'Part-Time', 'Contract', 'Internship'] as const;
+export const JOB_TYPES = [
+  'Full-Time',
+  'Part-Time',
+  'Contract',
+  'Internship',
+] as const;
 export const JOB_STATUSES = ['draft', 'active', 'closed'] as const;
 export const CURRENCIES = ['EUR', 'USD', 'GBP'] as const;
 

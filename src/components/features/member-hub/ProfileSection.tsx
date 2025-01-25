@@ -15,7 +15,9 @@ export function ProfileSection({
 }: ProfileSectionProps) {
   return (
     <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 relative min-w-0">
-      <h2 className="font-semibold mb-4 md:mb-6 truncate">Your WiF Sister Profile</h2>
+      <h2 className="font-semibold mb-4 md:mb-6 truncate">
+        Your WiF Sister Profile
+      </h2>
 
       {/* Profile Picture with Circular Progress */}
       <div className="flex items-center space-x-3 sm:space-x-4 mb-6 min-w-0">

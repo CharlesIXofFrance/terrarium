@@ -13,7 +13,7 @@ export function PlatformSettings() {
     >
       <div className="p-6">
         <h1 className="text-2xl font-bold mb-4">Platform Settings</h1>
-        
+
         {/* Example of conditional rendering based on permissions */}
         {hasPermission({ action: 'update', resource: 'settings' }) && (
           <button className="bg-primary text-white px-4 py-2 rounded">

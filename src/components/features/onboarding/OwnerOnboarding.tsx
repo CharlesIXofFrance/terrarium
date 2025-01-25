@@ -712,20 +712,6 @@ export function OwnerOnboarding() {
         // If this is the last step, update profile completion and redirect
         if (currentStep === steps.length - 1) {
           try {
-            // Update profile completion status
-            const { error: profileUpdateError } = await supabase
-              .from('profiles')
-              .update({ profile_complete: true })
-              .eq('id', user.id);
-
-            if (profileUpdateError) throw profileUpdateError;
-
-            // Update local user state
-            setUser({
-              ...user,
-              profile_complete: true,
-            });
-
             // Get the latest community data
             const { data: community } = await supabase
               .from('communities')
@@ -734,6 +720,20 @@ export function OwnerOnboarding() {
               .single();
 
             if (!community) throw new Error('Community not found');
+
+            // Update community onboarding status
+            const { error: updateError } = await supabase
+              .from('communities')
+              .update({
+                onboarding_completed: true,
+                settings: {
+                  ...community.settings,
+                  setup_completed_at: new Date().toISOString(),
+                },
+              })
+              .eq('id', community.id);
+
+            if (updateError) throw updateError;
 
             // Navigate to the community dashboard
             console.log('Redirecting to dashboard...');

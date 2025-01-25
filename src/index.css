@@ -9,8 +9,23 @@
     --background: 220 13% 97%;
     --foreground: 210 15% 9%;
     --primary: 210 77% 26%;
-    --secondary: 210 33% 86%;
-    --accent: 210 60% 46%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 201 91% 86%;
+    --secondary-foreground: 210 15% 9%;
+    --accent: 205 58% 46%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    --info: 205 58% 46%;
+    --info-foreground: 0 0% 100%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --border: 214.3 31.8% 91.4%;
+    --radius: 0.5rem;
   }
 
   body {
@@ -34,16 +49,32 @@
 }
 
 @layer components {
+  .card {
+    @apply bg-white rounded-lg shadow-[0_4px_8px_rgba(0,0,0,0.1)] p-4 opacity-0 animate-fade-in hover:scale-105 transition-transform duration-300;
+  }
+
   .btn {
-    @apply rounded-md px-6 py-3 font-semibold transition-all duration-200 hover:scale-105;
+    @apply inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50;
   }
 
   .btn-primary {
-    @apply bg-[#0F4C75] text-[#F8F9FA] hover:bg-[#0D3D5F];
+    @apply bg-primary text-white hover:bg-primary-600 focus-visible:ring-primary-500;
   }
 
-  .card {
-    @apply bg-white rounded-lg shadow-[0_4px_8px_rgba(0,0,0,0.1)] p-4 opacity-0 animate-fade-in hover:scale-105 transition-transform duration-250;
+  .btn-secondary {
+    @apply bg-secondary text-secondary-foreground hover:bg-secondary-600 focus-visible:ring-secondary-500;
+  }
+
+  .btn-accent {
+    @apply bg-accent text-accent-foreground hover:bg-accent-600 focus-visible:ring-accent-500;
+  }
+
+  .input {
+    @apply flex h-10 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .label {
+    @apply text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70;
   }
 
   .progress-bar {

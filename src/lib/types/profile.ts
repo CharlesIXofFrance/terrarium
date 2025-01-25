@@ -70,6 +70,7 @@ export const profileSchema = z.object({
   onboarding_step: z.number().default(1),
   metadata: z.record(z.unknown()).default({}),
   community_metadata: z.record(z.unknown()).default({}),
+  signup_community_id: z.string().optional(),
   created_at: z.string(),
   updated_at: z.string(),
 });

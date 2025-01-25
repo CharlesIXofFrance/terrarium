@@ -119,7 +119,8 @@ export function CommunityLayout() {
     return <Navigate to="/unauthorized" />;
   }
 
-  const isOwner = user.role === 'platform_owner' || user.role === 'community_owner';
+  const isOwner =
+    user.role === 'platform_owner' || user.role === 'community_owner';
 
   // Navigation items for the sidebar
   const navigationItems = [
@@ -204,7 +205,8 @@ export function CommunityLayout() {
         >
           <nav className="p-4 space-y-2">
             {navigationItems.map((item) => {
-              const isActive = currentRoute === item.href.split('?subdomain=')[1];
+              const isActive =
+                currentRoute === item.href.split('?subdomain=')[1];
               const Icon = item.icon;
 
               return (

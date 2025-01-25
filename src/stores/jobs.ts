@@ -9,9 +9,7 @@ export const jobsAtom = atom<Job[]>(MOCK_JOBS);
 export const selectedJobAtom = atom<Job | null>(null);
 
 // Filtered jobs atom with derived state
-export const filteredJobsAtom = atom(
-  (get) => get(jobsAtom)
-);
+export const filteredJobsAtom = atom((get) => get(jobsAtom));
 
 // Jobs loading state
 export const jobsLoadingAtom = atom(false);

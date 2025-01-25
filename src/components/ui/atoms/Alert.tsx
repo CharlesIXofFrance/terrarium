@@ -1,5 +1,10 @@
 import React from 'react';
-import { XCircleIcon, AlertCircleIcon, CheckCircleIcon, InfoIcon } from 'lucide-react';
+import {
+  XCircleIcon,
+  AlertCircleIcon,
+  CheckCircleIcon,
+  InfoIcon,
+} from 'lucide-react';
 
 interface AlertProps {
   title?: string;
@@ -46,11 +51,17 @@ const icons = {
   info: InfoIcon,
 };
 
-export function Alert({ title, message, variant = 'error', onRetry }: AlertProps) {
+export function Alert({
+  title,
+  message,
+  variant = 'error',
+  onRetry,
+}: AlertProps) {
   const styles = variantStyles[variant];
   const Icon = icons[variant];
   const errorMessage = message instanceof Error ? message.message : message;
-  const errorTitle = title || (message instanceof Error ? message.name : 'Error');
+  const errorTitle =
+    title || (message instanceof Error ? message.name : 'Error');
 
   return (
     <div
@@ -63,8 +74,12 @@ export function Alert({ title, message, variant = 'error', onRetry }: AlertProps
           <Icon className={`h-5 w-5 ${styles.icon}`} aria-hidden="true" />
         </div>
         <div className="ml-3 flex-1">
-          <h3 className={`text-sm font-medium ${styles.title}`}>{errorTitle}</h3>
-          <div className={`mt-2 text-sm ${styles.description}`}>{errorMessage}</div>
+          <h3 className={`text-sm font-medium ${styles.title}`}>
+            {errorTitle}
+          </h3>
+          <div className={`mt-2 text-sm ${styles.description}`}>
+            {errorMessage}
+          </div>
           {onRetry && (
             <div className="mt-4">
               <button

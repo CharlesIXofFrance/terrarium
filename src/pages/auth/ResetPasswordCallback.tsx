@@ -50,7 +50,11 @@ export function ResetPasswordCallback() {
         navigate('/reset-password', { replace: true });
       } catch (err) {
         console.error('Password reset error:', err);
-        setError(err instanceof Error ? err.message : 'Failed to process password reset');
+        setError(
+          err instanceof Error
+            ? err.message
+            : 'Failed to process password reset'
+        );
       }
     };
 

@@ -55,7 +55,10 @@ export class RecruitCRMService {
   private apiKey: string;
   private options: RecruitCRMOptions;
 
-  constructor(apiKey: string = env.RECRUITCRM_API_KEY || '', options: RecruitCRMOptions = {}) {
+  constructor(
+    apiKey: string = env.RECRUITCRM_API_KEY || '',
+    options: RecruitCRMOptions = {}
+  ) {
     this.apiKey = apiKey;
     this.options = options;
   }
@@ -85,11 +88,11 @@ export class RecruitCRMService {
   async getJobs() {
     const response = await this.fetchWithAuth('/jobs');
     const jobs = jobSchema.array().parse(response.data);
-    
+
     // Apply location filtering if specified
     const filteredJobs = this.options.locations?.length
-      ? jobs.filter(job =>
-          job.locations.some(loc =>
+      ? jobs.filter((job) =>
+          job.locations.some((loc) =>
             this.options.locations?.includes(
               `${loc.city}${loc.state ? `, ${loc.state}` : ''}, ${loc.country}`
             )

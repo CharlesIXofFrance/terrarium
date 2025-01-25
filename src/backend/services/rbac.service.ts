@@ -1,13 +1,20 @@
-import { Role, Permission, ROLE_PERMISSIONS, DEFAULT_ROLE } from '../types/rbac.types';
+import {
+  Role,
+  Permission,
+  ROLE_PERMISSIONS,
+  DEFAULT_ROLE,
+} from '../types/rbac.types';
 
 class RBACService {
   /**
    * Check if a role has a specific permission
    */
   hasPermission(role: Role, permission: Permission): boolean {
-    const permissions = ROLE_PERMISSIONS[role] || ROLE_PERMISSIONS[DEFAULT_ROLE];
+    const permissions =
+      ROLE_PERMISSIONS[role] || ROLE_PERMISSIONS[DEFAULT_ROLE];
     return permissions.some(
-      (p) => p.action === permission.action && p.resource === permission.resource
+      (p) =>
+        p.action === permission.action && p.resource === permission.resource
     );
   }
 
@@ -15,14 +22,18 @@ class RBACService {
    * Check if a role has all of the specified permissions
    */
   hasAllPermissions(role: Role, permissions: Permission[]): boolean {
-    return permissions.every((permission) => this.hasPermission(role, permission));
+    return permissions.every((permission) =>
+      this.hasPermission(role, permission)
+    );
   }
 
   /**
    * Check if a role has any of the specified permissions
    */
   hasAnyPermission(role: Role, permissions: Permission[]): boolean {
-    return permissions.some((permission) => this.hasPermission(role, permission));
+    return permissions.some((permission) =>
+      this.hasPermission(role, permission)
+    );
   }
 
   /**

@@ -3,7 +3,7 @@ import { atomWithStorage } from 'jotai/utils';
 
 // Single font to reduce bundle size
 export const FONTS = {
-  'Inter': "'Inter', sans-serif"
+  Inter: "'Inter', sans-serif",
 };
 
 // Store styles in localStorage to persist customizations
@@ -42,31 +42,29 @@ const stylesAtom = atomWithStorage('terrarium_styles', {
 });
 
 // Cache computed styles
-const computedStylesAtom = atom(
-  (get) => {
-    const styles = get(stylesAtom);
-    return {
-      ...styles,
-      typography: {
-        ...styles.typography,
-        headingFont: FONTS[styles.typography.headingFont as keyof typeof FONTS],
-        bodyFont: FONTS[styles.typography.bodyFont as keyof typeof FONTS],
-      },
-    };
-  }
-);
+const computedStylesAtom = atom((get) => {
+  const styles = get(stylesAtom);
+  return {
+    ...styles,
+    typography: {
+      ...styles.typography,
+      headingFont: FONTS[styles.typography.headingFont as keyof typeof FONTS],
+      bodyFont: FONTS[styles.typography.bodyFont as keyof typeof FONTS],
+    },
+  };
+});
 
 export function useStyles() {
   const [styles, setStyles] = useAtom(stylesAtom);
   const [computedStyles] = useAtom(computedStylesAtom);
 
   const updateStyles = (category: string, property: string, value: any) => {
-    setStyles(prev => ({
+    setStyles((prev) => ({
       ...prev,
       [category]: {
         ...prev[category],
-        [property]: value
-      }
+        [property]: value,
+      },
     }));
   };
 

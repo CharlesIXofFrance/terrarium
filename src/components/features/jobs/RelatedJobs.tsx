@@ -85,14 +85,11 @@ export function RelatedJobs({ currentJobId, limit = 3 }: RelatedJobsProps) {
           style={{
             scrollbarWidth: 'none',
             msOverflowStyle: 'none',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(286px, 1fr))'
+            gridTemplateColumns: 'repeat(auto-fit, minmax(286px, 1fr))',
           }}
         >
           {relatedJobs.map((job) => (
-            <div
-              key={job.id}
-              onClick={() => handleJobClick(job.id)}
-            >
+            <div key={job.id} onClick={() => handleJobClick(job.id)}>
               <JobCard
                 job={job}
                 onApply={handleApply}

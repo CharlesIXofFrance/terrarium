@@ -6,7 +6,7 @@ import { CommunityRoutes } from './CommunityRoutes';
 import { PlatformRoutes } from './PlatformRoutes';
 import { ProtectedRoute } from '@/components/features/auth/ProtectedRoute';
 import { useAuth } from '@/lib/hooks/useAuth';
-import { CommunityLoginPage } from '@/pages/CommunityLoginPage';
+import { CommunityLoginPage } from '@/pages/auth/CommunityLoginPage';
 
 export const SubdomainRouter: React.FC = () => {
   const { type, subdomain } = parseDomain();

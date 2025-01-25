@@ -5,7 +5,10 @@ interface ColorPickerProps {
   onChange: (color: string) => void;
 }
 
-export const ColorPicker: React.FC<ColorPickerProps> = ({ color, onChange }) => {
+export const ColorPicker: React.FC<ColorPickerProps> = ({
+  color,
+  onChange,
+}) => {
   return (
     <div className="flex items-center space-x-2">
       <input

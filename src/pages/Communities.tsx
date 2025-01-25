@@ -6,14 +6,16 @@ const MOCK_COMMUNITIES: Community[] = [
   {
     id: '1',
     name: 'React Developers',
-    description: 'A community for React developers to share knowledge and find opportunities.',
+    description:
+      'A community for React developers to share knowledge and find opportunities.',
     memberCount: 1500,
     jobCount: 25,
   },
   {
     id: '2',
     name: 'Product Designers',
-    description: 'Connect with fellow designers and discover exciting design opportunities.',
+    description:
+      'Connect with fellow designers and discover exciting design opportunities.',
     memberCount: 800,
     jobCount: 15,
   },

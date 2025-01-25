@@ -11,7 +11,7 @@ export function useImageLoader() {
 
   const optimizeImageUrl = (url: string, options: ImageLoaderOptions = {}) => {
     if (!url) return '';
-    
+
     // Check cache first
     const cacheKey = `${url}-${JSON.stringify(options)}`;
     if (imageCache.has(cacheKey)) {
@@ -20,7 +20,7 @@ export function useImageLoader() {
 
     try {
       const imageUrl = new URL(url);
-      
+
       // Handle Unsplash images
       if (imageUrl.hostname === 'images.unsplash.com') {
         const params = new URLSearchParams(imageUrl.search);
@@ -28,12 +28,12 @@ export function useImageLoader() {
         if (options.height) params.set('h', options.height.toString());
         if (options.quality) params.set('q', options.quality.toString());
         imageUrl.search = params.toString();
-        
+
         const optimizedUrl = imageUrl.toString();
         imageCache.set(cacheKey, optimizedUrl);
         return optimizedUrl;
       }
-      
+
       return url;
     } catch {
       return url;

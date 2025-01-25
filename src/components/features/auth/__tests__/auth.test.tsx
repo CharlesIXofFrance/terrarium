@@ -25,7 +25,7 @@ describe('Auth Components', () => {
 
     it('should handle successful registration', async () => {
       const user = userEvent.setup();
-      
+
       mockSupabaseClient.auth.signUp.mockResolvedValueOnce({
         data: {
           user: { id: '123', email: 'test@example.com' },
@@ -36,7 +36,10 @@ describe('Auth Components', () => {
 
       render(
         <BrowserRouter>
-          <RegisterForm onSuccess={mockOnSuccess} supabaseClient={mockSupabaseClient} />
+          <RegisterForm
+            onSuccess={mockOnSuccess}
+            supabaseClient={mockSupabaseClient}
+          />
         </BrowserRouter>
       );
 
@@ -44,7 +47,10 @@ describe('Auth Components', () => {
         await user.type(screen.getByTestId('full-name-input'), 'John Doe');
         await user.type(screen.getByTestId('email-input'), 'test@example.com');
         await user.type(screen.getByTestId('password-input'), 'password123');
-        await user.type(screen.getByTestId('confirm-password-input'), 'password123');
+        await user.type(
+          screen.getByTestId('confirm-password-input'),
+          'password123'
+        );
         await user.click(screen.getByTestId('submit-button'));
       });
 
@@ -63,16 +69,21 @@ describe('Auth Components', () => {
       await waitFor(() => {
         const confirmationMessage = screen.getByTestId('confirmation-sent');
         expect(confirmationMessage).toBeInTheDocument();
-        expect(confirmationMessage).toHaveTextContent('Please check your email to confirm your account');
+        expect(confirmationMessage).toHaveTextContent(
+          'Please check your email to confirm your account'
+        );
       });
     });
 
     it('should show error for password mismatch', async () => {
       const user = userEvent.setup();
-      
+
       render(
         <BrowserRouter>
-          <RegisterForm onSuccess={mockOnSuccess} supabaseClient={mockSupabaseClient} />
+          <RegisterForm
+            onSuccess={mockOnSuccess}
+            supabaseClient={mockSupabaseClient}
+          />
         </BrowserRouter>
       );
 
@@ -80,7 +91,10 @@ describe('Auth Components', () => {
         await user.type(screen.getByTestId('full-name-input'), 'John Doe');
         await user.type(screen.getByTestId('email-input'), 'test@example.com');
         await user.type(screen.getByTestId('password-input'), 'password123');
-        await user.type(screen.getByTestId('confirm-password-input'), 'password456');
+        await user.type(
+          screen.getByTestId('confirm-password-input'),
+          'password456'
+        );
         await user.click(screen.getByTestId('submit-button'));
       });
 
@@ -99,7 +113,10 @@ describe('Auth Components', () => {
 
       render(
         <BrowserRouter>
-          <RegisterForm onSuccess={mockOnSuccess} supabaseClient={mockSupabaseClient} />
+          <RegisterForm
+            onSuccess={mockOnSuccess}
+            supabaseClient={mockSupabaseClient}
+          />
         </BrowserRouter>
       );
 
@@ -107,12 +124,17 @@ describe('Auth Components', () => {
         await user.type(screen.getByTestId('full-name-input'), 'John Doe');
         await user.type(screen.getByTestId('email-input'), 'test@example.com');
         await user.type(screen.getByTestId('password-input'), 'password123');
-        await user.type(screen.getByTestId('confirm-password-input'), 'password123');
+        await user.type(
+          screen.getByTestId('confirm-password-input'),
+          'password123'
+        );
         await user.click(screen.getByTestId('submit-button'));
       });
 
       await waitFor(() => {
-        expect(screen.getByText('Email already registered')).toBeInTheDocument();
+        expect(
+          screen.getByText('Email already registered')
+        ).toBeInTheDocument();
       });
     });
   });
@@ -132,7 +154,10 @@ describe('Auth Components', () => {
 
       render(
         <BrowserRouter>
-          <LoginForm onSuccess={mockOnSuccess} supabaseClient={mockSupabaseClient} />
+          <LoginForm
+            onSuccess={mockOnSuccess}
+            supabaseClient={mockSupabaseClient}
+          />
         </BrowserRouter>
       );
 
@@ -143,10 +168,12 @@ describe('Auth Components', () => {
       });
 
       await waitFor(() => {
-        expect(mockSupabaseClient.auth.signInWithPassword).toHaveBeenCalledWith({
-          email: 'test@example.com',
-          password: 'password123',
-        });
+        expect(mockSupabaseClient.auth.signInWithPassword).toHaveBeenCalledWith(
+          {
+            email: 'test@example.com',
+            password: 'password123',
+          }
+        );
       });
 
       await waitFor(() => {
@@ -166,7 +193,10 @@ describe('Auth Components', () => {
 
       render(
         <BrowserRouter>
-          <LoginForm onSuccess={mockOnSuccess} supabaseClient={mockSupabaseClient} />
+          <LoginForm
+            onSuccess={mockOnSuccess}
+            supabaseClient={mockSupabaseClient}
+          />
         </BrowserRouter>
       );
 

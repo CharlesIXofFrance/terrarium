@@ -16,12 +16,9 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
-    detectSessionInUrl: false,
-  },
-  headers: {
-    'Accept': 'application/json',
-    'Content-Type': 'application/json',
-    'Prefer': 'return=representation',
+    detectSessionInUrl: true,
+    flowType: 'implicit',
+    storage: localStorage,
   },
 });
 

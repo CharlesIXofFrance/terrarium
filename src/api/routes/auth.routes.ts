@@ -2,7 +2,11 @@
 // This will be expanded when backend API is implemented
 
 import { authService } from '../../backend/services/auth.service';
-import type { LoginCredentials, RegisterData, AuthResult } from '../../backend/types/auth.types';
+import type {
+  LoginCredentials,
+  RegisterData,
+  AuthResult,
+} from '../../backend/types/auth.types';
 
 export const authRoutes = {
   login: async (credentials: LoginCredentials): Promise<AuthResult> => {
@@ -13,8 +17,10 @@ export const authRoutes = {
       throw error;
     }
   },
-  
-  register: async (data: RegisterData): Promise<{ needsEmailVerification: boolean }> => {
+
+  register: async (
+    data: RegisterData
+  ): Promise<{ needsEmailVerification: boolean }> => {
     try {
       return await authService.register(data);
     } catch (error) {
@@ -48,5 +54,5 @@ export const authRoutes = {
       console.error('Reset password route error:', error);
       throw error;
     }
-  }
+  },
 };

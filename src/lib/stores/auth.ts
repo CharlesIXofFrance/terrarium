@@ -1,5 +1,9 @@
 import { atom, createStore } from 'jotai';
-import type { User, Community, AuthError } from '../../backend/types/auth.types';
+import type {
+  User,
+  Community,
+  AuthError,
+} from '../../backend/types/auth.types';
 import { supabase } from '../supabase';
 
 const STORAGE_KEY = 'terrarium_user';
@@ -37,12 +41,14 @@ const storage = {
     } catch (error) {
       console.error('Failed to clear storage:', error);
     }
-  }
+  },
 };
 
 // Atoms
 export const userAtom = atom<User | null>(storage.load(STORAGE_KEY));
-export const userCommunityAtom = atom<Community | null>(storage.load(COMMUNITY_STORAGE_KEY));
+export const userCommunityAtom = atom<Community | null>(
+  storage.load(COMMUNITY_STORAGE_KEY)
+);
 export const isLoadingAtom = atom<boolean>(true);
 export const authErrorAtom = atom<AuthError | null>(null);
 
@@ -71,12 +77,18 @@ const startSessionCheck = () => {
   }
 
   // Check session every 5 minutes
-  sessionCheckInterval = setInterval(async () => {
-    const { data: { session }, error } = await supabase.auth.getSession();
-    if (error || !session) {
-      clearAuthState();
-    }
-  }, 5 * 60 * 1000);
+  sessionCheckInterval = setInterval(
+    async () => {
+      const {
+        data: { session },
+        error,
+      } = await supabase.auth.getSession();
+      if (error || !session) {
+        clearAuthState();
+      }
+    },
+    5 * 60 * 1000
+  );
 };
 
 const stopSessionCheck = () => {
@@ -92,7 +104,10 @@ export async function initAuth() {
 
   try {
     // Get initial session
-    const { data: { session }, error } = await supabase.auth.getSession();
+    const {
+      data: { session },
+      error,
+    } = await supabase.auth.getSession();
 
     if (error) {
       throw error;
@@ -152,7 +167,8 @@ export async function initAuth() {
     console.error('Error initializing auth:', error);
     store.set(authErrorAtom, {
       code: error instanceof Error ? error.name : 'UNKNOWN_ERROR',
-      message: error instanceof Error ? error.message : 'An unknown error occurred',
+      message:
+        error instanceof Error ? error.message : 'An unknown error occurred',
     });
     clearAuthState();
   } finally {

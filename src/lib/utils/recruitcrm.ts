@@ -184,7 +184,9 @@ export class RecruitCRMService {
       let jobs = data.data.jobs;
 
       if (this.filters?.location) {
-        jobs = jobs.filter((job) => job.locations.some((loc) => loc.city === this.filters.location));
+        jobs = jobs.filter((job) =>
+          job.locations.some((loc) => loc.city === this.filters.location)
+        );
       }
 
       return {

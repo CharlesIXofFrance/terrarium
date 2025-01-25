@@ -11,7 +11,7 @@ const sizeClasses = {
   lg: 'h-8 w-8',
 };
 
-export function Spinner({ size = 'md', className = '' }: SpinnerProps) {
+export const Spinner = ({ size = 'md', className = '' }: SpinnerProps) => {
   return (
     <svg
       className={`animate-spin ${sizeClasses[size]} ${className}`}
@@ -35,4 +35,4 @@ export function Spinner({ size = 'md', className = '' }: SpinnerProps) {
       />
     </svg>
   );
-}
+};

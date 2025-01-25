@@ -23,7 +23,8 @@ vi.mock('react-router-dom', async () => {
     ...actual,
     useNavigate: () => mockNavigate,
     useLocation: () => ({
-      search: '?token=c89ec834c39cfa9c5c8fa6b6eb8a4bf5b51e8c9eb904c8cc9459faa6&type=recovery&redirect_to=http://localhost:3001/reset-password',
+      search:
+        '?token=c89ec834c39cfa9c5c8fa6b6eb8a4bf5b51e8c9eb904c8cc9459faa6&type=recovery&redirect_to=http://localhost:3001/reset-password',
     }),
   };
 });
@@ -68,7 +69,8 @@ describe('VerifyCallback Component', () => {
         ...actual,
         useNavigate: () => mockNavigate,
         useLocation: () => ({
-          search: '?type=recovery&redirect_to=http://localhost:3001/reset-password',
+          search:
+            '?type=recovery&redirect_to=http://localhost:3001/reset-password',
         }),
       };
     });

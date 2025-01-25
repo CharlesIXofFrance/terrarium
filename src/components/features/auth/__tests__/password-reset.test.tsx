@@ -39,7 +39,9 @@ describe('ForgotPassword', () => {
     );
 
     expect(screen.getByPlaceholderText('Email')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /reset password/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /reset password/i })
+    ).toBeInTheDocument();
   });
 
   it('handles successful password reset request', async () => {
@@ -118,10 +120,14 @@ describe('ResetPassword', () => {
     await waitFor(() => {
       const passwordInput = screen.getByTestId('password-input');
       const confirmPasswordInput = screen.getByTestId('confirm-password-input');
-      const submitButton = screen.getByRole('button', { name: /update password/i });
+      const submitButton = screen.getByRole('button', {
+        name: /update password/i,
+      });
 
       fireEvent.change(passwordInput, { target: { value: 'password123' } });
-      fireEvent.change(confirmPasswordInput, { target: { value: 'password456' } });
+      fireEvent.change(confirmPasswordInput, {
+        target: { value: 'password456' },
+      });
       fireEvent.click(submitButton);
 
       expect(screen.getByText('Passwords do not match')).toBeInTheDocument();
@@ -143,10 +149,14 @@ describe('ResetPassword', () => {
     await waitFor(() => {
       const passwordInput = screen.getByTestId('password-input');
       const confirmPasswordInput = screen.getByTestId('confirm-password-input');
-      const submitButton = screen.getByRole('button', { name: /update password/i });
+      const submitButton = screen.getByRole('button', {
+        name: /update password/i,
+      });
 
       fireEvent.change(passwordInput, { target: { value: 'password123' } });
-      fireEvent.change(confirmPasswordInput, { target: { value: 'password123' } });
+      fireEvent.change(confirmPasswordInput, {
+        target: { value: 'password123' },
+      });
       fireEvent.click(submitButton);
     });
 
@@ -170,10 +180,14 @@ describe('ResetPassword', () => {
     await waitFor(() => {
       const passwordInput = screen.getByTestId('password-input');
       const confirmPasswordInput = screen.getByTestId('confirm-password-input');
-      const submitButton = screen.getByRole('button', { name: /update password/i });
+      const submitButton = screen.getByRole('button', {
+        name: /update password/i,
+      });
 
       fireEvent.change(passwordInput, { target: { value: 'password123' } });
-      fireEvent.change(confirmPasswordInput, { target: { value: 'password123' } });
+      fireEvent.change(confirmPasswordInput, {
+        target: { value: 'password123' },
+      });
       fireEvent.click(submitButton);
     });
 

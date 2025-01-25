@@ -17,18 +17,18 @@ export function useJobFilters(initialJobs: Job[]) {
 
   const filteredJobs = useCallback(() => {
     let result = [...initialJobs];
-    
+
     // Apply search term filter
     result = filterJobsBySearchTerm(result, searchTerm);
-    
+
     // Apply other filters
     result = filterJobs(result, filters);
-    
+
     return result;
   }, [initialJobs, searchTerm, filters]);
 
   const updateFilters = useCallback((newFilters: Partial<typeof filters>) => {
-    setFilters(prev => ({ ...prev, ...newFilters }));
+    setFilters((prev) => ({ ...prev, ...newFilters }));
   }, []);
 
   const clearFilters = useCallback(() => {

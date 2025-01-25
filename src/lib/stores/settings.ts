@@ -29,7 +29,6 @@ const defaultSettings: CommunitySettings = {
   },
 };
 
-export const communitySettingsAtom = atomWithStorage<Record<string, CommunitySettings>>(
-  'community_settings',
-  {}
-);
+export const communitySettingsAtom = atomWithStorage<
+  Record<string, CommunitySettings>
+>('community_settings', {});

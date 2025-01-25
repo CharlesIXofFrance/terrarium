@@ -54,9 +54,7 @@ export async function deleteFile(path: string) {
  * Get a public URL for a file
  */
 export async function getPublicUrl(path: string) {
-  const { data } = supabase.storage
-    .from('community-assets')
-    .getPublicUrl(path);
+  const { data } = supabase.storage.from('community-assets').getPublicUrl(path);
 
   return data.publicUrl;
 }

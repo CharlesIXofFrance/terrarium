@@ -35,7 +35,7 @@ function getRandomIcon(): { title: string; path: string } {
 function generateInitials(name: string): string {
   return name
     .split(' ')
-    .map(word => word[0])
+    .map((word) => word[0])
     .join('')
     .slice(0, 2)
     .toUpperCase();
@@ -66,7 +66,7 @@ export function renderLogo({
   size = 24,
   color = '#6B7280',
   className = '',
-  fallbackType = 'initials'
+  fallbackType = 'initials',
 }: RenderLogoProps): JSX.Element {
   // Try to find matching Simple Icon
   const cleanName = cleanBrandName(brandName);
@@ -74,7 +74,7 @@ export function renderLogo({
 
   if (brandIcon) {
     return (
-      <div 
+      <div
         className={`flex items-center justify-center ${className}`}
         aria-label={`${brandName} logo`}
       >
@@ -88,7 +88,7 @@ export function renderLogo({
     case 'random':
       const randomIcon = getRandomIcon();
       return (
-        <div 
+        <div
           className={`flex items-center justify-center ${className}`}
           aria-label={`${brandName} logo`}
         >
@@ -98,7 +98,7 @@ export function renderLogo({
 
     case 'icon':
       return (
-        <div 
+        <div
           className={`flex items-center justify-center ${className}`}
           aria-label={`${brandName} logo`}
         >
@@ -110,7 +110,7 @@ export function renderLogo({
     default:
       const initials = generateInitials(brandName);
       return (
-        <div 
+        <div
           className={`
             flex 
             items-center 
@@ -123,7 +123,7 @@ export function renderLogo({
           style={{
             width: size,
             height: size,
-            fontSize: size * 0.4
+            fontSize: size * 0.4,
           }}
           aria-label={`${brandName} logo`}
         >

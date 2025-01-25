@@ -1,15 +1,35 @@
+/**
+ * AI Context:
+ * This hook provides React components with access to Terrarium's auth system.
+ * It handles both password-based (owners/admins) and passwordless (members/employers)
+ * authentication flows.
+ *
+ * Features:
+ * 1. Role-based auth flows
+ * 2. Community context management
+ * 3. Automatic redirects
+ * 4. Loading and error states
+ *
+ * Usage:
+ * const { user, signIn, signUp } = useAuth();
+ */
+
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAtom } from 'jotai';
 import { userAtom, userCommunityAtom } from '../stores/auth';
-import { authService } from '../../backend/services/auth.service';
-import type { LoginCredentials, RegisterData } from '../../backend/types/auth.types';
-import { AuthError } from '@supabase/supabase-js';
+import { ownerAuth, memberAuth, type AuthResult } from '@/services/auth';
+import { UserRole } from '@/lib/utils/types';
+import type { AuthError } from '@supabase/supabase-js';
 import { atom } from 'jotai';
 import { supabase } from '../supabase';
 import { useCallback } from 'react';
 
+// Query keys
 const USER_QUERY_KEY = ['auth', 'user'];
+const COMMUNITY_QUERY_KEY = ['auth', 'community'];
+
+// Local state atoms
 const isRegisteringAtom = atom(false);
 const registerErrorAtom = atom('');
 
@@ -19,61 +39,68 @@ export function useAuth() {
   const [isRegistering, setIsRegistering] = useAtom(isRegisteringAtom);
   const [registerError, setRegisterError] = useAtom(registerErrorAtom);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
+  // Check current auth state
   const { isLoading: isCheckingAuth } = useQuery({
     queryKey: USER_QUERY_KEY,
-    queryFn: authService.getCurrentUser,
+    queryFn: async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) setUser(user);
+      return user;
+    },
     initialData: user,
   });
 
-  const loginMutation = useMutation({
-    mutationFn: authService.login,
-    onSuccess: async ({ user, session, needsEmailVerification }) => {
-      if (needsEmailVerification) {
-        // Show email verification message
-        return;
+  // Fetch community data if user is owner/admin
+  const { data: community } = useQuery({
+    queryKey: COMMUNITY_QUERY_KEY,
+    queryFn: async () => {
+      if (
+        !user ||
+        (user.role !== UserRole.OWNER && user.role !== UserRole.ADMIN)
+      ) {
+        return null;
       }
 
-      if (!user || !session) {
-        throw new Error('No user or session after login');
+      const { data, error } = await supabase
+        .from('communities')
+        .select('*')
+        .eq('owner_id', user.id)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching community:', error);
       }
+
+      if (data) setUserCommunity(data);
+      return data;
+    },
+    enabled:
+      !!user && (user.role === UserRole.OWNER || user.role === UserRole.ADMIN),
+  });
+
+  // Password-based auth for owners/admins
+  const passwordSignIn = useMutation({
+    mutationFn: ownerAuth.signIn,
+    onSuccess: ({ user, error }: AuthResult) => {
+      if (error) throw error;
+      if (!user) throw new Error('No user after sign in');
 
       setUser(user);
 
-      // For community admins and owners, check their community
-      if (user.role === 'community_admin' || user.role === 'community_owner') {
-        const { data: community, error: communityError } = await supabase
-          .from('communities')
-          .select('*')
-          .eq('owner_id', user.id)
-          .single();
-
-        if (communityError && communityError.code !== 'PGRST116') {
-          console.error('Error fetching community:', communityError);
-        }
-
-        if (community) {
-          setUserCommunity(community);
-          navigate(`/?subdomain=${community.slug}/dashboard`);
-        } else {
-          navigate('/onboarding');
-        }
+      if (community) {
+        navigate(`/?subdomain=${community.slug}/dashboard`);
       } else {
-        // Regular member flow
-        navigate('/m/women-in-fintech');
+        navigate('/onboarding');
       }
-    },
-    onError: (error: AuthError) => {
-      console.error('Login error:', error);
-      if (error.message.includes('Email not confirmed')) {
-        return { needsEmailVerification: true };
-      }
-      throw error;
     },
   });
 
-  const registerMutation = useMutation({
-    mutationFn: authService.register,
+  const passwordSignUp = useMutation({
+    mutationFn: ownerAuth.signUp,
     onSuccess: () => {
       setIsRegistering(false);
       navigate('/login?verification=pending');
@@ -85,51 +112,28 @@ export function useAuth() {
     },
   });
 
-  const logoutMutation = useMutation({
-    mutationFn: authService.logout,
+  // Passwordless auth for members/employers
+  const magicLinkSignIn = useMutation({
+    mutationFn: memberAuth.signIn,
     onSuccess: () => {
-      setUser(null);
-      setUserCommunity(null);
-      navigate('/');
+      // Magic link sent, show message
+      navigate('/check-email');
     },
   });
 
-  const signIn = useCallback(
-    async (email: string, password: string) => {
-      try {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-
-        if (error) throw error;
-
-        if (data.user) {
-          // Get user's community
-          const { data: communityData } = await supabase
-            .from('communities')
-            .select('*')
-            .eq('owner_id', data.user.id)
-            .single();
-
-          setUser(data.user);
-          if (communityData) {
-            setUserCommunity(communityData);
-            navigate(`/m/${communityData.slug}`);
-          }
-        }
-      } catch (error) {
-        console.error('Error signing in:', error);
-        throw error;
-      }
+  const magicLinkSignUp = useMutation({
+    mutationFn: memberAuth.signUp,
+    onSuccess: () => {
+      navigate('/check-email');
     },
-    [navigate, setUser, setUserCommunity]
-  );
+  });
 
+  // Shared logout
   const signOut = useCallback(async () => {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
+
       setUser(null);
       setUserCommunity(null);
       navigate('/');
@@ -140,17 +144,31 @@ export function useAuth() {
   }, [navigate, setUser, setUserCommunity]);
 
   return {
+    // State
     user,
     userCommunity,
     isCheckingAuth,
-    isLoggingIn: loginMutation.isLoading,
     isRegistering,
     registerError,
-    loginError: loginMutation.error,
-    login: loginMutation.mutate,
-    register: registerMutation.mutate,
-    logout: logoutMutation.mutate,
-    signIn,
+
+    // Password auth (owners/admins)
+    passwordSignIn: passwordSignIn.mutate,
+    passwordSignUp: passwordSignUp.mutate,
+    isPasswordSigningIn: passwordSignIn.isLoading,
+    isPasswordSigningUp: passwordSignUp.isLoading,
+    passwordSignInError: passwordSignIn.error,
+    passwordSignUpError: passwordSignUp.error,
+
+    // Passwordless auth (members/employers)
+    magicLinkSignIn: magicLinkSignIn.mutate,
+    magicLinkSignUp: magicLinkSignUp.mutate,
+    isMagicLinkSigningIn: magicLinkSignIn.isLoading,
+    isMagicLinkSigningUp: magicLinkSignUp.isLoading,
+    magicLinkSignInError: magicLinkSignIn.error,
+    magicLinkSignUpError: magicLinkSignUp.error,
+
+    // Shared
     signOut,
+    isSigningOut: false,
   };
 }

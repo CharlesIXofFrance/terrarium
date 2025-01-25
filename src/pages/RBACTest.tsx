@@ -129,7 +129,9 @@ export function RBACTest() {
 
       {/* Platform-wide Permissions (Platform Owner) */}
       <div className="mb-8">
-        <h2 className="text-xl font-semibold mb-4">Platform-wide Permissions</h2>
+        <h2 className="text-xl font-semibold mb-4">
+          Platform-wide Permissions
+        </h2>
         <div className="space-y-4">
           <div
             className={`p-4 rounded ${
@@ -144,7 +146,8 @@ export function RBACTest() {
             }`}
           >
             <p>
-              Can Manage All Communities: {canManageAllCommunities ? 'Yes' : 'No'}
+              Can Manage All Communities:{' '}
+              {canManageAllCommunities ? 'Yes' : 'No'}
             </p>
           </div>
         </div>
@@ -206,7 +209,9 @@ export function RBACTest() {
       {canManageCommunity && (
         <div className="mb-8 p-4 bg-green-100 rounded">
           <h3 className="font-semibold">Community Owner Dashboard</h3>
-          <p>This content is visible to community owners and platform owners.</p>
+          <p>
+            This content is visible to community owners and platform owners.
+          </p>
         </div>
       )}
 

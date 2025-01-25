@@ -62,7 +62,9 @@ export function MemberLayout({
   const createUrl = (path: string) => {
     const baseSubdomain = subdomain || community || currentCommunity?.slug;
     const targetPath = path === '/' ? '' : path;
-    return baseSubdomain ? `/?subdomain=${baseSubdomain}${targetPath}` : targetPath;
+    return baseSubdomain
+      ? `/?subdomain=${baseSubdomain}${targetPath}`
+      : targetPath;
   };
 
   console.log('MemberLayout - Debug:', {
@@ -134,9 +136,7 @@ export function MemberLayout({
         user={isPreview ? mockUser : user}
         isPreview={isPreview}
       />
-      <main className={contentClasses}>
-        {children || <Outlet />}
-      </main>
+      <main className={contentClasses}>{children || <Outlet />}</main>
       <MemberFooter />
     </div>
   );

@@ -35,7 +35,10 @@ describe('RBAC Service', () => {
     const role: Role = 'community_owner';
 
     it('should grant community management access', () => {
-      const permission: Permission = { action: 'manage', resource: 'community' };
+      const permission: Permission = {
+        action: 'manage',
+        resource: 'community',
+      };
       expect(rbacService.hasPermission(role, permission)).toBe(true);
     });
 

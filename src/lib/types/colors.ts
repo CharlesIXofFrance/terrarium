@@ -8,9 +8,9 @@ export const ColorAnalysisSchema = z.object({
   palette: z.array(z.string().regex(/^#[0-9A-F]{6}$/i)),
   contrast: z.object({
     light: z.number(),
-    dark: z.number()
+    dark: z.number(),
   }),
-  timestamp: z.string().datetime()
+  timestamp: z.string().datetime(),
 });
 
 export type ColorAnalysis = z.infer<typeof ColorAnalysisSchema>;

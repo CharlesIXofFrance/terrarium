@@ -5,7 +5,9 @@ const SCROLL_KEY_PREFIX = 'scroll_position_';
 
 export function useScrollRestoration() {
   const location = useLocation();
-  const isJobBoard = location.pathname.includes('/jobs') && !location.pathname.includes('/jobs/');
+  const isJobBoard =
+    location.pathname.includes('/jobs') &&
+    !location.pathname.includes('/jobs/');
   const isJobListing = location.pathname.includes('/jobs/');
   const previousPathRef = useRef(location.pathname);
 
@@ -15,7 +17,7 @@ export function useScrollRestoration() {
 
     const currentPath = location.pathname;
     const previousPath = previousPathRef.current;
-    
+
     // Save scroll position when navigating away from job board
     if (previousPath.includes('/jobs') && !previousPath.includes('/jobs/')) {
       const scrollKey = `${SCROLL_KEY_PREFIX}job_board`;
@@ -26,7 +28,7 @@ export function useScrollRestoration() {
     if (isJobBoard) {
       const scrollKey = `${SCROLL_KEY_PREFIX}job_board`;
       const savedPosition = sessionStorage.getItem(scrollKey);
-      
+
       if (savedPosition) {
         requestAnimationFrame(() => {
           window.scrollTo(0, parseInt(savedPosition, 10));

@@ -77,7 +77,8 @@ export function PagePreview({
     if (!iframe) return;
 
     const handleLoad = async () => {
-      const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+      const iframeDoc =
+        iframe.contentDocument || iframe.contentWindow?.document;
       if (!iframeDoc) return;
 
       // Create a new div for mounting
@@ -130,7 +131,7 @@ export function PagePreview({
           } else {
             // Inline stylesheet
             const style = iframeDoc.createElement('style');
-            Array.from(styleSheet.cssRules).forEach(rule => {
+            Array.from(styleSheet.cssRules).forEach((rule) => {
               style.textContent += rule.cssText + '\n';
             });
             iframeDoc.head.appendChild(style);
@@ -149,22 +150,24 @@ export function PagePreview({
   }, [mode]);
 
   return (
-    <div 
+    <div
       className="relative bg-gray-50 w-full flex justify-center"
       style={{
         height: mode === 'desktop' ? '100vh' : 'auto',
         minHeight: mode === 'desktop' ? '100vh' : 'auto',
       }}
     >
-      <div 
+      <div
         className="preview-container"
         style={{
           width: mode === 'desktop' ? '100%' : `${viewportStyle[mode].width}px`,
-          height: mode === 'desktop' ? '100vh' : `${viewportStyle[mode].height}px`,
+          height:
+            mode === 'desktop' ? '100vh' : `${viewportStyle[mode].height}px`,
           overflow: 'hidden',
           border: mode !== 'desktop' ? '1px solid #e5e7eb' : 'none',
           borderRadius: mode !== 'desktop' ? '8px' : '0',
-          boxShadow: mode !== 'desktop' ? '0 4px 6px -1px rgba(0, 0, 0, 0.1)' : 'none',
+          boxShadow:
+            mode !== 'desktop' ? '0 4px 6px -1px rgba(0, 0, 0, 0.1)' : 'none',
         }}
       >
         <iframe
@@ -187,12 +190,13 @@ export function PagePreview({
           `}
           frameBorder="0"
         />
-        {mountNode && createPortal(
-          <MemberLayout mode={mode} isPreview={true}>
-            {getComponent()}
-          </MemberLayout>,
-          mountNode
-        )}
+        {mountNode &&
+          createPortal(
+            <MemberLayout mode={mode} isPreview={true}>
+              {getComponent()}
+            </MemberLayout>,
+            mountNode
+          )}
       </div>
     </div>
   );

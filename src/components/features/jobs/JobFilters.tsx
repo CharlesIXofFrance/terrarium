@@ -146,19 +146,36 @@ export function JobFilters({
                           ? 'bg-white shadow-sm'
                           : 'bg-gray-50 hover:bg-gray-100'
                       }`}
-                      style={isSelected ? { borderColor: primaryColor, borderWidth: '1px', borderStyle: 'solid' } : undefined}
+                      style={
+                        isSelected
+                          ? {
+                              borderColor: primaryColor,
+                              borderWidth: '1px',
+                              borderStyle: 'solid',
+                            }
+                          : undefined
+                      }
                     >
                       <div className="flex items-center space-x-3">
                         <Icon
                           className="h-5 w-5"
-                          style={{ color: isSelected ? primaryColor : '#9CA3AF' }}
+                          style={{
+                            color: isSelected ? primaryColor : '#9CA3AF',
+                          }}
                         />
-                        <span style={{ color: isSelected ? primaryColor : '#4B5563' }}>
+                        <span
+                          style={{
+                            color: isSelected ? primaryColor : '#4B5563',
+                          }}
+                        >
                           {option.label}
                         </span>
                       </div>
                       {isSelected && (
-                        <Check className="h-4 w-4" style={{ color: primaryColor }} />
+                        <Check
+                          className="h-4 w-4"
+                          style={{ color: primaryColor }}
+                        />
                       )}
                     </button>
                   );
@@ -192,19 +209,32 @@ export function JobFilters({
                         ? 'bg-white shadow-sm'
                         : 'bg-gray-50 hover:bg-gray-100'
                     }`}
-                    style={isSelected ? { borderColor: primaryColor, borderWidth: '1px', borderStyle: 'solid' } : undefined}
+                    style={
+                      isSelected
+                        ? {
+                            borderColor: primaryColor,
+                            borderWidth: '1px',
+                            borderStyle: 'solid',
+                          }
+                        : undefined
+                    }
                   >
                     <div className="flex items-center space-x-3">
                       <Icon
                         className="h-5 w-5"
                         style={{ color: isSelected ? primaryColor : '#9CA3AF' }}
                       />
-                      <span style={{ color: isSelected ? primaryColor : '#4B5563' }}>
+                      <span
+                        style={{ color: isSelected ? primaryColor : '#4B5563' }}
+                      >
                         {option.label}
                       </span>
                     </div>
                     {isSelected && (
-                      <Check className="h-4 w-4" style={{ color: primaryColor }} />
+                      <Check
+                        className="h-4 w-4"
+                        style={{ color: primaryColor }}
+                      />
                     )}
                   </button>
                 );
@@ -235,7 +265,7 @@ export function JobFilters({
           onClick={onClearFilters}
           variant="outline"
           className="w-full"
-          style={{ 
+          style={{
             borderColor: primaryColor,
             color: primaryColor,
           }}

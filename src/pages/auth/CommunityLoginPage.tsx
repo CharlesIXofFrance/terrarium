@@ -1,17 +1,16 @@
 /**
- * AI Context:
- * This component implements the community-specific login page feature. It's located in the pages directory
- * because it represents a full page that's directly tied to a route (/c/:slug/login).
+ * Community Login/Signup Page
  *
- * The page:
- * 1. Loads community-specific branding (logo, colors, text) using the useCommunityCustomization hook
- * 2. Provides a login form with email/password fields and proper validation
- * 3. Handles authentication through Supabase
- * 4. Shows appropriate loading and error states
+ * This page handles authentication for community members and employers:
+ * 1. Public Signup: New users can join a community
+ * 2. Member Login: Existing members can log in
  *
- * It's placed in pages/ rather than features/ because it's a complete, routable page rather than
- * a reusable feature component. The actual login form could potentially be extracted into a
- * separate component in features/ if it needs to be reused.
+ * Features:
+ * - Magic link authentication (passwordless)
+ * - Community branding/customization
+ * - Access control
+ * - Rate limiting
+ * - Error handling
  */
 
 import React, { useState } from 'react';
@@ -19,11 +18,12 @@ import { Navigate, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useCommunityCustomization } from '../hooks/useCommunityCustomization';
-import { supabase } from '../lib/supabase';
-import { Spinner } from '../components/ui/atoms/Spinner';
-import { Button } from '../components/ui/atoms/Button';
-import type { Role } from '@/backend/types/rbac.types';
+import { useCommunityCustomization } from '@/hooks/useCommunityCustomization';
+import { supabase } from '@/lib/supabase';
+import { memberAuth } from '@/services/auth';
+import { UserRole } from '@/lib/utils/types';
+import { Spinner } from '@/components/ui/atoms/Spinner';
+import { Button } from '@/components/ui/atoms/Button';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -64,6 +64,7 @@ export function CommunityLoginPage({ communitySlug }: CommunityLoginPageProps) {
     handleSubmit,
     formState: { errors },
     setError,
+    reset,
   } = useForm<SignupFormData>({
     resolver: zodResolver(isSignup ? signupSchema : loginSchema),
   });
@@ -71,54 +72,51 @@ export function CommunityLoginPage({ communitySlug }: CommunityLoginPageProps) {
   const onSubmit = async (data: SignupFormData) => {
     setIsSubmitting(true);
     try {
+      // Get community ID
+      const { data: community, error: communityError } = await supabase
+        .from('communities')
+        .select('id, name')
+        .eq('slug', slug)
+        .single();
+
+      if (communityError || !community) {
+        throw new Error('Community not found');
+      }
+
       if (isSignup) {
-        // Sign up with email verification
-        const { error } = await supabase.auth.signInWithOtp({
-          email: data.email,
-          options: {
-            emailRedirectTo: `${window.location.origin}/?subdomain=${slug}/onboarding`,
-            data: {
-              first_name: data.first_name,
-              last_name: data.last_name,
-              role: 'member' as Role, // Explicitly type as Role
-              email: data.email,
-              profile_complete: false,
-            },
-          },
+        const result = await memberAuth.signUp({
+          email: data.email.toLowerCase().trim(),
+          firstName: data.first_name,
+          lastName: data.last_name,
+          role: UserRole.MEMBER,
+          communityId: community.id,
         });
 
-        if (error) {
-          setError('root', { message: error.message });
-        } else {
-          setVerificationSent(true);
+        if (!result.success) {
+          throw result.error || new Error('Failed to sign up');
         }
       } else {
-        // For login, first check if the user exists
-        const { data: existingUser } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('email', data.email)
-          .single();
+        const result = await memberAuth.signIn({
+          email: data.email.toLowerCase().trim(),
+          role: UserRole.MEMBER,
+          communityId: community.id,
+        });
 
-        if (existingUser) {
-          // User exists, send magic link
-          const { error } = await supabase.auth.signInWithOtp({
-            email: data.email,
-            options: {
-              emailRedirectTo: `${window.location.origin}/?subdomain=${slug}`,
-            },
-          });
-
-          if (error) {
-            setError('root', { message: error.message });
-          }
+        if (!result.success) {
+          throw result.error || new Error('Failed to sign in');
         }
-
-        // Always show verification sent message for privacy
-        setVerificationSent(true);
       }
+
+      setVerificationSent(true);
+      reset(); // Clear form after successful submission
     } catch (error) {
-      setError('root', { message: 'An unexpected error occurred' });
+      console.error('Auth error:', error);
+      setError('root', {
+        message:
+          error instanceof Error
+            ? error.message
+            : 'An unexpected error occurred',
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -179,8 +177,7 @@ export function CommunityLoginPage({ communitySlug }: CommunityLoginPageProps) {
             <div className="text-center">
               <h2 className="text-2xl font-bold mb-4">Check Your Email</h2>
               <p className="text-gray-600">
-                We've sent you a verification code. Please check your email and
-                enter the code to{' '}
+                We've sent you a verification link. Please check your email to{' '}
                 {isSignup ? 'complete your registration' : 'sign in'}.
               </p>
             </div>
@@ -283,6 +280,7 @@ export function CommunityLoginPage({ communitySlug }: CommunityLoginPageProps) {
                       disabled={isSubmitting}
                       className="mt-1 relative block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                       placeholder="Email address"
+                      autoComplete="email"
                     />
                     {errors.email && (
                       <p className="mt-1 text-sm text-red-600">
@@ -312,7 +310,10 @@ export function CommunityLoginPage({ communitySlug }: CommunityLoginPageProps) {
               <div className="text-center mt-4">
                 <button
                   type="button"
-                  onClick={() => setIsSignup(!isSignup)}
+                  onClick={() => {
+                    setIsSignup(!isSignup);
+                    reset(); // Clear form when switching modes
+                  }}
                   className="text-sm text-indigo-600 hover:text-indigo-500"
                 >
                   {isSignup

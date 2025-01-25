@@ -6,7 +6,9 @@ const envSchema = z.object({
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
   RECRUITCRM_API_KEY: z.string().optional(),
   RECRUITCRM_API_URL: z.string().url().default('https://api.recruitcrm.io/v1'),
-  NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+  NODE_ENV: z
+    .enum(['development', 'test', 'production'])
+    .default('development'),
 });
 
 // Load environment variables

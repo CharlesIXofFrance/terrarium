@@ -71,9 +71,9 @@ function App() {
               .single(),
             supabase
               .from('communities')
-              .select('*')
+              .select('id, name, slug, description, logo_url')
               .eq('owner_id', sessionUser.id)
-              .single(),
+              .maybeSingle(),
           ]);
 
           if (!mounted) return;
@@ -92,39 +92,41 @@ function App() {
           });
 
           // If not an owner, check if member of any community
-          if (
-            communityResult.error &&
-            communityResult.error.code === 'PGRST116'
-          ) {
+          if (!communityResult.data) {
+            console.log('Not a community owner, checking membership...');
             const { data: memberCommunity, error: memberError } = await supabase
               .from('community_members')
-              .select('communities:communities(*)')
+              .select(
+                `
+                *,
+                community:communities!inner (
+                  id,
+                  name,
+                  slug,
+                  description,
+                  logo_url
+                )
+              `
+              )
               .eq('profile_id', sessionUser.id)
-              .single();
+              .maybeSingle();
 
             if (!mounted) return;
 
-            if (memberError && memberError.code !== 'PGRST116') {
+            if (memberError) {
               console.error('Member community fetch error:', memberError);
               throw memberError;
             }
 
-            if (memberCommunity?.communities) {
-              console.log(
-                'Setting member community:',
-                memberCommunity.communities
-              );
-              setUserCommunity(memberCommunity.communities);
-              setCurrentCommunity(memberCommunity.communities);
+            if (memberCommunity?.community) {
+              console.log('Found member community:', memberCommunity.community);
+              setUserCommunity(memberCommunity.community);
+              setCurrentCommunity(memberCommunity.community);
+            } else {
+              console.log('No community found for user');
             }
-          } else if (communityResult.error) {
-            console.error(
-              'Owner community fetch error:',
-              communityResult.error
-            );
-            throw communityResult.error;
-          } else if (communityResult.data) {
-            console.log('Setting owned community:', communityResult.data);
+          } else {
+            console.log('Found owned community:', communityResult.data);
             setUserCommunity(communityResult.data);
             setCurrentCommunity(communityResult.data);
           }
@@ -239,28 +241,37 @@ function App() {
           // Fetch user's community (either owned or member of)
           const { data: ownedCommunity, error: ownedError } = await supabase
             .from('communities')
-            .select('*')
+            .select('id, name, slug, description, logo_url')
             .eq('owner_id', session.user.id)
-            .single();
+            .maybeSingle();
 
           if (ownedError && ownedError.code === 'PGRST116') {
             const { data: memberCommunity, error: memberError } = await supabase
               .from('community_members')
-              .select('community:communities(*)')
+              .select(
+                'community:communities!inner(id, name, slug, description, logo_url)'
+              )
               .eq('profile_id', session.user.id)
-              .single();
+              .maybeSingle()
+              .throwOnError();
 
-            if (memberError && memberError.code !== 'PGRST116') {
+            if (memberError) {
+              console.error('Member community fetch error:', memberError);
               throw memberError;
             }
 
             if (memberCommunity?.community) {
+              console.log('Found member community:', memberCommunity.community);
               setUserCommunity(memberCommunity.community);
               setCurrentCommunity(memberCommunity.community);
+            } else {
+              console.log('No community found for user');
             }
           } else if (ownedError) {
+            console.error('Owner community fetch error:', ownedError);
             throw ownedError;
           } else if (ownedCommunity) {
+            console.log('Found owned community:', ownedCommunity);
             setUserCommunity(ownedCommunity);
             setCurrentCommunity(ownedCommunity);
           }

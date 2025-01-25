@@ -22,6 +22,7 @@ import { userCommunityAtom } from '@/lib/stores/auth';
 import { OwnerOnboarding } from '../features/onboarding/OwnerOnboarding';
 import { CommunityMemberOnboarding } from '../features/onboarding/community-member/CommunityMemberOnboarding';
 import { DataSettings } from '@/pages/community/DataSettings';
+import { ProtectedRoute } from '@/components/features/auth/ProtectedRoute';
 
 export const CommunityRoutes: React.FC = () => {
   const { user } = useAuth();
@@ -39,8 +40,10 @@ export const CommunityRoutes: React.FC = () => {
     (user?.role === 'community_admin' || user?.role === 'community_owner') &&
     userCommunity?.slug === community;
 
-  // Check if onboarding is complete
-  const isOnboardingComplete = user?.profile_complete;
+  // Check if onboarding is complete based on user role
+  const isOnboardingComplete = hasAdminAccess
+    ? userCommunity?.onboarding_completed
+    : user?.profile_complete;
 
   console.log('CommunityRoutes - Debug:', {
     user: {
@@ -52,6 +55,7 @@ export const CommunityRoutes: React.FC = () => {
       id: userCommunity?.id,
       slug: userCommunity?.slug,
       ownerId: userCommunity?.owner_id,
+      onboardingCompleted: userCommunity?.onboarding_completed,
     },
     hasAdminAccess,
     isOnboardingComplete,
@@ -63,24 +67,94 @@ export const CommunityRoutes: React.FC = () => {
 
   // Admin routes mapping
   const adminRoutes: Record<string, React.ReactNode> = {
-    '/settings': <Dashboard />,
-    '/settings/dashboard': <Dashboard />,
-    '/settings/members': <Members />,
-    '/settings/jobs': <Jobs />,
-    '/settings/employers': <Employers />,
-    '/settings/job-board': <JobBoardSettings />,
-    '/settings/branding': <BrandingSettings />,
-    '/settings/customize': <CustomizationPortal />,
-    '/settings/data': <DataSettings />,
+    '/settings': (
+      <ProtectedRoute ownerOnly>
+        <Dashboard />
+      </ProtectedRoute>
+    ),
+    '/settings/dashboard': (
+      <ProtectedRoute ownerOnly>
+        <Dashboard />
+      </ProtectedRoute>
+    ),
+    '/settings/members': (
+      <ProtectedRoute ownerOnly>
+        <Members />
+      </ProtectedRoute>
+    ),
+    '/settings/jobs': (
+      <ProtectedRoute ownerOnly>
+        <Jobs />
+      </ProtectedRoute>
+    ),
+    '/settings/employers': (
+      <ProtectedRoute ownerOnly>
+        <Employers />
+      </ProtectedRoute>
+    ),
+    '/settings/job-board': (
+      <ProtectedRoute ownerOnly>
+        <JobBoardSettings />
+      </ProtectedRoute>
+    ),
+    '/settings/branding': (
+      <ProtectedRoute ownerOnly>
+        <BrandingSettings />
+      </ProtectedRoute>
+    ),
+    '/settings/customize': (
+      <ProtectedRoute ownerOnly>
+        <CustomizationPortal />
+      </ProtectedRoute>
+    ),
+    '/settings/data': (
+      <ProtectedRoute ownerOnly>
+        <DataSettings />
+      </ProtectedRoute>
+    ),
   };
 
   // Member routes mapping
   const memberRoutes: Record<string, React.ReactNode> = {
-    '/': <MemberHub />,
-    '/jobs': <JobBoard />,
-    '/events': <Events />,
-    '/feed': <Feed />,
-    '/profile': <MemberProfile />,
+    '/': (
+      <ProtectedRoute>
+        <MemberHub />
+      </ProtectedRoute>
+    ),
+    '/jobs': (
+      <ProtectedRoute>
+        <JobBoard />
+      </ProtectedRoute>
+    ),
+    '/events': (
+      <ProtectedRoute>
+        <Events />
+      </ProtectedRoute>
+    ),
+    '/feed': (
+      <ProtectedRoute>
+        <Feed />
+      </ProtectedRoute>
+    ),
+    '/profile': (
+      <ProtectedRoute>
+        <MemberProfile />
+      </ProtectedRoute>
+    ),
+  };
+
+  // Onboarding routes
+  const onboardingRoutes: Record<string, React.ReactNode> = {
+    '/owner-onboarding': (
+      <ProtectedRoute ownerOnly>
+        <OwnerOnboarding />
+      </ProtectedRoute>
+    ),
+    '/member-onboarding': (
+      <ProtectedRoute>
+        <CommunityMemberOnboarding />
+      </ProtectedRoute>
+    ),
   };
 
   // Function to find matching route with dynamic parameters
@@ -95,9 +169,31 @@ export const CommunityRoutes: React.FC = () => {
 
     // Handle dynamic routes
     if (path.startsWith('/jobs/')) {
-      return <JobDetails />;
+      return (
+        <ProtectedRoute>
+          <JobDetails />
+        </ProtectedRoute>
+      );
     }
 
+    return null;
+  };
+
+  // Find matching route from all route types
+  const getMatchingRoute = (path: string) => {
+    // First check onboarding routes
+    const onboardingRoute = findMatchingRoute(onboardingRoutes, path);
+    if (onboardingRoute) return onboardingRoute;
+
+    // Then check admin routes
+    const adminRoute = findMatchingRoute(adminRoutes, path);
+    if (adminRoute) return adminRoute;
+
+    // Finally check member routes
+    const memberRoute = findMatchingRoute(memberRoutes, path);
+    if (memberRoute) return memberRoute;
+
+    // No match found
     return null;
   };
 
@@ -116,60 +212,23 @@ export const CommunityRoutes: React.FC = () => {
     return <Navigate to={`/?subdomain=${community}/onboarding`} replace />;
   }
 
+  const matchingRoute = getMatchingRoute(path);
+
   return (
-    <CommunityAccessGuard>
-      {hasAdminAccess ? (
-        <Routes>
-          {path.startsWith('/settings') ? (
-            <Route element={<CommunityLayout />}>
-              <Route
-                path="*"
-                element={
-                  adminRoutes[path] || (
-                    <Navigate
-                      to={`/?subdomain=${community}/settings`}
-                      replace
-                      state={{ from: location }}
-                    />
-                  )
-                }
-              />
-            </Route>
-          ) : (
-            <Route element={<MemberLayout />}>
-              <Route
-                path="*"
-                element={
-                  findMatchingRoute(memberRoutes, path) || (
-                    <Navigate
-                      to={`/?subdomain=${community}`}
-                      replace
-                      state={{ from: location }}
-                    />
-                  )
-                }
-              />
-            </Route>
-          )}
-        </Routes>
-      ) : (
-        <Routes>
-          <Route element={<MemberLayout />}>
-            <Route
-              path="*"
-              element={
-                findMatchingRoute(memberRoutes, path) || (
-                  <Navigate
-                    to={`/?subdomain=${community}`}
-                    replace
-                    state={{ from: location }}
-                  />
-                )
-              }
-            />
-          </Route>
-        </Routes>
-      )}
-    </CommunityAccessGuard>
+    <Routes>
+      <Route
+        element={
+          <CommunityAccessGuard>
+            <CommunityLayout>{matchingRoute}</CommunityLayout>
+          </CommunityAccessGuard>
+        }
+      >
+        {/* Redirect root to member hub */}
+        <Route
+          path="/"
+          element={<Navigate to={`/?subdomain=${community}/`} replace />}
+        />
+      </Route>
+    </Routes>
   );
 };

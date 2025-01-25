@@ -14,8 +14,8 @@ export function useScrollEnd(refs: RefObject<HTMLElement>[]) {
   }, [refs]);
 
   useEffect(() => {
-    const elements = refs.map(ref => ref.current).filter(Boolean);
-    elements.forEach(element => {
+    const elements = refs.map((ref) => ref.current).filter(Boolean);
+    elements.forEach((element) => {
       element?.addEventListener('scroll', checkScrollEnd);
     });
 
@@ -24,7 +24,7 @@ export function useScrollEnd(refs: RefObject<HTMLElement>[]) {
 
     // Cleanup
     return () => {
-      elements.forEach(element => {
+      elements.forEach((element) => {
         element?.removeEventListener('scroll', checkScrollEnd);
       });
     };

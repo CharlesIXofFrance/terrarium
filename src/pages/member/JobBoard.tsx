@@ -1,4 +1,10 @@
-import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import React, {
+  useState,
+  useCallback,
+  useEffect,
+  useRef,
+  useMemo,
+} from 'react';
 import { useParams } from 'react-router-dom';
 import {
   Search,
@@ -11,7 +17,10 @@ import {
 } from 'lucide-react';
 import { useJobs } from '@/lib/hooks/useJobs';
 import { JobList } from '@/components/features/jobs/JobList';
-import { JobFilters, filterLabels } from '@/components/features/jobs/JobFilters';
+import {
+  JobFilters,
+  filterLabels,
+} from '@/components/features/jobs/JobFilters';
 import { SelectedFilters } from '@/components/features/jobs/SelectedFilters';
 import { useScrollRestoration } from '@/lib/hooks/useScrollRestoration';
 import { Button } from '@/components/ui/atoms/Button';
@@ -112,18 +121,18 @@ export function JobBoard() {
   return (
     <div className="min-h-screen">
       {/* Top Navigation and Search Area */}
-      <div 
+      <div
         className="fixed left-0 right-0 z-50"
-        style={{ 
+        style={{
           backgroundColor: primaryColor,
           top: '72px',
-          height: '88px'
+          height: '88px',
         }}
       >
         {/* Mobile Search */}
         <div className="md:hidden">
           {/* Search Input */}
-          <div 
+          <div
             className="bg-white w-full"
             onClick={() => setIsSearchOpen(true)}
           >
@@ -342,7 +351,10 @@ export function JobBoard() {
       )}
       {/* Main Content Area */}
       <div style={{ paddingTop: '72px' }}>
-        <div className="absolute inset-x-0" style={{ top: '88px', bottom: isAtEnd ? '64px' : 0 }}>
+        <div
+          className="absolute inset-x-0"
+          style={{ top: '88px', bottom: isAtEnd ? '64px' : 0 }}
+        >
           <div className="h-full flex">
             {/* Desktop Filters Column */}
             <div className="hidden md:block w-64 shrink-0 bg-white border-r border-gray-200">

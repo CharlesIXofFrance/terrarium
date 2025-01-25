@@ -14,32 +14,102 @@ ON CONFLICT (id) DO UPDATE SET
     file_size_limit = EXCLUDED.file_size_limit,
     allowed_mime_types = EXCLUDED.allowed_mime_types;
 
--- Insert test data
+-- Reset database
+TRUNCATE TABLE public.communities CASCADE;
+TRUNCATE TABLE public.profiles CASCADE;
+
+-- Insert test users first
 INSERT INTO auth.users (id, email)
 VALUES 
-    ('00000000-0000-0000-0000-000000000000', 'test@example.com'),
-    ('11111111-1111-1111-1111-111111111111', 'test2@example.com')
+    ('00000000-0000-0000-0000-000000000001', 'owner@test.com'),
+    ('00000000-0000-0000-0000-000000000002', 'member@test.com')
 ON CONFLICT (id) DO NOTHING;
 
--- Create profiles directly
-INSERT INTO public.profiles (id, full_name, email, role)
-VALUES 
-    ('00000000-0000-0000-0000-000000000000', 'Test User', 'test@example.com', 'member'),
-    ('11111111-1111-1111-1111-111111111111', 'Test User 2', 'test2@example.com', 'member')
-ON CONFLICT (id) DO NOTHING;
+-- Create test profiles
+INSERT INTO public.profiles (
+  id,
+  email,
+  first_name,
+  last_name,
+  role,
+  profile_complete,
+  created_at,
+  updated_at,
+  onboarding_step,
+  community_metadata,
+  metadata
+) VALUES
+(
+  '00000000-0000-0000-0000-000000000001',
+  'owner@test.com',
+  'Test',
+  'Owner',
+  'owner',
+  true,
+  NOW(),
+  NOW(),
+  3,
+  '{}',
+  '{}'
+),
+(
+  '00000000-0000-0000-0000-000000000002',
+  'member@test.com',
+  'Test',
+  'Member',
+  'member',
+  true,
+  NOW(),
+  NOW(),
+  3,
+  '{}',
+  '{}'
+);
 
-INSERT INTO public.communities (id, name, slug, description, owner_id)
-VALUES (
-    '22222222-2222-2222-2222-222222222222',
-    'Test Community',
-    'test-community',
-    'A test community',
-    '00000000-0000-0000-0000-000000000000'
-)
-ON CONFLICT (id) DO NOTHING;
+-- Create test community
+INSERT INTO public.communities (
+  id,
+  name,
+  slug,
+  description,
+  owner_id,
+  created_at,
+  updated_at
+) VALUES (
+  'f8c3de3d-1fea-4d7c-a8b0-29f63c4c3454',
+  'Test Community',
+  'test-community',
+  'A test community for development',
+  '00000000-0000-0000-0000-000000000001',
+  NOW(),
+  NOW()
+);
 
-INSERT INTO public.community_members (community_id, profile_id, role)
-VALUES 
-    ('22222222-2222-2222-2222-222222222222', '00000000-0000-0000-0000-000000000000', 'admin'),
-    ('22222222-2222-2222-2222-222222222222', '11111111-1111-1111-1111-111111111111', 'member')
-ON CONFLICT (community_id, profile_id) DO NOTHING;
+-- Create test community members
+INSERT INTO public.community_members (
+  profile_id,
+  community_id,
+  role,
+  status,
+  onboarding_completed,
+  created_at,
+  updated_at
+) VALUES
+(
+  '00000000-0000-0000-0000-000000000001',
+  'f8c3de3d-1fea-4d7c-a8b0-29f63c4c3454',
+  'owner',
+  'active',
+  true,
+  NOW(),
+  NOW()
+),
+(
+  '00000000-0000-0000-0000-000000000002',
+  'f8c3de3d-1fea-4d7c-a8b0-29f63c4c3454',
+  'member',
+  'active',
+  true,
+  NOW(),
+  NOW()
+);

@@ -89,6 +89,7 @@ export function useCommunityCustomization(slug: string) {
 
       // Return paths for images, they will be converted to signed URLs by useSignedUrl hook
       return {
+        communityId: community.id,
         title: settings.title || defaultCustomization.title,
         subtitle: settings.subtitle || defaultCustomization.subtitle,
         welcomeMessage: settings.welcome_message,

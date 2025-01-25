@@ -19,7 +19,7 @@ export function JobList({
   const hasMoreJobs = displayCount < jobs.length;
 
   const loadMore = () => {
-    setDisplayCount(prev => Math.min(prev + 6, jobs.length)); // Load 2 more rows
+    setDisplayCount((prev) => Math.min(prev + 6, jobs.length)); // Load 2 more rows
   };
 
   if (jobs.length === 0) {
@@ -43,7 +43,7 @@ export function JobList({
           <JobCard key={job.id} job={job} onApply={onApply} onSave={onSave} />
         ))}
       </div>
-      
+
       {hasMoreJobs && (
         <div className="flex justify-center pt-4">
           <button

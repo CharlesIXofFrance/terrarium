@@ -5,7 +5,7 @@ export function scrollToTop() {
   requestAnimationFrame(() => {
     window.scrollTo({
       top: 0,
-      behavior: 'instant'
+      behavior: 'instant',
     });
   });
 }
@@ -18,7 +18,7 @@ export function setScrollPosition(position: number) {
   requestAnimationFrame(() => {
     window.scrollTo({
       top: position,
-      behavior: 'instant'
+      behavior: 'instant',
     });
   });
 }

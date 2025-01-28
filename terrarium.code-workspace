@@ -1,14 +1,14 @@
 {
   "folders": [
     {
-      "path": "."
-    }
+      "path": ".",
+    },
   ],
   "settings": {
     "editor.defaultFormatter": "esbenp.prettier-vscode",
     "editor.formatOnSave": true,
     "editor.codeActionsOnSave": {
-      "source.fixAll.eslint": "explicit"
+      "source.fixAll.eslint": "explicit",
     },
     "editor.rulers": [80],
     "editor.tabSize": 2,
@@ -17,22 +17,23 @@
     "typescript.tsdk": "node_modules/typescript/lib",
     "typescript.enablePromptUseWorkspaceTsdk": true,
     "[typescript]": {
-      "editor.defaultFormatter": "esbenp.prettier-vscode"
+      "editor.defaultFormatter": "esbenp.prettier-vscode",
     },
     "[typescriptreact]": {
-      "editor.defaultFormatter": "esbenp.prettier-vscode"
+      "editor.defaultFormatter": "esbenp.prettier-vscode",
     },
     "eslint.validate": [
       "javascript",
       "javascriptreact",
       "typescript",
-      "typescriptreact"
+      "typescriptreact",
     ],
     "search.exclude": {
       "**/node_modules": true,
       "**/dist": true,
-      "**/.git": true
-    }
+      "**/.git": true,
+    },
+    "cSpell.words": ["ilike", "websearch"],
   },
   "extensions": {
     "recommendations": [
@@ -45,7 +46,7 @@
       "mikestead.dotenv",
       "eamodio.gitlens",
       "christian-kohler.path-intellisense",
-      "wayou.vscode-todo-highlight"
-    ]
-  }
+      "wayou.vscode-todo-highlight",
+    ],
+  },
 }

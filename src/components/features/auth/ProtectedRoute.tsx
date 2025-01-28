@@ -18,39 +18,35 @@ export function ProtectedRoute({
   const [user, setUser] = useAtom(userAtom);
   const location = useLocation();
   const { subdomain } = parseDomain();
-  const [shouldRedirect, setShouldRedirect] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isOwner, setIsOwner] = useState<boolean | null>(null);
   const [requireOnboarding, setRequireOnboarding] = useState(false);
   const [onboardingCompleted, setOnboardingCompleted] = useState(false);
 
-  // Effect to check and refresh session if needed
+  // Effect to handle auth state changes
   useEffect(() => {
-    const checkSession = async () => {
-      try {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        setUser(session.user);
+      }
+    });
 
-        if (!session && user) {
-          // Session is invalid but we have a user, try to refresh
-          const {
-            data: { session: newSession },
-          } = await supabase.auth.refreshSession();
-
-          if (!newSession) {
-            // If refresh failed, clear user state
-            setUser(null);
-          }
-        }
-      } catch (error) {
-        console.error('Session check error:', error);
+    // Subscribe to auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        setUser(session.user);
+      } else {
         setUser(null);
       }
-    };
+    });
 
-    checkSession();
-  }, [user, setUser]);
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [setUser]);
 
   // Check if user is owner and handle onboarding
   useEffect(() => {
@@ -62,52 +58,35 @@ export function ProtectedRoute({
 
       try {
         // Check if user is a community owner
-        const { data: ownedCommunity, error: ownerError } = await supabase
+        const { data: communities, error: ownerError } = await supabase
           .from('communities')
-          .select('onboarding_completed')
-          .eq('owner_id', user.id)
-          .single();
+          .select()
+          .eq('owner_id', user.id);
 
-        if (ownerError && ownerError.code !== 'PGRST116') {
-          console.error('Error checking owned community:', ownerError);
-          throw ownerError;
-        }
+        if (ownerError) throw ownerError;
 
-        const userIsOwner = Boolean(ownedCommunity);
+        const userIsOwner = communities && communities.length > 0;
         setIsOwner(userIsOwner);
 
         // If not an owner, check if they're a member
         if (!userIsOwner) {
           const { data: memberData, error: memberError } = await supabase
             .from('community_members')
-            .select('community_id')
+            .select('*, profile:profiles(*)')
             .eq('profile_id', user.id)
-            .maybeSingle();
+            .single();
 
           if (memberError && memberError.code !== 'PGRST116') {
-            console.error('Error checking community membership:', memberError);
             throw memberError;
           }
 
-          // If they're a member, check profile onboarding
           if (memberData) {
-            const { data: profile, error: profileError } = await supabase
-              .from('profiles')
-              .select('onboarding_completed')
-              .eq('id', user.id)
-              .single();
-
-            if (profileError) {
-              console.error('Error checking profile:', profileError);
-              throw profileError;
-            }
-
             setRequireOnboarding(true);
-            setOnboardingCompleted(profile?.onboarding_completed);
+            setOnboardingCompleted(memberData.onboarding_completed ?? false);
           }
-        } else {
+        } else if (communities?.[0]) {
           setRequireOnboarding(true);
-          setOnboardingCompleted(ownedCommunity.onboarding_completed);
+          setOnboardingCompleted(communities[0].onboarding_completed ?? false);
         }
       } catch (error) {
         console.error('Error checking user status:', error);
@@ -116,8 +95,10 @@ export function ProtectedRoute({
       }
     };
 
-    checkUserStatus();
-  }, [user?.id, location.pathname]);
+    if (user?.id) {
+      checkUserStatus();
+    }
+  }, [user?.id]);
 
   // Wait for initial session check
   if (isLoading) {
@@ -131,15 +112,18 @@ export function ProtectedRoute({
   // If no user, redirect to login
   if (!user) {
     const search = location.search ? location.search : '';
-    console.log('No user found, redirecting to login with search:', search);
     return <Navigate to={`/login${search}`} replace />;
   }
 
   // If onboarding required and not completed, redirect to onboarding
   if (requireOnboarding && !onboardingCompleted) {
-    console.log(
-      'Onboarding required but not completed, redirecting to onboarding'
-    );
+    // If we have a subdomain, redirect to community onboarding
+    if (subdomain) {
+      return (
+        <Navigate to={`/?subdomain=${subdomain}&path=/onboarding`} replace />
+      );
+    }
+    // Otherwise redirect to platform onboarding
     return <Navigate to="/onboarding" replace />;
   }
 
@@ -150,7 +134,6 @@ export function ProtectedRoute({
 
   // Check owner-only access
   if (ownerOnly && !isOwner) {
-    console.log('Non-owner attempting to access owner-only route');
     return <Navigate to="/" replace />;
   }
 

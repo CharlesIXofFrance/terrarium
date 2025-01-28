@@ -22,7 +22,7 @@ import {
 import userEvent from '@testing-library/user-event';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { CommunityLoginPage } from '../CommunityLoginPage';
+import { CommunityLoginPage } from '../auth/CommunityLoginPage';
 import { supabase } from '@/lib/supabase';
 
 // Mock Supabase client
@@ -334,6 +334,209 @@ describe('CommunityLoginPage', () => {
       expect(
         screen.getByText(mockCustomization.customText.subHeadline)
       ).toBeInTheDocument();
+    });
+  });
+
+  describe('Redirections and Access Control', () => {
+    it('redirects to dashboard if user is already logged in and is a member', async () => {
+      // Mock active session
+      (supabase.auth.getSession as vi.Mock).mockResolvedValue({
+        data: {
+          session: {
+            user: { id: '123', email: 'test@example.com' },
+          },
+        },
+        error: null,
+      });
+
+      // Mock existing community member
+      (supabase.from as vi.Mock)
+        .mockReturnValueOnce({
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              single: vi.fn().mockResolvedValue({
+                data: {
+                  customization: mockCustomization,
+                  id: '456',
+                },
+                error: null,
+              }),
+            }),
+          }),
+        })
+        .mockReturnValueOnce({
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              single: vi.fn().mockResolvedValue({
+                data: { role: 'member' },
+                error: null,
+              }),
+            }),
+          }),
+        });
+
+      renderWithProviders();
+
+      await waitFor(() => {
+        expect(mockNavigate).toHaveBeenCalledWith(
+          '/c/test-community/dashboard'
+        );
+      });
+    });
+
+    it('shows access denied message for banned users', async () => {
+      // Mock active session
+      (supabase.auth.getSession as vi.Mock).mockResolvedValue({
+        data: {
+          session: {
+            user: { id: '123', email: 'test@example.com' },
+          },
+        },
+        error: null,
+      });
+
+      // Mock community query
+      (supabase.from as vi.Mock)
+        .mockReturnValueOnce({
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              single: vi.fn().mockResolvedValue({
+                data: {
+                  customization: mockCustomization,
+                  id: '456',
+                },
+                error: null,
+              }),
+            }),
+          }),
+        })
+        .mockReturnValueOnce({
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              single: vi.fn().mockResolvedValue({
+                data: { role: 'banned' },
+                error: null,
+              }),
+            }),
+          }),
+        });
+
+      renderWithProviders();
+
+      expect(await screen.findByText(/access denied/i)).toBeInTheDocument();
+      expect(
+        await screen.findByText(/you have been banned/i)
+      ).toBeInTheDocument();
+    });
+
+    it('preserves redirect URL after successful login', async () => {
+      const redirectUrl = '/c/test-community/events/123';
+
+      // Mock no active session initially
+      (supabase.auth.getSession as vi.Mock).mockResolvedValueOnce({
+        data: { session: null },
+        error: null,
+      });
+
+      // Mock successful login
+      (supabase.auth.signInWithPassword as vi.Mock).mockResolvedValueOnce({
+        data: {
+          user: { id: '123', email: 'test@example.com' },
+          session: { access_token: 'test-token' },
+        },
+        error: null,
+      });
+
+      // Mock community member role check
+      (supabase.from as vi.Mock).mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            single: vi.fn().mockResolvedValue({
+              data: { role: 'member' },
+              error: null,
+            }),
+          }),
+        }),
+      });
+
+      render(
+        <QueryClientProvider client={queryClient}>
+          <BrowserRouter>
+            <Routes>
+              <Route
+                path="/"
+                element={
+                  <CommunityLoginPage
+                    communitySlug="test-community"
+                    redirectTo={redirectUrl}
+                  />
+                }
+              />
+            </Routes>
+          </BrowserRouter>
+        </QueryClientProvider>
+      );
+
+      // Fill and submit login form
+      const user = userEvent.setup();
+      await user.type(
+        screen.getByPlaceholderText(/email/i),
+        'test@example.com'
+      );
+      await user.type(screen.getByPlaceholderText(/password/i), 'password123');
+      await user.click(screen.getByRole('button', { name: /sign in/i }));
+
+      await waitFor(() => {
+        expect(mockNavigate).toHaveBeenCalledWith(redirectUrl);
+      });
+    });
+
+    it('handles pending invitations', async () => {
+      // Mock no active session
+      (supabase.auth.getSession as vi.Mock).mockResolvedValue({
+        data: { session: null },
+        error: null,
+      });
+
+      // Mock community with invitation required
+      (supabase.from as vi.Mock).mockReturnValueOnce({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            single: vi.fn().mockResolvedValue({
+              data: {
+                customization: mockCustomization,
+                id: '456',
+                settings: {
+                  requireInvitation: true,
+                },
+              },
+              error: null,
+            }),
+          }),
+        }),
+      });
+
+      // Mock pending invitation check
+      (supabase.from as vi.Mock).mockReturnValueOnce({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            single: vi.fn().mockResolvedValue({
+              data: {
+                status: 'pending',
+                email: 'test@example.com',
+              },
+              error: null,
+            }),
+          }),
+        }),
+      });
+
+      renderWithProviders();
+
+      expect(
+        await screen.findByText(/invitation pending/i)
+      ).toBeInTheDocument();
+      expect(await screen.findByText(/check your email/i)).toBeInTheDocument();
     });
   });
 });

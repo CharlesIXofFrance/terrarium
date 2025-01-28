@@ -23,7 +23,6 @@
  * - Must support rewards system
  */
 
-import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAtom } from 'jotai';
 import { userAtom } from '@/lib/stores/auth';
@@ -39,9 +38,15 @@ import { CommunityMemberWelcomeStep } from './steps/CommunityMemberWelcomeStep';
 import { CommunityMemberIdentityStep } from './steps/CommunityMemberIdentityStep';
 import { CommunityMemberProfileStep } from './steps/CommunityMemberProfileStep';
 import { CommunityFieldsStep } from './steps/CommunityFieldsStep';
-import type { CommunityMemberProfile } from '@/lib/types/community-member';
+import type { Profile } from '@/lib/types/profile';
 
-const onboardingSteps = ['welcome', 'identity', 'profile', 'community'];
+const onboardingSteps = [
+  'welcome',
+  'identity',
+  'profile',
+  'community',
+] as const;
+type OnboardingStep = (typeof onboardingSteps)[number];
 
 export function CommunityMemberOnboarding() {
   const navigate = useNavigate();
@@ -51,7 +56,7 @@ export function CommunityMemberOnboarding() {
     communityMemberOnboardingAtom
   );
   const [formData, setFormData] = useAtom(onboardingFormDataAtom);
-  const [rewards, setRewards] = useAtom(onboardingRewardsAtom);
+  const [, setRewards] = useAtom(onboardingRewardsAtom);
 
   const handleAvatarUpload = async (file: File | null) => {
     try {
@@ -89,19 +94,22 @@ export function CommunityMemberOnboarding() {
       toast({
         title: 'Success',
         description: 'Profile picture uploaded successfully',
-        type: 'success',
+        variant: 'default',
       });
     } catch (error) {
       console.error('Error uploading avatar:', error);
       toast({
         title: 'Error',
         description: 'Failed to upload profile picture',
-        type: 'error',
+        variant: 'destructive',
       });
     }
   };
 
-  const handleStepComplete = async (step: string, data: any) => {
+  const handleStepComplete = async (
+    step: OnboardingStep,
+    data: Partial<Profile>
+  ) => {
     try {
       // Update form data
       setFormData((prev) => ({ ...prev, ...data }));
@@ -116,13 +124,13 @@ export function CommunityMemberOnboarding() {
       };
 
       // Get current step index
-      const currentStepIndex = onboardingSteps.indexOf(step as any) + 1;
+      const currentStepIndex = onboardingSteps.indexOf(step) + 1;
       const isLastStep = currentStepIndex === onboardingSteps.length;
 
       // Merge with existing form data for complete profile update
-      const updatedData = {
-        ...formData, // Include existing form data
-        ...data, // Include new form data
+      const updatedProfileData: Partial<Profile> = {
+        ...formData,
+        ...data,
         onboarding_step: currentStepIndex,
         onboarding_completed: isLastStep,
       };
@@ -130,50 +138,72 @@ export function CommunityMemberOnboarding() {
       // Save to database
       const { error } = await supabase
         .from('profiles')
-        .update(updatedData)
+        .update(updatedProfileData)
         .eq('id', user?.id);
 
       if (error) throw error;
+
+      // Update community member data if needed
+      if (isLastStep) {
+        const { error: memberError } = await supabase
+          .from('community_members')
+          .update({
+            onboarding_completed: true,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('profile_id', user?.id)
+          .eq('community_id', user?.user_metadata?.communityId);
+
+        if (memberError) throw memberError;
+      }
 
       // Show rewards if applicable
       if (step === 'welcome') {
         setRewards((prev) => ({ ...prev, showWelcomeMeme: true }));
       }
 
-      // Move to next step
-      const currentIndex = onboardingSteps.indexOf(step as any);
+      // Move to next step or complete onboarding
+      const currentIndex = onboardingSteps.indexOf(step);
       if (currentIndex < onboardingSteps.length - 1) {
         setOnboardingState({
           ...newState,
-          currentStep: onboardingSteps[currentIndex + 1] as any,
+          currentStep: onboardingSteps[currentIndex + 1],
         });
       } else {
-        // Show completion animation
+        // Show completion animation and redirect
         setRewards((prev) => ({ ...prev, showCompletionAnimation: true }));
-        navigate('/m/profile');
+
+        // Get current community from URL
+        const params = new URLSearchParams(window.location.search);
+        const community = params.get('subdomain') || '';
+
+        // Redirect to member profile in the community
+        navigate(`/?subdomain=${community}&path=/profile`);
       }
 
       toast({
         title: 'Success',
         description: 'Progress saved successfully',
-        type: 'success',
+        variant: 'default',
       });
     } catch (error) {
       console.error('Error saving progress:', error);
       toast({
         title: 'Error',
         description: 'Failed to save progress',
-        type: 'error',
+        variant: 'destructive',
       });
     }
   };
 
   const handleBack = () => {
-    const currentIndex = onboardingSteps.indexOf(onboardingState.currentStep);
+    const currentIndex = onboardingSteps.indexOf(
+      onboardingState.currentStep as OnboardingStep
+    );
     if (currentIndex > 0) {
       setOnboardingState({
         ...onboardingState,
-        currentStep: onboardingSteps[currentIndex - 1] as any,
+        currentStep: onboardingSteps[currentIndex - 1],
       });
     }
   };
@@ -183,7 +213,7 @@ export function CommunityMemberOnboarding() {
       <div className="max-w-3xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
         {/* Progress indicator */}
         <OnboardingProgress
-          currentStep={onboardingState.currentStep}
+          currentStep={onboardingState.currentStep as OnboardingStep}
           completed={onboardingState.completed}
         />
 
@@ -214,7 +244,7 @@ export function CommunityMemberOnboarding() {
 
           {onboardingState.currentStep === 'community' && (
             <CommunityFieldsStep
-              communityId={user?.community_id || ''}
+              communityId={user?.user_metadata?.communityId || ''}
               defaultValues={formData.community_fields}
               onSubmit={(data) => handleStepComplete('community', data)}
               onBack={handleBack}

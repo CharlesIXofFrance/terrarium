@@ -5,8 +5,28 @@ import { cleanup } from '@testing-library/react';
 import { QueryClient } from '@tanstack/react-query';
 
 // Mock environment variables
-process.env.VITE_SUPABASE_URL = 'https://test.supabase.co';
-process.env.VITE_SUPABASE_ANON_KEY = 'test-key';
+process.env.VITE_SUPABASE_URL = 'http://127.0.0.1:54321';
+process.env.VITE_SUPABASE_ANON_KEY =
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0';
+
+// Mock Supabase client
+vi.mock('@/lib/supabase', () => ({
+  supabase: {
+    auth: {
+      signInWithOtp: vi.fn(),
+      signOut: vi.fn(),
+      getSession: vi.fn(),
+      signInWithOAuth: vi.fn(),
+      onAuthStateChange: vi.fn(() => ({ unsubscribe: vi.fn() })),
+    },
+    from: vi.fn(() => ({
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      single: vi.fn(),
+      insert: vi.fn().mockReturnThis(),
+    })),
+  },
+}));
 
 // Create a new QueryClient for each test
 beforeEach(() => {

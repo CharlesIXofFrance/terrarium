@@ -1,182 +1,207 @@
 /**
  * Auth Callback Page
  *
- * This page handles the callback after a user clicks a verification link (either signup or login).
+ * This page handles the callback after a user clicks a verification link.
  * The flow works as follows:
- * 1. User clicks email verification link
- * 2. Supabase verifies the token and redirects to this page
- * 3. We check for an existing session or tokens in the URL hash
- * 4. We complete the sign-in process and redirect to the proper community
+ * 1. User clicks magic link in email
+ * 2. Link redirects to this page with token_hash
+ * 3. We verify the token using Proof Key for Code Exchange
+ * 4. We complete sign in and create community member if needed
+ * 5. Redirect to appropriate page (onboarding or dashboard)
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useSetAtom } from 'jotai';
-import { userAtom } from '@/lib/stores/auth';
+import { userAtom, userCommunityAtom, isLoadingAtom } from '@/lib/stores/auth';
 import { supabase } from '@/lib/supabase';
-import { memberAuth } from '@/services/auth';
 import { Spinner } from '@/components/ui/atoms/Spinner';
-import { Alert } from '@/components/ui/atoms/Alert';
+import { toast } from 'sonner';
 
-export function AuthCallback() {
+const DEBUG = process.env.NODE_ENV === 'development';
+
+interface DebugData {
+  [key: string]: unknown;
+}
+
+function debugLog(area: string, message: string, data?: DebugData): void {
+  if (DEBUG) {
+    console.log(`[Auth Callback Debug] ${area}:`, message, data || '');
+  }
+}
+
+export const AuthCallback = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const setUser = useSetAtom(userAtom);
-  const [error, setError] = useState<Error | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
+  const setCommunity = useSetAtom(userCommunityAtom);
+  const setIsLoading = useSetAtom(isLoadingAtom);
 
   useEffect(() => {
-    let mounted = true;
+    let isMounted = true;
 
     const handleCallback = async () => {
-      if (isProcessing) return; // Prevent re-entry
-      setIsProcessing(true);
-
       try {
-        if (!mounted) return;
+        if (!isMounted) return;
+        setIsLoading(true);
 
-        // Get the subdomain from URL params
-        const params = new URLSearchParams(window.location.search);
-        const subdomain = params.get('subdomain');
+        // Get token hash and type from URL
+        const tokenHash = searchParams.get('token_hash');
+        const type = searchParams.get('type');
+        const communitySlug = searchParams.get('subdomain');
 
-        if (!subdomain) {
-          throw new Error('No subdomain specified in redirect URL');
+        debugLog('handleCallback', 'URL parameters', {
+          tokenHash,
+          type,
+          communitySlug,
+          allParams: Object.fromEntries(searchParams.entries()),
+        });
+
+        if (!tokenHash || !type) {
+          throw new Error('Invalid callback URL');
         }
 
-        // Clean the subdomain - remove any trailing paths like /login
-        const cleanSubdomain = subdomain.split('/')[0];
-        console.log('Using cleaned subdomain:', cleanSubdomain);
-
-        // Check if we have tokens in the URL hash
-        const hashParams = new URLSearchParams(
-          window.location.hash.substring(1)
-        );
-        const accessToken = hashParams.get('access_token');
-        const refreshToken = hashParams.get('refresh_token');
-
-        // If we have tokens, set the session
-        if (accessToken && refreshToken) {
-          const {
-            data: { session },
-            error: setSessionError,
-          } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken,
-          });
-
-          if (setSessionError) {
-            console.error('Error setting session:', setSessionError);
-            throw setSessionError;
-          }
-
-          if (!session) {
-            throw new Error('Failed to create session from tokens');
-          }
+        if (!communitySlug) {
+          debugLog('handleCallback', 'No community slug found');
+          throw new Error('Community not found in URL');
         }
 
-        // Get the current session (either existing or newly set)
+        // Exchange token hash for session
+        debugLog('handleCallback', 'Verifying OTP');
         const {
           data: { session },
-          error: sessionError,
-        } = await supabase.auth.getSession();
+          error: verifyError,
+        } = await supabase.auth.verifyOtp({
+          token_hash: tokenHash,
+          type: 'magiclink',
+        });
 
-        if (sessionError) {
-          console.error('Error getting session:', sessionError);
-          throw sessionError;
-        }
-
-        if (!session || !cleanSubdomain) return;
-
-        // Set the user in global state
-        setUser(session.user);
-
-        // Complete the auth process
-        try {
-          console.log('Starting completeSignIn with user:', session.user);
-          const result = await memberAuth.completeSignIn(session.user);
-          console.log('Auth callback - Complete sign in result:', result);
-
-          const { isNewUser } = result.data;
-
-          // Ensure session is persisted before redirecting
-          await supabase.auth.setSession({
-            access_token: session.access_token,
-            refresh_token: session.refresh_token,
+        if (verifyError || !session) {
+          debugLog('handleCallback', 'Verification failed', {
+            error: verifyError,
           });
+          throw new Error(verifyError?.message || 'Verification failed');
+        }
 
-          // Wait for session to be fully persisted
-          await new Promise((resolve) => setTimeout(resolve, 1000));
+        // Create user profile if needed
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
 
-          // Get the session again to verify it's persisted
-          const {
-            data: { session: verifySession },
-          } = await supabase.auth.getSession();
-          if (!verifySession) {
-            throw new Error('Session verification failed after setting');
-          }
+        if (!profile) {
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .insert({
+              id: session.user.id,
+              email: session.user.email,
+              first_name: session.user.user_metadata?.firstName,
+              last_name: session.user.user_metadata?.lastName,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            });
 
-          console.log('Session successfully persisted');
-
-          // Build the redirect URL
-          const isLocalhost =
-            window.location.hostname === 'localhost' ||
-            window.location.hostname === '127.0.0.1';
-          const path = isNewUser ? '/onboarding' : '/dashboard';
-
-          const redirectTo = isLocalhost
-            ? `/?subdomain=${cleanSubdomain}${path}`
-            : `${window.location.protocol}//${cleanSubdomain}.${window.location.host}${path}`;
-
-          console.log('Auth callback - Redirecting to:', redirectTo);
-
-          // Force navigation with window.location
-          window.location.replace(redirectTo);
-        } catch (error) {
-          console.error('Error completing sign in:', error);
-          // Don't throw if it's just a duplicate key error - the membership was still created
-          if (error.code !== '23505') {
-            throw new Error('Failed to complete sign in');
-          } else {
-            console.log('Ignoring duplicate key error - membership exists');
-            // Continue with redirect
-            const redirectTo = isLocalhost
-              ? `/?subdomain=${cleanSubdomain}/onboarding`
-              : `${window.location.protocol}//${cleanSubdomain}.${window.location.host}/onboarding`;
-
-            // Force navigation with window.location
-            window.location.replace(redirectTo);
+          if (profileError) {
+            debugLog('handleCallback', 'Profile creation error', {
+              error: profileError,
+            });
+            throw profileError;
           }
         }
-      } catch (err) {
-        if (!mounted) return;
-        console.error('Auth callback error:', err);
-        setError(err as Error);
+
+        debugLog('handleCallback', 'Session obtained', {
+          userId: session.user.id,
+          email: session.user.email,
+        });
+
+        // Get community data
+        debugLog('handleCallback', 'Fetching community data', {
+          communitySlug,
+        });
+        const { data: community, error: communityError } = await supabase
+          .from('communities')
+          .select('*')
+          .eq('slug', communitySlug)
+          .single();
+
+        if (communityError) {
+          debugLog('handleCallback', 'Community fetch error', {
+            error: communityError,
+          });
+          throw communityError;
+        }
+        if (!community) {
+          debugLog('handleCallback', 'Community not found', { communitySlug });
+          throw new Error('Community not found');
+        }
+
+        // Get or create community member
+        debugLog('handleCallback', 'Creating/updating community member');
+        const { data: member, error: memberError } = await supabase
+          .from('community_members')
+          .upsert(
+            {
+              profile_id: session.user.id,
+              community_id: community.id,
+              role: session.user.user_metadata?.role || 'member',
+              status: 'active',
+              onboarding_completed: false,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            },
+            {
+              onConflict: 'profile_id,community_id',
+              ignoreDuplicates: false,
+            }
+          )
+          .select('*, profile:profiles(*)')
+          .single();
+
+        if (memberError) {
+          debugLog('handleCallback', 'Member upsert error', {
+            error: memberError,
+          });
+          throw memberError;
+        }
+
+        debugLog('handleCallback', 'Member data', { member });
+
+        // Set global state
+        setUser(session.user);
+        setCommunity(community);
+
+        // Redirect based on onboarding status
+        const redirectPath = member.onboarding_completed
+          ? `/?subdomain=${communitySlug}&path=/dashboard`
+          : `/?subdomain=${communitySlug}&path=/onboarding`;
+
+        debugLog('handleCallback', 'Redirecting', { redirectPath });
+        navigate(redirectPath, { replace: true });
+      } catch (error) {
+        debugLog('handleCallback', 'Error in callback', { error });
+        console.error('Auth callback error:', error);
+        toast.error(
+          error instanceof Error ? error.message : 'Authentication failed'
+        );
+        navigate('/login');
       } finally {
-        setIsProcessing(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
 
     handleCallback();
 
     return () => {
-      mounted = false;
+      isMounted = false;
     };
-  }, [navigate, setUser, searchParams, isProcessing]); // Include all dependencies
-
-  if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-4">
-        <Alert variant="error" title="Authentication Failed">
-          {error.message}
-        </Alert>
-      </div>
-    );
-  }
+  }, [navigate, searchParams, setUser, setCommunity, setIsLoading]);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen">
+    <div className="flex h-screen items-center justify-center">
       <Spinner size="lg" />
-      <p className="mt-4 text-gray-600">Completing authentication...</p>
     </div>
   );
-}
+};

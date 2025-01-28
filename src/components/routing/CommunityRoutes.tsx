@@ -1,7 +1,6 @@
 import React from 'react';
 import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { CommunityLayout } from '@/components/layout/CommunityLayout';
-import { MemberLayout } from '@/components/features/members/MemberLayout';
 import { Dashboard } from '@/pages/community/Dashboard';
 import { Members } from '@/pages/community/Members';
 import { Jobs } from '@/pages/community/Jobs';
@@ -15,25 +14,56 @@ import { JobDetails } from '@/pages/member/JobDetails';
 import { Events } from '@/pages/member/Events';
 import { Feed } from '@/pages/member/Feed';
 import { MemberProfile } from '@/pages/member/MemberProfile';
-import { CommunityAccessGuard } from '@/components/features/auth/CommunityAccessGuard';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useAtom } from 'jotai';
 import { userCommunityAtom } from '@/lib/stores/auth';
 import { OwnerOnboarding } from '../features/onboarding/OwnerOnboarding';
 import { CommunityMemberOnboarding } from '../features/onboarding/community-member/CommunityMemberOnboarding';
 import { DataSettings } from '@/pages/community/DataSettings';
-import { ProtectedRoute } from '@/components/features/auth/ProtectedRoute';
+import { AuthGuard } from '../features/auth/AuthGuard';
+import { AuthCallback } from '@/pages/auth/AuthCallback';
+import { UnauthorizedPage } from '@/pages/auth/UnauthorizedPage';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/lib/supabase';
+
+interface UserProfile {
+  id: string;
+  profile_complete: boolean;
+  onboarding_step: number;
+}
 
 export const CommunityRoutes: React.FC = () => {
   const { user } = useAuth();
   const [userCommunity] = useAtom(userCommunityAtom);
   const location = useLocation();
 
-  // Get the path from the subdomain parameter
+  // Parse subdomain and path from URL parameters
   const params = new URLSearchParams(window.location.search);
-  const subdomainParam = params.get('subdomain') || '';
-  const [community, ...pathParts] = subdomainParam.split('/');
-  const path = pathParts.length > 0 ? `/${pathParts.join('/')}` : '/';
+  const community = params.get('subdomain') || '';
+  const pathParam = params.get('path') || '/';
+
+  // Normalize the path by removing any trailing slashes and ensuring it starts with /
+  const path =
+    pathParam.endsWith('/') && pathParam !== '/'
+      ? pathParam.slice(0, -1)
+      : pathParam;
+
+  // Fetch user profile data
+  const { data: profile } = useQuery<UserProfile | null>({
+    queryKey: ['profile', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, profile_complete, onboarding_step')
+        .eq('id', user.id)
+        .single();
+
+      if (error) throw error;
+      return data as UserProfile;
+    },
+    enabled: !!user?.id,
+  });
 
   // Check if user is admin or owner of this specific community
   const hasAdminAccess =
@@ -43,13 +73,16 @@ export const CommunityRoutes: React.FC = () => {
   // Check if onboarding is complete based on user role
   const isOnboardingComplete = hasAdminAccess
     ? userCommunity?.onboarding_completed
-    : user?.profile_complete;
+    : profile?.profile_complete;
 
   console.log('CommunityRoutes - Debug:', {
     user: {
       id: user?.id,
       role: user?.role,
-      profileComplete: user?.profile_complete,
+    },
+    profile: {
+      profileComplete: profile?.profile_complete,
+      onboardingStep: profile?.onboarding_step,
     },
     userCommunity: {
       id: userCommunity?.id,
@@ -60,175 +93,118 @@ export const CommunityRoutes: React.FC = () => {
     hasAdminAccess,
     isOnboardingComplete,
     pathname: location.pathname,
-    subdomainParam,
     community,
     path,
   });
 
+  // Helper function to build URL with subdomain and path
+  const buildUrl = (subdomain: string, path: string) =>
+    `/?subdomain=${subdomain}&path=${path}`;
+
+  // If onboarding is not complete, redirect to onboarding
+  if (!isOnboardingComplete && path !== '/onboarding') {
+    return <Navigate to={buildUrl(community, '/onboarding')} replace />;
+  }
+
   // Admin routes mapping
   const adminRoutes: Record<string, React.ReactNode> = {
     '/settings': (
-      <ProtectedRoute ownerOnly>
+      <AuthGuard requiredRole="admin">
         <Dashboard />
-      </ProtectedRoute>
+      </AuthGuard>
     ),
     '/settings/dashboard': (
-      <ProtectedRoute ownerOnly>
+      <AuthGuard requiredRole="admin">
         <Dashboard />
-      </ProtectedRoute>
+      </AuthGuard>
     ),
     '/settings/members': (
-      <ProtectedRoute ownerOnly>
+      <AuthGuard requiredRole="admin">
         <Members />
-      </ProtectedRoute>
+      </AuthGuard>
     ),
     '/settings/jobs': (
-      <ProtectedRoute ownerOnly>
+      <AuthGuard requiredRole="admin">
         <Jobs />
-      </ProtectedRoute>
+      </AuthGuard>
     ),
     '/settings/employers': (
-      <ProtectedRoute ownerOnly>
+      <AuthGuard requiredRole="admin">
         <Employers />
-      </ProtectedRoute>
+      </AuthGuard>
     ),
     '/settings/job-board': (
-      <ProtectedRoute ownerOnly>
+      <AuthGuard requiredRole="admin">
         <JobBoardSettings />
-      </ProtectedRoute>
+      </AuthGuard>
     ),
     '/settings/branding': (
-      <ProtectedRoute ownerOnly>
+      <AuthGuard requiredRole="admin">
         <BrandingSettings />
-      </ProtectedRoute>
-    ),
-    '/settings/customize': (
-      <ProtectedRoute ownerOnly>
-        <CustomizationPortal />
-      </ProtectedRoute>
+      </AuthGuard>
     ),
     '/settings/data': (
-      <ProtectedRoute ownerOnly>
+      <AuthGuard requiredRole="admin">
         <DataSettings />
-      </ProtectedRoute>
+      </AuthGuard>
+    ),
+    '/settings/customization': (
+      <AuthGuard requiredRole="admin">
+        <CustomizationPortal />
+      </AuthGuard>
     ),
   };
 
   // Member routes mapping
   const memberRoutes: Record<string, React.ReactNode> = {
-    '/': (
-      <ProtectedRoute>
-        <MemberHub />
-      </ProtectedRoute>
-    ),
-    '/jobs': (
-      <ProtectedRoute>
-        <JobBoard />
-      </ProtectedRoute>
-    ),
-    '/events': (
-      <ProtectedRoute>
-        <Events />
-      </ProtectedRoute>
-    ),
-    '/feed': (
-      <ProtectedRoute>
-        <Feed />
-      </ProtectedRoute>
-    ),
-    '/profile': (
-      <ProtectedRoute>
-        <MemberProfile />
-      </ProtectedRoute>
-    ),
+    '/': <MemberHub />,
+    '/jobs': <JobBoard />,
+    '/jobs/:id': <JobDetails />,
+    '/events': <Events />,
+    '/feed': <Feed />,
+    '/profile': <MemberProfile />,
   };
 
-  // Onboarding routes
-  const onboardingRoutes: Record<string, React.ReactNode> = {
-    '/owner-onboarding': (
-      <ProtectedRoute ownerOnly>
-        <OwnerOnboarding />
-      </ProtectedRoute>
+  // Special routes
+  const specialRoutes: Record<string, React.ReactNode> = {
+    '/onboarding': hasAdminAccess ? (
+      <OwnerOnboarding />
+    ) : (
+      <CommunityMemberOnboarding />
     ),
-    '/member-onboarding': (
-      <ProtectedRoute>
-        <CommunityMemberOnboarding />
-      </ProtectedRoute>
-    ),
+    '/auth/callback': <AuthCallback />,
+    '/unauthorized': <UnauthorizedPage />,
   };
 
-  // Function to find matching route with dynamic parameters
-  const findMatchingRoute = (
-    routes: Record<string, React.ReactNode>,
-    path: string
-  ) => {
-    // First try exact match
-    if (routes[path]) {
-      return routes[path];
-    }
+  // Determine which routes to show based on user role
+  const routesToUse = hasAdminAccess
+    ? { ...adminRoutes, ...memberRoutes, ...specialRoutes }
+    : { ...memberRoutes, ...specialRoutes };
 
-    // Handle dynamic routes
-    if (path.startsWith('/jobs/')) {
-      return (
-        <ProtectedRoute>
-          <JobDetails />
-        </ProtectedRoute>
-      );
-    }
+  // Find matching route
+  const matchingRoute = routesToUse[path];
 
-    return null;
-  };
+  console.log('CommunityRoutes - Route Debug:', {
+    path,
+    availableRoutes: Object.keys(routesToUse),
+    matchingRoute: !!matchingRoute,
+    specialRoutes: Object.keys(specialRoutes),
+    isOnboardingComplete,
+    profile,
+  });
 
-  // Find matching route from all route types
-  const getMatchingRoute = (path: string) => {
-    // First check onboarding routes
-    const onboardingRoute = findMatchingRoute(onboardingRoutes, path);
-    if (onboardingRoute) return onboardingRoute;
-
-    // Then check admin routes
-    const adminRoute = findMatchingRoute(adminRoutes, path);
-    if (adminRoute) return adminRoute;
-
-    // Finally check member routes
-    const memberRoute = findMatchingRoute(memberRoutes, path);
-    if (memberRoute) return memberRoute;
-
-    // No match found
-    return null;
-  };
-
-  // Handle onboarding routes
-  if (path === '/onboarding') {
-    // If we're on a community subdomain, always show member onboarding
-    if (community) {
-      return <CommunityMemberOnboarding />;
-    }
-    // Otherwise, show owner onboarding for admins
-    return <OwnerOnboarding />;
-  }
-
-  // Redirect to onboarding if not complete
-  if (!isOnboardingComplete && !path.includes('/onboarding')) {
-    return <Navigate to={`/?subdomain=${community}/onboarding`} replace />;
-  }
-
-  const matchingRoute = getMatchingRoute(path);
+  const content = matchingRoute ? (
+    <Route path="*" element={matchingRoute} />
+  ) : (
+    <Route
+      path="*"
+      element={<Navigate to={buildUrl(community, '/')} replace />}
+    />
+  );
 
   return (
     <Routes>
-      <Route
-        element={
-          <CommunityAccessGuard>
-            <CommunityLayout>{matchingRoute}</CommunityLayout>
-          </CommunityAccessGuard>
-        }
-      >
-        {/* Redirect root to member hub */}
-        <Route
-          path="/"
-          element={<Navigate to={`/?subdomain=${community}/`} replace />}
-        />
-      </Route>
+      <Route element={<CommunityLayout />}>{content}</Route>
     </Routes>
   );
 };

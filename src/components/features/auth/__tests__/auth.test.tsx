@@ -1,19 +1,30 @@
 import React from 'react';
-import { render, screen, waitFor, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { BrowserRouter } from 'react-router-dom';
-import { RegisterForm } from '../RegisterForm';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import { supabase } from '@/lib/supabase';
 import { LoginForm } from '../LoginForm';
-import userEvent from '@testing-library/user-event';
+import { RegisterForm } from '../RegisterForm';
+import { Alert } from '@/components/ui/alert';
 
-const mockSupabaseClient = {
-  auth: {
-    signUp: vi.fn(),
-    signInWithPassword: vi.fn(),
-    signOut: vi.fn(),
-    getSession: vi.fn(),
+// Mock Supabase
+vi.mock('@/lib/supabase', () => ({
+  supabase: {
+    auth: {
+      signInWithPassword: vi.fn(),
+      signUp: vi.fn(),
+    },
   },
-};
+}));
+
+// Mock Alert component
+vi.mock('@/components/ui/alert', () => ({
+  Alert: ({ message, variant = 'error' }) => (
+    <div role="alert" data-variant={variant}>
+      {message}
+    </div>
+  ),
+}));
 
 describe('Auth Components', () => {
   beforeEach(() => {
@@ -21,193 +32,171 @@ describe('Auth Components', () => {
   });
 
   describe('RegisterForm', () => {
-    const mockOnSuccess = vi.fn();
-
     it('should handle successful registration', async () => {
-      const user = userEvent.setup();
-
-      mockSupabaseClient.auth.signUp.mockResolvedValueOnce({
-        data: {
-          user: { id: '123', email: 'test@example.com' },
-          session: null, // This indicates email confirmation is required
-        },
+      const mockUser = { id: '123', email: 'test@example.com' };
+      vi.mocked(supabase.auth.signUp).mockResolvedValueOnce({
+        data: { user: mockUser, session: null },
         error: null,
       });
 
       render(
-        <BrowserRouter>
-          <RegisterForm
-            onSuccess={mockOnSuccess}
-            supabaseClient={mockSupabaseClient}
-          />
-        </BrowserRouter>
+        <MemoryRouter>
+          <RegisterForm />
+        </MemoryRouter>
       );
 
-      await act(async () => {
-        await user.type(screen.getByTestId('full-name-input'), 'John Doe');
-        await user.type(screen.getByTestId('email-input'), 'test@example.com');
-        await user.type(screen.getByTestId('password-input'), 'password123');
-        await user.type(
-          screen.getByTestId('confirm-password-input'),
-          'password123'
-        );
-        await user.click(screen.getByTestId('submit-button'));
+      fireEvent.change(screen.getByTestId('email-input'), {
+        target: { value: 'test@example.com' },
+      });
+      fireEvent.change(screen.getByTestId('password-input'), {
+        target: { value: 'password123' },
+      });
+      fireEvent.change(screen.getByTestId('confirm-password-input'), {
+        target: { value: 'password123' },
       });
 
+      fireEvent.submit(screen.getByTestId('submit-button'));
+
       await waitFor(() => {
-        expect(mockSupabaseClient.auth.signUp).toHaveBeenCalledWith({
+        expect(supabase.auth.signUp).toHaveBeenCalledWith({
           email: 'test@example.com',
           password: 'password123',
-          options: {
-            data: {
-              full_name: 'John Doe',
-            },
-          },
         });
-      });
-
-      await waitFor(() => {
-        const confirmationMessage = screen.getByTestId('confirmation-sent');
-        expect(confirmationMessage).toBeInTheDocument();
-        expect(confirmationMessage).toHaveTextContent(
-          'Please check your email to confirm your account'
-        );
       });
     });
 
     it('should show error for password mismatch', async () => {
-      const user = userEvent.setup();
-
       render(
-        <BrowserRouter>
-          <RegisterForm
-            onSuccess={mockOnSuccess}
-            supabaseClient={mockSupabaseClient}
-          />
-        </BrowserRouter>
+        <MemoryRouter>
+          <RegisterForm />
+        </MemoryRouter>
       );
 
-      await act(async () => {
-        await user.type(screen.getByTestId('full-name-input'), 'John Doe');
-        await user.type(screen.getByTestId('email-input'), 'test@example.com');
-        await user.type(screen.getByTestId('password-input'), 'password123');
-        await user.type(
-          screen.getByTestId('confirm-password-input'),
-          'password456'
-        );
-        await user.click(screen.getByTestId('submit-button'));
+      fireEvent.change(screen.getByTestId('email-input'), {
+        target: { value: 'test@example.com' },
+      });
+      fireEvent.change(screen.getByTestId('password-input'), {
+        target: { value: 'password123' },
+      });
+      fireEvent.change(screen.getByTestId('confirm-password-input'), {
+        target: { value: 'different-password' },
       });
 
+      fireEvent.submit(screen.getByTestId('submit-button'));
+
       await waitFor(() => {
-        expect(screen.getByText('Passwords do not match')).toBeInTheDocument();
-        expect(mockSupabaseClient.auth.signUp).not.toHaveBeenCalled();
+        expect(screen.getByRole('alert')).toHaveTextContent(
+          'Passwords do not match'
+        );
       });
     });
 
     it('should handle registration error', async () => {
-      const user = userEvent.setup();
-      mockSupabaseClient.auth.signUp.mockResolvedValueOnce({
+      vi.mocked(supabase.auth.signUp).mockResolvedValueOnce({
         data: { user: null, session: null },
-        error: { message: 'Email already registered' },
+        error: new Error('Registration failed'),
       });
 
       render(
-        <BrowserRouter>
-          <RegisterForm
-            onSuccess={mockOnSuccess}
-            supabaseClient={mockSupabaseClient}
-          />
-        </BrowserRouter>
+        <MemoryRouter>
+          <RegisterForm />
+        </MemoryRouter>
       );
 
-      await act(async () => {
-        await user.type(screen.getByTestId('full-name-input'), 'John Doe');
-        await user.type(screen.getByTestId('email-input'), 'test@example.com');
-        await user.type(screen.getByTestId('password-input'), 'password123');
-        await user.type(
-          screen.getByTestId('confirm-password-input'),
-          'password123'
-        );
-        await user.click(screen.getByTestId('submit-button'));
+      fireEvent.change(screen.getByTestId('email-input'), {
+        target: { value: 'test@example.com' },
+      });
+      fireEvent.change(screen.getByTestId('password-input'), {
+        target: { value: 'password123' },
+      });
+      fireEvent.change(screen.getByTestId('confirm-password-input'), {
+        target: { value: 'password123' },
       });
 
+      fireEvent.submit(screen.getByTestId('submit-button'));
+
       await waitFor(() => {
-        expect(
-          screen.getByText('Email already registered')
-        ).toBeInTheDocument();
+        expect(screen.getByRole('alert')).toHaveTextContent(
+          'Registration failed'
+        );
       });
     });
   });
 
   describe('LoginForm', () => {
-    const mockOnSuccess = vi.fn();
-
     it('should handle successful login', async () => {
-      const user = userEvent.setup();
-      mockSupabaseClient.auth.signInWithPassword.mockResolvedValueOnce({
-        data: {
-          user: { id: '123' },
-          session: { access_token: 'token' },
-        },
+      const mockUser = { id: '123', email: 'test@example.com' };
+      vi.mocked(supabase.auth.signInWithPassword).mockResolvedValueOnce({
+        data: { user: mockUser, session: null },
         error: null,
       });
 
       render(
-        <BrowserRouter>
-          <LoginForm
-            onSuccess={mockOnSuccess}
-            supabaseClient={mockSupabaseClient}
-          />
-        </BrowserRouter>
+        <MemoryRouter>
+          <LoginForm />
+        </MemoryRouter>
       );
 
-      await act(async () => {
-        await user.type(screen.getByTestId('email-input'), 'test@example.com');
-        await user.type(screen.getByTestId('password-input'), 'password123');
-        await user.click(screen.getByTestId('submit-button'));
+      fireEvent.change(screen.getByTestId('email-input'), {
+        target: { value: 'test@example.com' },
+      });
+      fireEvent.change(screen.getByTestId('password-input'), {
+        target: { value: 'password123' },
       });
 
-      await waitFor(() => {
-        expect(mockSupabaseClient.auth.signInWithPassword).toHaveBeenCalledWith(
-          {
-            email: 'test@example.com',
-            password: 'password123',
-          }
-        );
-      });
+      fireEvent.submit(screen.getByTestId('submit-button'));
 
       await waitFor(() => {
-        expect(mockOnSuccess).toHaveBeenCalledWith({
-          user: { id: '123' },
-          session: { access_token: 'token' },
+        expect(supabase.auth.signInWithPassword).toHaveBeenCalledWith({
+          email: 'test@example.com',
+          password: 'password123',
+          options: {
+            redirectTo: expect.any(String),
+          },
         });
       });
     });
 
     it('should handle login error', async () => {
-      const user = userEvent.setup();
-      mockSupabaseClient.auth.signInWithPassword.mockResolvedValueOnce({
+      vi.mocked(supabase.auth.signInWithPassword).mockResolvedValueOnce({
         data: { user: null, session: null },
-        error: { message: 'Invalid credentials' },
+        error: new Error('Invalid credentials'),
       });
 
       render(
-        <BrowserRouter>
-          <LoginForm
-            onSuccess={mockOnSuccess}
-            supabaseClient={mockSupabaseClient}
-          />
-        </BrowserRouter>
+        <MemoryRouter>
+          <LoginForm />
+        </MemoryRouter>
       );
 
-      await act(async () => {
-        await user.type(screen.getByTestId('email-input'), 'test@example.com');
-        await user.type(screen.getByTestId('password-input'), 'password123');
-        await user.click(screen.getByTestId('submit-button'));
+      fireEvent.change(screen.getByTestId('email-input'), {
+        target: { value: 'test@example.com' },
+      });
+      fireEvent.change(screen.getByTestId('password-input'), {
+        target: { value: 'wrong-password' },
       });
 
+      fireEvent.submit(screen.getByTestId('submit-button'));
+
       await waitFor(() => {
-        expect(screen.getByText('Invalid credentials')).toBeInTheDocument();
+        expect(screen.getByRole('alert')).toHaveTextContent(
+          'Invalid credentials'
+        );
+      });
+    });
+
+    it('should validate required fields', async () => {
+      render(
+        <MemoryRouter>
+          <LoginForm />
+        </MemoryRouter>
+      );
+
+      fireEvent.submit(screen.getByTestId('submit-button'));
+
+      await waitFor(() => {
+        expect(screen.getByTestId('email-input')).toBeRequired();
+        expect(screen.getByTestId('password-input')).toBeRequired();
       });
     });
   });

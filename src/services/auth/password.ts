@@ -22,6 +22,14 @@ import { supabase } from '@/lib/supabase';
 import { AuthResult, BaseAuthService } from './base';
 import { User, UserRole } from '@/lib/utils/types';
 
+interface TempProfileData {
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: UserRole;
+  communityId?: string;
+}
+
 interface PasswordSignUpData {
   email: string;
   password: string;
@@ -43,6 +51,38 @@ interface PasswordSignInData {
 class PasswordAuthService extends BaseAuthService {
   constructor(private readonly supabase: SupabaseClient) {
     super();
+  }
+
+  /**
+   * Creates a temporary profile for a new user during signup
+   */
+  private async createTempProfile({
+    email,
+    firstName,
+    lastName,
+    role,
+    communityId,
+  }: TempProfileData) {
+    const { data, error } = await this.supabase
+      .from('profiles')
+      .insert([
+        {
+          email,
+          first_name: firstName,
+          last_name: lastName,
+          role,
+          community_id: communityId,
+          onboarding_step: 0,
+          profile_complete: false,
+        },
+      ])
+      .select()
+      .single();
+
+    if (error) throw error;
+    if (!data) throw new Error('Failed to create temporary profile');
+
+    return data;
   }
 
   /**

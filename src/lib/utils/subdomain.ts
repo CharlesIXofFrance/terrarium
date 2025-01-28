@@ -16,7 +16,8 @@ export function parseDomain(
   if (hostname.includes('localhost')) {
     // For local development, use URL parameters to simulate subdomains
     const params = new URLSearchParams(window.location.search);
-    const subdomain = params.get('subdomain')?.split('/')[0] || null; // Only take the first part before any slash
+    const subdomainParam = params.get('subdomain');
+    const subdomain = subdomainParam ? subdomainParam.split('/')[0] : null;
 
     // Debug logging
     console.log('parseDomain - Debug:', {
@@ -66,19 +67,15 @@ export function getSubdomainUrl(
   path: string = ''
 ): string {
   if (window.location.hostname.includes('localhost')) {
-    // Get current subdomain parameter to preserve any existing path
-    const params = new URLSearchParams(window.location.search);
-    const currentSubdomain = params.get('subdomain')?.split('/')[0] || '';
-
     // Create URL with the path
     const url = new URL('http://localhost:3000/');
 
-    // Set subdomain parameter with path
+    // Set subdomain and path parameters separately
     if (subdomain) {
-      url.searchParams.set(
-        'subdomain',
-        path ? `${subdomain}${path}` : subdomain
-      );
+      url.searchParams.set('subdomain', subdomain);
+    }
+    if (path && path !== '/') {
+      url.searchParams.set('path', path);
     }
 
     return url.toString();

@@ -1,306 +1,159 @@
+import { AuthError, AuthResponse, User, Session } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabase';
+import { UserRole } from '@/lib/utils/types';
+
+const DEBUG = process.env.NODE_ENV === 'development';
+
+interface DebugData {
+  [key: string]: unknown;
+}
+
+function debugLog(area: string, message: string, data?: DebugData) {
+  if (DEBUG) {
+    console.log(`[Auth Debug] ${area}:`, message, data || '');
+  }
+}
+
+/**
+ * Result of an authentication operation
+ */
+export interface AuthResult {
+  success: boolean;
+  message: string;
+  error?: string;
+  user?: User;
+}
+
+/**
+ * Options for signing in with email
+ */
+export interface SignInOptions {
+  role: UserRole;
+  communitySlug: string;
+  firstName?: string;
+  lastName?: string;
+}
+
 /**
  * Passwordless authentication service for members and employers.
  * Uses magic links for a seamless sign-in experience.
  */
-
-import { supabase } from '@/lib/supabase';
-import { AuthResult, BaseAuthService } from './base';
-import { User, UserRole } from '@/lib/utils/types';
-
-interface PasswordlessSignUpData {
-  email: string;
-  firstName: string;
-  lastName: string;
-  role: UserRole;
-  communityId?: string;
-}
-
-interface PasswordlessSignInData {
-  email: string;
-  role: UserRole;
-  communityId?: string;
-}
-
-export class PasswordlessAuthService extends BaseAuthService {
-  async signUp(data: PasswordlessSignUpData): Promise<AuthResult> {
+export class PasswordlessAuthService {
+  /**
+   * Send a magic link to the user's email using Proof Key for Code Exchange (PKCE) flow
+   * @param email User's email address
+   * @param options Additional options like role and community info
+   */
+  async signInWithEmail(
+    email: string,
+    options: SignInOptions
+  ): Promise<AuthResult> {
     try {
-      const email = data.email.toLowerCase().trim();
-      console.log('Signing up with data:', { ...data, email });
+      debugLog('signInWithEmail', 'Starting auth flow', { email, ...options });
 
-      // Get the current community from the hostname
-      const hostname = window.location.hostname;
-      const subdomain = hostname.split('.')[0];
-      const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
-      const communitySlug = isLocalhost
-        ? new URLSearchParams(window.location.search).get('subdomain') || '' // Get from URL in localhost
-        : hostname.includes('localhost')
-          ? subdomain
-          : hostname.split('.')[0];
+      // Construct callback URL with community info and PKCE parameters
+      const callbackUrl = new URL('/auth/callback', window.location.origin);
+      callbackUrl.searchParams.set('communitySlug', options.communitySlug);
 
-      // Create user with email confirmation enabled
-      const { data: authData, error: signUpError } = await supabase.auth.signUp(
-        {
-          email,
-          password: crypto.randomUUID(), // Random password since we're using OTP
-          options: {
-            data: {
-              firstName: data.firstName,
-              lastName: data.lastName,
-              role: data.role,
-              communitySlug: communitySlug, // Store the slug in metadata
-            },
-            emailRedirectTo: `${window.location.origin}/auth/callback?subdomain=${communitySlug}`,
-          },
-        }
-      );
+      debugLog('signInWithEmail', 'Callback URL constructed', {
+        url: callbackUrl.toString(),
+      });
 
-      console.log('Auth response:', { data: authData, error: signUpError });
-
-      if (signUpError) {
-        console.error('Auth error details:', {
-          name: signUpError.name,
-          message: signUpError.message,
-          status: signUpError.status,
-          stack: signUpError.stack,
-        });
-        throw signUpError;
-      }
-
-      // Check if user was created
-      if (!authData.user) {
-        throw new Error('No user returned from signup');
-      }
-
-      return {
-        success: true,
-        message: 'Check your email for the confirmation link',
-        data: {
-          id: authData.user.id,
-          email: authData.user.email,
-        },
-      };
-    } catch (error) {
-      console.error('Error in passwordless signUp:', error);
-      return {
-        success: false,
-        message: error instanceof Error ? error.message : 'Failed to sign up',
-        error,
-      };
-    }
-  }
-
-  async signIn(data: PasswordlessSignInData): Promise<AuthResult> {
-    try {
-      const email = data.email.toLowerCase().trim();
-      console.log('Signing in with data:', { ...data, email });
-
-      // Get the current community from the hostname
-      const hostname = window.location.hostname;
-      const subdomain = hostname.split('.')[0];
-      const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
-      const communitySlug = isLocalhost
-        ? new URLSearchParams(window.location.search).get('subdomain') || '' // Get from URL in localhost
-        : hostname.includes('localhost')
-          ? subdomain
-          : hostname.split('.')[0];
-
-      // Send magic link
-      const { data: authData, error } = await supabase.auth.signInWithOtp({
+      const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback?subdomain=${communitySlug}`,
+          emailRedirectTo: callbackUrl.toString(),
+          data: {
+            role: options.role,
+            communitySlug: options.communitySlug,
+            firstName: options.firstName,
+            lastName: options.lastName,
+            isNewUser: Boolean(options.firstName && options.lastName),
+          },
+          shouldCreateUser: Boolean(options.firstName && options.lastName),
         },
       });
 
-      console.log('Auth response:', { data: authData, error });
-
       if (error) {
-        console.error('Auth error details:', {
-          name: error.name,
-          message: error.message,
-          status: error.status,
-          stack: error.stack,
-        });
+        debugLog('signInWithEmail', 'Auth error', { error });
+        if (error.message.includes('rate limit')) {
+          return {
+            success: false,
+            message: 'Too many requests',
+            error: 'Too many requests',
+          };
+        }
         throw error;
       }
 
+      debugLog('signInWithEmail', 'Magic link sent successfully');
       return {
         success: true,
         message: 'Check your email for the magic link',
       };
-    } catch (error) {
-      console.error('Error in passwordless signIn:', error);
+    } catch (err) {
+      debugLog('signInWithEmail', 'Unexpected error', { error: err });
       return {
         success: false,
         message:
-          error instanceof Error ? error.message : 'Failed to send magic link',
-        error,
+          err instanceof Error ? err.message : 'Failed to send magic link',
+        error: err instanceof Error ? err.message : 'Unknown error',
       };
     }
   }
 
-  async completeSignIn(user: User): Promise<AuthResult> {
-    try {
-      console.log('Completing sign in for user:', user.id);
+  /**
+   * Verify OTP token hash from magic link
+   * @param tokenHash The token hash from the magic link
+   * @param type The type of verification ('magic-link' for passwordless auth)
+   */
+  async verifyOtp(
+    tokenHash: string,
+    type: 'magiclink'
+  ): Promise<{ session: Session | null; user: User | null }> {
+    debugLog('verifyOtp', 'Starting verification', { tokenHash, type });
 
-      // First try to get community from user metadata
-      let communitySlug = user.user_metadata?.communitySlug;
+    const { data, error } = await supabase.auth.verifyOtp({
+      token_hash: tokenHash,
+      type,
+    });
 
-      // If not in metadata, try URL params
-      if (!communitySlug) {
-        const params = new URLSearchParams(window.location.search);
-        communitySlug = params.get('subdomain');
-      }
-
-      if (!communitySlug) {
-        throw new Error(
-          'No community specified in user metadata or redirect URL'
-        );
-      }
-
-      // Clean the slug - remove any path components
-      communitySlug = communitySlug.split('/')[0];
-      console.log('Using community slug:', communitySlug);
-
-      // Get community
-      const { data: community, error: communityError } = await supabase
-        .from('communities')
-        .select('id, name, slug, description, logo_url')
-        .eq('slug', communitySlug)
-        .maybeSingle();
-
-      if (communityError) {
-        console.error('Error finding community:', communityError);
-        throw communityError;
-      }
-
-      if (!community) {
-        throw new Error(`Community not found with slug: ${communitySlug}`);
-      }
-
-      console.log('Found community:', community);
-
-      // Get user profile
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('id, email, first_name, last_name, role')
-        .eq('id', user.id)
-        .maybeSingle();
-
-      if (profileError) {
-        console.error('Error finding profile:', profileError);
-        throw profileError;
-      }
-
-      if (!profile) {
-        throw new Error(`Profile not found for user: ${user.id}`);
-      }
-
-      console.log('Found profile:', profile);
-
-      // First check if membership exists
-      const { data: existingMembership, error: checkError } = await supabase
-        .from('community_members')
-        .select(
-          `
-          *,
-          community:communities!inner (
-            id,
-            name,
-            slug,
-            description,
-            logo_url
-          )
-        `
-        )
-        .eq('profile_id', user.id)
-        .eq('community_id', community.id)
-        .maybeSingle();
-
-      if (checkError) {
-        console.error('Error checking membership:', checkError);
-        throw checkError;
-      }
-
-      let membership;
-
-      if (!existingMembership) {
-        console.log('Creating new membership for user:', user.id);
-        // Use upsert with onConflict to handle race conditions
-        const { data: newMembership, error: createError } = await supabase
-          .from('community_members')
-          .upsert(
-            {
-              profile_id: user.id,
-              community_id: community.id,
-              role: user.user_metadata?.role || 'member',
-              status: 'active',
-              onboarding_completed: false,
-            },
-            {
-              onConflict: 'profile_id,community_id',
-              ignoreDuplicates: false, // We want to get the data back
-            }
-          )
-          .select(
-            `
-            *,
-            community:communities!inner (
-              id,
-              name,
-              slug,
-              description,
-              logo_url
-            )
-          `
-          )
-          .single();
-
-        if (createError) {
-          console.error('Error creating membership:', createError);
-          throw createError;
-        }
-
-        if (!newMembership) {
-          throw new Error('Failed to create or retrieve membership');
-        }
-
-        membership = newMembership;
-        console.log('Created/Retrieved membership:', membership);
-      } else {
-        membership = existingMembership;
-        console.log('Using existing membership:', membership);
-      }
-
-      // Count total memberships for this user
-      const { count, error: countError } = await supabase
-        .from('community_members')
-        .select('*', { count: 'exact', head: true })
-        .eq('profile_id', user.id);
-
-      if (countError) {
-        console.error('Error counting memberships:', countError);
-        throw countError;
-      }
-
-      const isNewUser = count === 1;
-      console.log('Is new user:', isNewUser);
-
-      return {
-        success: true,
-        message: isNewUser ? 'Welcome to Terrarium!' : 'Welcome back!',
-        data: {
-          ...profile,
-          communitySlug,
-          isNewUser,
-        },
-      };
-    } catch (error) {
-      console.error('Error in completeSignIn:', error);
+    if (error) {
+      debugLog('verifyOtp', 'Verification error', { error });
       throw error;
     }
+
+    debugLog('verifyOtp', 'Verification successful', { data });
+    return {
+      session: data.session,
+      user: data.session?.user || null,
+    };
+  }
+
+  /**
+   * Get the current session and user
+   */
+  async getSession(): Promise<{ session: Session | null; user: User | null }> {
+    debugLog('getSession', 'Fetching session');
+    const { data } = await supabase.auth.getSession();
+    return {
+      session: data.session,
+      user: data.session?.user || null,
+    };
+  }
+
+  /**
+   * Sign out the current user
+   */
+  async signOut(): Promise<void> {
+    debugLog('signOut', 'Starting sign out');
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      debugLog('signOut', 'Sign out error', { error });
+      throw error;
+    }
+    debugLog('signOut', 'Sign out successful');
   }
 }
 
 export const memberAuth = new PasswordlessAuthService();
-export type { AuthResult };

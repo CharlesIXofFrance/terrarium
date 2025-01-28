@@ -20,18 +20,18 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useCommunityCustomization } from '@/hooks/useCommunityCustomization';
 import { supabase } from '@/lib/supabase';
-import { memberAuth } from '@/services/auth';
 import { UserRole } from '@/lib/utils/types';
 import { Spinner } from '@/components/ui/atoms/Spinner';
 import { Button } from '@/components/ui/atoms/Button';
+import { Input } from '@/components/ui/atoms/Input';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
 });
 
 const signupSchema = loginSchema.extend({
-  first_name: z.string().min(1, 'First name is required'),
-  last_name: z.string().min(1, 'Last name is required'),
+  firstName: z.string().min(1, 'First name is required'),
+  lastName: z.string().min(1, 'Last name is required'),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
@@ -45,13 +45,13 @@ export function CommunityLoginPage({ communitySlug }: CommunityLoginPageProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSignup, setIsSignup] = useState(false);
   const [verificationSent, setVerificationSent] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   // Get community slug from props or subdomain
   const params = new URLSearchParams(window.location.search);
-  const subdomainParam = params.get('subdomain') || '';
-  const [community] = subdomainParam.split('/');
-  const slug = communitySlug || community;
+  const slug = communitySlug || params.get('subdomain') || '';
+  const path = params.get('path') || '/';
 
   const {
     customization,
@@ -63,64 +63,10 @@ export function CommunityLoginPage({ communitySlug }: CommunityLoginPageProps) {
     register,
     handleSubmit,
     formState: { errors },
-    setError,
     reset,
   } = useForm<SignupFormData>({
     resolver: zodResolver(isSignup ? signupSchema : loginSchema),
   });
-
-  const onSubmit = async (data: SignupFormData) => {
-    setIsSubmitting(true);
-    try {
-      // Get community ID
-      const { data: community, error: communityError } = await supabase
-        .from('communities')
-        .select('id, name')
-        .eq('slug', slug)
-        .single();
-
-      if (communityError || !community) {
-        throw new Error('Community not found');
-      }
-
-      if (isSignup) {
-        const result = await memberAuth.signUp({
-          email: data.email.toLowerCase().trim(),
-          firstName: data.first_name,
-          lastName: data.last_name,
-          role: UserRole.MEMBER,
-          communityId: community.id,
-        });
-
-        if (!result.success) {
-          throw result.error || new Error('Failed to sign up');
-        }
-      } else {
-        const result = await memberAuth.signIn({
-          email: data.email.toLowerCase().trim(),
-          role: UserRole.MEMBER,
-          communityId: community.id,
-        });
-
-        if (!result.success) {
-          throw result.error || new Error('Failed to sign in');
-        }
-      }
-
-      setVerificationSent(true);
-      reset(); // Clear form after successful submission
-    } catch (error) {
-      console.error('Auth error:', error);
-      setError('root', {
-        message:
-          error instanceof Error
-            ? error.message
-            : 'An unexpected error occurred',
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   if (!slug) {
     return <Navigate to="/login" replace />;
@@ -138,6 +84,53 @@ export function CommunityLoginPage({ communitySlug }: CommunityLoginPageProps) {
     console.error('Error loading community customization:', customizationError);
     return <Navigate to="/login" replace />;
   }
+
+  const onSubmit = async (data: SignupFormData) => {
+    try {
+      setIsSubmitting(true);
+      setError(null);
+
+      // Construct callback URL with community info
+      const callbackUrl = new URL('/auth/callback', window.location.origin);
+      callbackUrl.searchParams.set('subdomain', slug);
+      // Preserve the original path for post-login redirect
+      if (path !== '/login') {
+        callbackUrl.searchParams.set('path', path);
+      }
+
+      const { error: signInError } = await supabase.auth.signInWithOtp({
+        email: data.email,
+        options: {
+          emailRedirectTo: callbackUrl.toString(),
+          data: isSignup
+            ? {
+                firstName: data.firstName,
+                lastName: data.lastName,
+                role: UserRole.MEMBER,
+                communitySlug: slug,
+                isNewUser: true,
+              }
+            : {
+                role: UserRole.MEMBER,
+                communitySlug: slug,
+                isNewUser: false,
+              },
+          shouldCreateUser: isSignup,
+        },
+      });
+
+      if (signInError) throw signInError;
+
+      setVerificationSent(true);
+    } catch (err) {
+      console.error('Authentication error:', err);
+      setError(
+        err instanceof Error ? err.message : 'Failed to send magic link'
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div
@@ -173,155 +166,134 @@ export function CommunityLoginPage({ communitySlug }: CommunityLoginPageProps) {
             </div>
           )}
 
+          <div className="text-center">
+            <h2
+              className="mt-6 text-3xl font-bold tracking-tight"
+              style={{ color: customization?.textColor || '#000' }}
+            >
+              {verificationSent
+                ? 'Check your email'
+                : isSignup
+                  ? 'Join the Community'
+                  : customization?.title || 'Welcome Back'}
+            </h2>
+            <p
+              className="mt-2 text-sm"
+              style={{ color: customization?.textColor || '#000' }}
+            >
+              {verificationSent
+                ? 'We sent you a magic link to sign in'
+                : isSignup
+                  ? 'Create your account'
+                  : customization?.subtitle || 'Sign in to your account'}
+            </p>
+          </div>
+
           {verificationSent ? (
-            <div className="text-center">
-              <h2 className="text-2xl font-bold mb-4">Check Your Email</h2>
-              <p className="text-gray-600">
-                We've sent you a verification link. Please check your email to{' '}
-                {isSignup ? 'complete your registration' : 'sign in'}.
+            <div className="text-center mt-4">
+              <p className="text-sm text-gray-600">
+                Click the link in your email to sign in. If you don't see it,
+                check your spam folder.
               </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setVerificationSent(false);
+                  setError(null);
+                  reset();
+                }}
+                className="mt-4 text-sm font-medium text-indigo-600 hover:text-indigo-500"
+              >
+                Try again with a different email
+              </button>
             </div>
           ) : (
-            <>
-              <div className="text-center">
-                <h2
-                  className="mt-6 text-3xl font-bold tracking-tight"
-                  style={{ color: customization?.textColor || '#000' }}
-                >
-                  {isSignup
-                    ? 'Join the Community'
-                    : customization?.title || 'Welcome Back'}
-                </h2>
-                <p
-                  className="mt-2 text-sm"
-                  style={{ color: customization?.textColor || '#000' }}
-                >
-                  {isSignup
-                    ? 'Create your account'
-                    : customization?.subtitle || 'Sign in to your account'}
-                </p>
+            <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-6">
+              {error && (
+                <div className="rounded-md bg-red-50 p-4">
+                  <p className="text-sm text-red-700">{error}</p>
+                </div>
+              )}
+
+              <div className="space-y-4">
+                {isSignup && (
+                  <>
+                    <div>
+                      <label
+                        htmlFor="firstName"
+                        className="block text-sm font-medium text-gray-700"
+                      >
+                        First Name
+                      </label>
+                      <Input
+                        id="firstName"
+                        type="text"
+                        {...register('firstName')}
+                        error={errors.firstName?.message}
+                      />
+                    </div>
+                    <div>
+                      <label
+                        htmlFor="lastName"
+                        className="block text-sm font-medium text-gray-700"
+                      >
+                        Last Name
+                      </label>
+                      <Input
+                        id="lastName"
+                        type="text"
+                        {...register('lastName')}
+                        error={errors.lastName?.message}
+                      />
+                    </div>
+                  </>
+                )}
+                <div>
+                  <label
+                    htmlFor="email"
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    Email address
+                  </label>
+                  <Input
+                    id="email"
+                    type="email"
+                    autoComplete="email"
+                    {...register('email')}
+                    error={errors.email?.message}
+                  />
+                </div>
               </div>
 
-              <form
-                className="mt-8 space-y-6"
-                onSubmit={handleSubmit(onSubmit)}
+              <Button
+                type="submit"
+                variant="primary"
+                className="w-full"
+                isLoading={isSubmitting}
               >
-                {errors.root && (
-                  <div className="rounded-md bg-red-50 p-4">
-                    <p className="text-sm text-red-700">
-                      {errors.root.message}
-                    </p>
-                  </div>
-                )}
+                {isSubmitting
+                  ? 'Sending...'
+                  : isSignup
+                    ? 'Create Account'
+                    : 'Sign In'}
+              </Button>
 
-                <div className="space-y-4">
-                  {isSignup && (
-                    <>
-                      <div>
-                        <label
-                          htmlFor="first_name"
-                          className="block text-sm font-medium"
-                          style={{ color: customization?.textColor || '#000' }}
-                        >
-                          First Name
-                        </label>
-                        <input
-                          {...register('first_name')}
-                          type="text"
-                          id="first_name"
-                          disabled={isSubmitting}
-                          className="mt-1 relative block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                          placeholder="First Name"
-                        />
-                        {errors.first_name && (
-                          <p className="mt-1 text-sm text-red-600">
-                            {errors.first_name.message}
-                          </p>
-                        )}
-                      </div>
-
-                      <div>
-                        <label
-                          htmlFor="last_name"
-                          className="block text-sm font-medium"
-                          style={{ color: customization?.textColor || '#000' }}
-                        >
-                          Last Name
-                        </label>
-                        <input
-                          {...register('last_name')}
-                          type="text"
-                          id="last_name"
-                          disabled={isSubmitting}
-                          className="mt-1 relative block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                          placeholder="Last Name"
-                        />
-                        {errors.last_name && (
-                          <p className="mt-1 text-sm text-red-600">
-                            {errors.last_name.message}
-                          </p>
-                        )}
-                      </div>
-                    </>
-                  )}
-
-                  <div>
-                    <label
-                      htmlFor="email"
-                      className="block text-sm font-medium"
-                      style={{ color: customization?.textColor || '#000' }}
-                    >
-                      Email address
-                    </label>
-                    <input
-                      {...register('email')}
-                      type="email"
-                      id="email"
-                      disabled={isSubmitting}
-                      className="mt-1 relative block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                      placeholder="Email address"
-                      autoComplete="email"
-                    />
-                    {errors.email && (
-                      <p className="mt-1 text-sm text-red-600">
-                        {errors.email.message}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                <div>
-                  <Button
-                    type="submit"
-                    className="w-full"
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? (
-                      <Spinner className="h-5 w-5" />
-                    ) : isSignup ? (
-                      'Sign Up'
-                    ) : (
-                      'Sign In'
-                    )}
-                  </Button>
-                </div>
-              </form>
-
-              <div className="text-center mt-4">
+              <div className="text-center">
                 <button
                   type="button"
                   onClick={() => {
                     setIsSignup(!isSignup);
-                    reset(); // Clear form when switching modes
+                    setError(null);
+                    reset();
                   }}
-                  className="text-sm text-indigo-600 hover:text-indigo-500"
+                  className="text-sm font-medium text-indigo-600 hover:text-indigo-500"
                 >
                   {isSignup
                     ? 'Already have an account? Sign in'
                     : "Don't have an account? Sign up"}
                 </button>
               </div>
-            </>
+            </form>
           )}
         </div>
       </div>

@@ -8,18 +8,22 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables');
 }
 
-// Debug: Check localStorage
-const authToken = localStorage.getItem('sb-terrarium-auth-token');
-console.log('Debug - localStorage auth token:', authToken);
-
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   auth: {
-    persistSession: true,
     autoRefreshToken: true,
+    persistSession: true,
     detectSessionInUrl: true,
-    flowType: 'implicit',
-    storage: localStorage,
   },
 });
 
-export type SupabaseClient = typeof supabase;
+// Initialize session
+supabase.auth.getSession().then(({ data: { session } }) => {
+  if (session) {
+    console.log('Initial session loaded');
+  }
+});
+
+// Subscribe to auth state changes
+supabase.auth.onAuthStateChange((event, session) => {
+  console.log('Auth state change:', { event, hasSession: !!session });
+});

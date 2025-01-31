@@ -98,23 +98,30 @@ export function CommunityLoginPage({ communitySlug }: CommunityLoginPageProps) {
         callbackUrl.searchParams.set('path', path);
       }
 
+      // Get community data for the email template
+      const { data: community } = await supabase
+        .from('communities')
+        .select('id, name')
+        .eq('slug', slug)
+        .single();
+
+      if (!community) {
+        throw new Error('Community not found');
+      }
+
       const { error: signInError } = await supabase.auth.signInWithOtp({
         email: data.email,
         options: {
           emailRedirectTo: callbackUrl.toString(),
-          data: isSignup
-            ? {
-                firstName: data.firstName,
-                lastName: data.lastName,
-                role: UserRole.MEMBER,
-                communitySlug: slug,
-                isNewUser: true,
-              }
-            : {
-                role: UserRole.MEMBER,
-                communitySlug: slug,
-                isNewUser: false,
-              },
+          data: {
+            firstName: isSignup ? data.firstName : undefined,
+            lastName: isSignup ? data.lastName : undefined,
+            role: UserRole.MEMBER,
+            community_slug: slug,
+            community_id: community.id,
+            communityName: community.name,
+            isNewUser: isSignup,
+          },
           shouldCreateUser: isSignup,
         },
       });

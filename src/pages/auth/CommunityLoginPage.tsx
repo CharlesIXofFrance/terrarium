@@ -90,43 +90,52 @@ export function CommunityLoginPage({ communitySlug }: CommunityLoginPageProps) {
       setIsSubmitting(true);
       setError(null);
 
-      // Construct callback URL with community info
-      const callbackUrl = new URL('/auth/callback', window.location.origin);
-      callbackUrl.searchParams.set('subdomain', slug);
-      // Preserve the original path for post-login redirect
-      if (path !== '/login') {
-        callbackUrl.searchParams.set('path', path);
-      }
-
-      // Get community data for the email template
-      const { data: community } = await supabase
+      // Get community data first
+      const { data: community, error: communityError } = await supabase
         .from('communities')
-        .select('id, name')
+        .select('id, name, slug')
         .eq('slug', slug)
         .single();
 
-      if (!community) {
-        throw new Error('Community not found');
+      if (communityError || !community) {
+        throw new Error(communityError?.message || 'Community not found');
       }
 
-      const { error: signInError } = await supabase.auth.signInWithOtp({
+      // Build clean callback URL
+      const callbackUrl = new URL(
+        `/auth/callback?subdomain=${encodeURIComponent(community.slug)}`,
+        window.location.origin
+      );
+
+      // Add type and simple next path
+      callbackUrl.searchParams.set('type', 'signup');
+      if (path && path !== '/login') {
+        callbackUrl.searchParams.set('next', encodeURIComponent(path));
+      }
+
+      console.log('Sending magic link with URL:', callbackUrl.toString());
+
+      // Auth call with proper metadata
+      const { error: authError } = await supabase.auth.signInWithOtp({
         email: data.email,
         options: {
           emailRedirectTo: callbackUrl.toString(),
           data: {
-            firstName: isSignup ? data.firstName : undefined,
-            lastName: isSignup ? data.lastName : undefined,
+            first_name: isSignup ? data.firstName : undefined,
+            last_name: isSignup ? data.lastName : undefined,
             role: UserRole.MEMBER,
-            community_slug: slug,
             community_id: community.id,
-            communityName: community.name,
-            isNewUser: isSignup,
+            community_slug: community.slug,
+            community_name: community.name,
+            is_new_user: isSignup,
           },
           shouldCreateUser: isSignup,
         },
       });
 
-      if (signInError) throw signInError;
+      if (authError) {
+        throw new Error(authError.message);
+      }
 
       setVerificationSent(true);
     } catch (err) {

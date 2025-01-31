@@ -112,15 +112,14 @@ export function CommunityLayout() {
   if (
     !user ||
     !userCommunity ||
-    (user.role !== 'platform_owner' &&
-      user.role !== 'community_owner' &&
+    (user.role !== 'admin' &&
+      user.role !== 'owner' &&
       userCommunity.community_id !== currentCommunity?.id)
   ) {
     return <Navigate to="/unauthorized" />;
   }
 
-  const isOwner =
-    user.role === 'platform_owner' || user.role === 'community_owner';
+  const isOwner = user.role === 'admin' || user.role === 'owner';
 
   // Navigation items for the sidebar
   const navigationItems = [

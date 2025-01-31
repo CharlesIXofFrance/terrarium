@@ -8,6 +8,8 @@ import { ProtectedRoute } from '@/components/features/auth/ProtectedRoute';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { CommunityLoginPage } from '@/pages/auth/CommunityLoginPage';
 import { VerifyCallback } from '@/pages/auth/VerifyCallback';
+import { PlatformRegister } from '@/pages/auth/PlatformRegister';
+import { PlatformLogin } from '@/pages/auth/PlatformLogin';
 
 export const SubdomainRouter: React.FC = () => {
   const { type, subdomain } = parseDomain();

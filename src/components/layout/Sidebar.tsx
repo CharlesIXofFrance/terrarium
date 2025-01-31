@@ -68,7 +68,7 @@ export const Sidebar = () => {
   ];
 
   const navigation =
-    user?.role === 'platform_owner'
+    user?.role === 'admin'
       ? platformNavigation
       : [...communityNavigation, ...settingsLinks];
 

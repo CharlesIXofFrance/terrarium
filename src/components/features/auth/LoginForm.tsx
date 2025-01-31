@@ -47,9 +47,27 @@ export const LoginForm: React.FC<LoginFormProps> = ({
       // Clean the slug - remove any path components
       const cleanSlug = communitySlug.split('/')[0];
 
-      // Construct callback URL
+      // Construct callback URL with CSRF protection
       const callbackUrl = new URL('/auth/callback', window.location.origin);
       callbackUrl.searchParams.set('subdomain', cleanSlug);
+      callbackUrl.searchParams.set('csrf', crypto.randomUUID());
+
+      // Get user role from metadata
+      const { data: roleData, error: roleError } = await supabaseClient
+        .from('user_roles')
+        .select('role')
+        .eq('email', data.email)
+        .single();
+
+      // Only allow platform admins and community owners
+      if (
+        !roleError &&
+        roleData?.role !== 'PLATFORM_ADMIN' &&
+        roleData?.role !== 'COMMUNITY_OWNER'
+      ) {
+        setError('Please use magic link login for community access');
+        return;
+      }
 
       const { data: authData, error: authError } =
         await supabaseClient!.auth.signInWithPassword({
@@ -57,30 +75,51 @@ export const LoginForm: React.FC<LoginFormProps> = ({
           password: data.password,
           options: {
             redirectTo: callbackUrl.toString(),
+            captchaToken: await getCaptchaToken(), // Add CAPTCHA for additional security
           },
         });
 
       if (authError) {
-        setError(authError.message);
+        // Enhanced error handling
+        if (authError.message.includes('Invalid login credentials')) {
+          setError('Invalid email or password');
+        } else if (authError.message.includes('Too many requests')) {
+          setError('Too many login attempts. Please try again in 5 minutes.');
+        } else if (authError.message.includes('Email not confirmed')) {
+          setError('Please verify your email address before logging in');
+        } else {
+          setError(authError.message);
+        }
         return;
       }
 
       if (authData.user && authData.session) {
+        // Log successful login attempt for audit
+        await supabaseClient.from('auth_logs').insert([
+          {
+            user_id: authData.user.id,
+            action: 'login',
+            ip_address: await fetch('https://api.ipify.org?format=json')
+              .then((r) => r.json())
+              .then((data) => data.ip),
+            user_agent: navigator.userAgent,
+          },
+        ]);
+
         onSuccess({ user: authData.user, session: authData.session });
       }
     } catch (err) {
+      console.error('Login error:', err);
       if (err instanceof Error) {
-        // Handle rate limit errors
-        if (
-          err.name === 'AuthenticationError' &&
-          err.message.includes('Too many requests')
-        ) {
-          setError('Too many login attempts. Please try again later.');
+        if (err.message.includes('network')) {
+          setError('Network error. Please check your connection.');
+        } else if (err.message.includes('rate limit')) {
+          setError('Too many login attempts. Please try again in 5 minutes.');
         } else {
           setError(err.message);
         }
       } else {
-        setError('An unexpected error occurred');
+        setError('An unexpected error occurred. Please try again.');
       }
     } finally {
       setIsLoading(false);

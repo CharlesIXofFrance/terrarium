@@ -46,7 +46,7 @@ describe('PlatformRoutes', () => {
 
   it('renders dashboard for platform owner', () => {
     vi.mocked(useAuth).mockReturnValue({
-      user: { role: 'platform_owner' },
+      user: { role: 'admin' },
       isLoading: false,
     });
 
@@ -56,7 +56,7 @@ describe('PlatformRoutes', () => {
 
   it('renders communities list for platform owner', () => {
     vi.mocked(useAuth).mockReturnValue({
-      user: { role: 'platform_owner' },
+      user: { role: 'admin' },
       isLoading: false,
     });
 
@@ -66,7 +66,7 @@ describe('PlatformRoutes', () => {
 
   it('renders users list for platform owner', () => {
     vi.mocked(useAuth).mockReturnValue({
-      user: { role: 'platform_owner' },
+      user: { role: 'admin' },
       isLoading: false,
     });
 
@@ -76,7 +76,7 @@ describe('PlatformRoutes', () => {
 
   it('renders settings for platform owner', () => {
     vi.mocked(useAuth).mockReturnValue({
-      user: { role: 'platform_owner' },
+      user: { role: 'admin' },
       isLoading: false,
     });
 
@@ -86,7 +86,7 @@ describe('PlatformRoutes', () => {
 
   it('redirects to dashboard for unknown routes', () => {
     vi.mocked(useAuth).mockReturnValue({
-      user: { role: 'platform_owner' },
+      user: { role: 'admin' },
       isLoading: false,
     });
 

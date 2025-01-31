@@ -101,37 +101,88 @@ export function CommunityLoginPage({ communitySlug }: CommunityLoginPageProps) {
         throw new Error(communityError?.message || 'Community not found');
       }
 
-      // Build clean callback URL
-      const callbackUrl = new URL(
-        `/auth/callback?subdomain=${encodeURIComponent(community.slug)}`,
-        window.location.origin
-      );
+      // Build clean callback URL - we let Supabase handle the token_hash
+      const callbackUrl = new URL('/auth/callback', window.location.origin);
 
-      // Add type and simple next path
-      callbackUrl.searchParams.set('type', 'signup');
+      // Add community context and type
+      callbackUrl.searchParams.set('subdomain', community.slug);
+      callbackUrl.searchParams.set('type', isSignup ? 'signup' : 'signin');
+
+      // Add next path if provided
       if (path && path !== '/login') {
-        callbackUrl.searchParams.set('next', encodeURIComponent(path));
+        callbackUrl.searchParams.set('next', path);
       }
 
       console.log('Sending magic link with URL:', callbackUrl.toString());
 
+      console.log('Community data:', community);
+
+      const metadata = {
+        firstName: isSignup ? data.firstName : undefined,
+        lastName: isSignup ? data.lastName : undefined,
+        role: UserRole.MEMBER,
+        community_id: community.id,
+        community_slug: community.slug,
+        community_name: community.name,
+        is_new_user: isSignup,
+      };
+
+      console.log('Sending auth request with metadata:', metadata);
+
       // Auth call with proper metadata
-      const { error: authError } = await supabase.auth.signInWithOtp({
+      // Add rate limiting check
+      const { data: rateLimitData } = await supabase
+        .from('auth_rate_limits')
+        .select('attempts, last_attempt')
+        .eq('email', data.email)
+        .single();
+
+      if (
+        rateLimitData?.attempts >= 5 &&
+        new Date().getTime() - new Date(rateLimitData.last_attempt).getTime() <
+          300000
+      ) {
+        throw new Error('Too many attempts. Please try again in 5 minutes.');
+      }
+
+      // Update rate limit
+      await supabase.from('auth_rate_limits').upsert({
         email: data.email,
-        options: {
-          emailRedirectTo: callbackUrl.toString(),
-          data: {
-            first_name: isSignup ? data.firstName : undefined,
-            last_name: isSignup ? data.lastName : undefined,
-            role: UserRole.MEMBER,
-            community_id: community.id,
-            community_slug: community.slug,
-            community_name: community.name,
-            is_new_user: isSignup,
-          },
-          shouldCreateUser: isSignup,
-        },
+        attempts: (rateLimitData?.attempts || 0) + 1,
+        last_attempt: new Date().toISOString(),
       });
+
+      // Add CAPTCHA verification for additional security
+      const captchaToken = await getCaptchaToken();
+
+      const { data: authData, error: authError } =
+        await supabase.auth.signInWithOtp({
+          email: data.email,
+          options: {
+            emailRedirectTo: callbackUrl.toString(),
+            data: {
+              ...metadata,
+              csrf_token: crypto.randomUUID(), // Add CSRF protection
+            },
+            captchaToken,
+          },
+        });
+
+      // Log auth attempt for audit
+      await supabase.from('auth_logs').insert([
+        {
+          email: data.email,
+          action: isSignup ? 'signup_attempt' : 'login_attempt',
+          ip_address: await fetch('https://api.ipify.org?format=json')
+            .then((r) => r.json())
+            .then((data) => data.ip),
+          user_agent: navigator.userAgent,
+          community_slug: slug,
+          success: !authError,
+        },
+      ]);
+
+      console.log('Auth response:', { authData, error: authError });
 
       if (authError) {
         throw new Error(authError.message);

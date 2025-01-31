@@ -3,7 +3,7 @@ import type { Role, Permission } from '../../types/rbac.types';
 
 describe('RBAC Service', () => {
   describe('Platform Owner Permissions', () => {
-    const role: Role = 'platform_owner';
+    const role: Role = 'admin';
 
     it('should grant platform management access', () => {
       const permission: Permission = { action: 'manage', resource: 'platform' };
@@ -32,7 +32,7 @@ describe('RBAC Service', () => {
   });
 
   describe('Community Owner Permissions', () => {
-    const role: Role = 'community_owner';
+    const role: Role = 'owner';
 
     it('should grant community management access', () => {
       const permission: Permission = {

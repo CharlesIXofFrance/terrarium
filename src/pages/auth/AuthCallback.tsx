@@ -10,7 +10,7 @@
  * 5. Redirect to appropriate page (onboarding or dashboard)
  */
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useSetAtom } from 'jotai';
 import { userAtom, userCommunityAtom, isLoadingAtom } from '@/lib/stores/auth';
@@ -36,13 +36,11 @@ export const AuthCallback = () => {
   const setUser = useSetAtom(userAtom);
   const setCommunity = useSetAtom(userCommunityAtom);
   const setIsLoading = useSetAtom(isLoadingAtom);
+  const [error, setError] = useState<string>();
 
   useEffect(() => {
-    let isMounted = true;
-
     const handleCallback = async () => {
       try {
-        if (!isMounted) return;
         setIsLoading(true);
 
         // Get token hash and type from URL
@@ -68,20 +66,44 @@ export const AuthCallback = () => {
 
         // Exchange token hash for session
         debugLog('handleCallback', 'Verifying OTP');
-        const {
-          data: { session },
-          error: verifyError,
-        } = await supabase.auth.verifyOtp({
+        console.log('Starting OTP verification with:', {
+          type: 'email',
           token_hash: tokenHash,
-          type: 'magiclink',
+          searchParams: Object.fromEntries(searchParams.entries()),
         });
 
-        if (verifyError || !session) {
-          debugLog('handleCallback', 'Verification failed', {
-            error: verifyError,
-          });
-          throw new Error(verifyError?.message || 'Verification failed');
+        // Get the session - Supabase will automatically handle the auth flow
+        const {
+          data: { session },
+          error: sessionError,
+        } = await supabase.auth.getSession();
+
+        if (sessionError) {
+          debugLog('handleCallback', 'Session error', { error: sessionError });
+          throw new Error(sessionError.message);
         }
+
+        if (!session) {
+          debugLog('handleCallback', 'No session found');
+          throw new Error('No session found after authentication');
+        }
+
+        // Set up auth state change listener
+        supabase.auth.onAuthStateChange((event, currentSession) => {
+          debugLog('handleCallback', 'Auth state changed', {
+            event,
+            currentSession,
+          });
+          if (event === 'SIGNED_IN' && currentSession) {
+            // Handle successful sign in
+            debugLog('handleCallback', 'User signed in', {
+              user: currentSession.user,
+            });
+          } else if (event === 'SIGNED_OUT') {
+            // Handle sign out
+            navigate('/login');
+          }
+        });
 
         // Create user profile if needed
         const { data: profile } = await supabase
@@ -186,18 +208,20 @@ export const AuthCallback = () => {
         );
         navigate('/login');
       } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
+        setIsLoading(false);
       }
     };
 
     handleCallback();
-
-    return () => {
-      isMounted = false;
-    };
   }, [navigate, searchParams, setUser, setCommunity, setIsLoading]);
+
+  if (error) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-red-500">{error}</div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen items-center justify-center">
@@ -205,3 +229,5 @@ export const AuthCallback = () => {
     </div>
   );
 };
+
+export default AuthCallback;

@@ -27,7 +27,7 @@ const mockUsers = {
     id: 'test-platform-owner',
     email: 'platform-owner@test.com',
     name: 'Test Platform Owner',
-    role: 'platform_owner',
+    role: 'admin',
     communities: ['women-in-fintech'],
     createdAt: new Date().toISOString(),
   },
@@ -87,7 +87,7 @@ export function LandingPage() {
     }
   };
 
-  const loginAs = (role: 'member' | 'platform_owner') => {
+  const loginAs = (role: 'member' | 'admin') => {
     const user = mockUsers[role];
     localStorage.setItem('user', JSON.stringify(user));
 
@@ -118,7 +118,7 @@ export function LandingPage() {
           Test as Member
         </button>
         <button
-          onClick={() => loginAs('platform_owner')}
+          onClick={() => loginAs('admin')}
           className="px-4 py-2 bg-purple-600 text-white rounded-lg shadow-lg hover:bg-purple-700 transition-colors"
         >
           Test as Platform Owner

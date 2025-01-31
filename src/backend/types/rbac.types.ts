@@ -1,4 +1,4 @@
-export type Role = 'platform_owner' | 'community_owner' | 'member' | 'employer';
+export type Role = 'admin' | 'owner' | 'member' | 'employer';
 
 export interface Permission {
   action: 'create' | 'read' | 'update' | 'delete' | 'manage';
@@ -19,7 +19,7 @@ export interface RolePermissions {
 export const DEFAULT_ROLE = 'member';
 
 export const ROLE_PERMISSIONS: RolePermissions = {
-  platform_owner: [
+  admin: [
     // Full access to everything including platform management
     { action: 'manage', resource: 'platform' }, // Special permission for platform-wide settings
     { action: 'create', resource: 'communities' },
@@ -43,7 +43,7 @@ export const ROLE_PERMISSIONS: RolePermissions = {
     { action: 'update', resource: 'members' },
     { action: 'delete', resource: 'members' },
   ],
-  community_owner: [
+  owner: [
     // Full access to their community's resources
     { action: 'create', resource: 'jobs' },
     { action: 'read', resource: 'jobs' },

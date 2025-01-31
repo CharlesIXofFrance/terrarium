@@ -20,7 +20,15 @@ BEGIN
   END IF;
 
   -- Log all metadata for debugging
-  RAISE LOG 'Processing user %: metadata=%', NEW.id, NEW.raw_user_meta_data;
+  RAISE LOG 'Processing user %: metadata=%, confirmed=%', 
+    NEW.id, 
+    NEW.raw_user_meta_data,
+    NEW.email_confirmed_at;
+    
+  RAISE LOG 'User details: email=%, role=%, created_at=%',
+    NEW.email,
+    NEW.role,
+    NEW.created_at;
   
   -- Get current timestamp and metadata
   now_timestamp := timezone('utc'::text, now());
@@ -43,8 +51,8 @@ BEGIN
     ) VALUES (
       NEW.id,
       NEW.email,
-      user_metadata->>'first_name',
-      user_metadata->>'last_name',
+      user_metadata->>'firstName',
+      user_metadata->>'lastName',
       (user_metadata->>'role')::user_role,
       false,
       now_timestamp,

@@ -7,6 +7,8 @@ import { AuthCallback } from '@/pages/auth/AuthCallback';
 import { UnauthorizedPage } from '@/pages/auth/UnauthorizedPage';
 import { DashboardPage } from '@/pages/dashboard/DashboardPage';
 import { OwnerOnboarding } from '@/components/features/onboarding/OwnerOnboarding';
+import { PlatformRegister } from '@/pages/auth/PlatformRegister';
+import { PlatformLogin } from '@/pages/auth/PlatformLogin';
 
 // Platform-specific components
 const PlatformDashboard = () => <div>Platform Dashboard</div>;
@@ -17,23 +19,59 @@ const PlatformSettings = () => <div>Platform Settings</div>;
 export const PlatformRoutes: React.FC = () => {
   const { user } = useAuth();
 
-  if (user?.role !== 'platform_owner') {
+  if (user?.role !== 'admin') {
     return <Navigate to="/login" replace />;
   }
 
   return (
     <Routes>
       {/* Public routes */}
-      <Route path="/login" element={<CommunityLoginPage />} />
+      <Route path="/login" element={<PlatformLogin />} />
+      <Route path="/register" element={<PlatformRegister />} />
       <Route path="/auth/callback" element={<AuthCallback />} />
       <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
       {/* Protected routes */}
-      <Route path="/" element={<PlatformDashboard />} />
-      <Route path="/dashboard" element={<PlatformDashboard />} />
-      <Route path="/communities" element={<CommunitiesList />} />
-      <Route path="/users" element={<UsersList />} />
-      <Route path="/settings" element={<PlatformSettings />} />
+      <Route
+        path="/"
+        element={
+          <AuthGuard>
+            <PlatformDashboard />
+          </AuthGuard>
+        }
+      />
+      <Route
+        path="/dashboard"
+        element={
+          <AuthGuard>
+            <PlatformDashboard />
+          </AuthGuard>
+        }
+      />
+      <Route
+        path="/communities"
+        element={
+          <AuthGuard>
+            <CommunitiesList />
+          </AuthGuard>
+        }
+      />
+      <Route
+        path="/users"
+        element={
+          <AuthGuard>
+            <UsersList />
+          </AuthGuard>
+        }
+      />
+      <Route
+        path="/settings"
+        element={
+          <AuthGuard>
+            <PlatformSettings />
+          </AuthGuard>
+        }
+      />
       <Route
         path="/onboarding"
         element={
@@ -44,7 +82,7 @@ export const PlatformRoutes: React.FC = () => {
       />
 
       {/* Catch-all redirect to login */}
-      <Route path="*" element={<Navigate to="/platform" replace />} />
+      <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   );
 };

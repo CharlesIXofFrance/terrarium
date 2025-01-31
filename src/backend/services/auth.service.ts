@@ -133,7 +133,7 @@ export const authService = {
         options: {
           data: {
             full_name: data.full_name,
-            role: 'community_owner',
+            role: 'owner',
           },
           emailRedirectTo: `${window.location.origin}/auth/callback`,
         },

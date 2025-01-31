@@ -19,7 +19,7 @@ describe('Navigation Components', () => {
   describe('Navbar', () => {
     it('should show platform dashboard link for platform owners', () => {
       mockUseAuth.mockReturnValue({
-        user: { role: 'platform_owner' },
+        user: { role: 'admin' },
         logout: vi.fn(),
       });
 
@@ -38,7 +38,7 @@ describe('Navigation Components', () => {
 
     it('should show member dashboard link for community owners', () => {
       mockUseAuth.mockReturnValue({
-        user: { role: 'community_owner' },
+        user: { role: 'owner' },
         logout: vi.fn(),
       });
 
@@ -59,7 +59,7 @@ describe('Navigation Components', () => {
   describe('Sidebar', () => {
     it('should show platform navigation for platform owners', () => {
       mockUseAuth.mockReturnValue({
-        user: { role: 'platform_owner' },
+        user: { role: 'admin' },
       });
 
       render(
@@ -75,7 +75,7 @@ describe('Navigation Components', () => {
 
     it('should show community navigation for community owners', () => {
       mockUseAuth.mockReturnValue({
-        user: { role: 'community_owner' },
+        user: { role: 'owner' },
       });
 
       render(

@@ -12,7 +12,7 @@ export function Navbar({ onDashboardClick }: NavbarProps) {
 
   const getDashboardLink = () => {
     if (!user) return '/login';
-    return user.role === 'platform_owner' ? '/platform' : '/m/dashboard';
+    return user.role === 'admin' ? '/platform' : '/m/dashboard';
   };
 
   return (

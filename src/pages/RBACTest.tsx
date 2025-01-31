@@ -89,11 +89,9 @@ export function RBACTest() {
             Employer Role
           </button>
           <button
-            onClick={() => changeRole('community_owner')}
+            onClick={() => changeRole('owner')}
             className={`px-4 py-2 rounded ${
-              testRole === 'community_owner'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-200'
+              testRole === 'owner' ? 'bg-blue-600 text-white' : 'bg-gray-200'
             }`}
           >
             Community Owner Role

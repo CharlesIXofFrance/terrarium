@@ -67,7 +67,7 @@ export const CommunityRoutes: React.FC = () => {
 
   // Check if user is admin or owner of this specific community
   const hasAdminAccess =
-    (user?.role === 'community_admin' || user?.role === 'community_owner') &&
+    (user?.role === 'admin' || user?.role === 'owner') &&
     userCommunity?.slug === community;
 
   // Check if onboarding is complete based on user role

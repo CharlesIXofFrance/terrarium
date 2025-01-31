@@ -1,241 +1,147 @@
-Terrarium Project Development Rules
+# Terrarium Project Development Rules
 
-The Terrarium project is a multi-tenant community platform. Each “community” (tenant) has its own branding, job board, events, and member management. By adopting a common code base and consistent UI/UX, Terrarium ensures a unified experience across all communities while allowing certain customizations.
+Multi-tenant community platform with per-tenant branding, job boards, events, and member management.
 
-Project Context
-	•	Tech Stack
-	•	React 18+: Modern UI library (TypeScript, Vite, Tailwind).
-	•	State:
-	•	Jotai for global/client state (lightweight atoms).
-	•	React Query for server state (caching, synchronization).
-	•	Backend: Supabase (Auth, DB, Row-Level Security).
-	•	Forms: React Hook Form + Zod (runtime validation).
-	•	UI: Radix UI for accessible primitives, plus Tailwind.
-	•	Analytics: Chart.js (dashboards, metrics).
-	•	Architecture
-	•	Built as a SaaS with multi-tenant isolation.
-	•	Community-specific routes and settings.
-	•	Row-Level Security (RLS) for data separation.
-	•	Current Phase
-	•	Finalizing developer environment and initial infra.
+## Project Context
+• Tech Stack
+  - React 18+ (TypeScript, Vite, Tailwind)
+  - State: Jotai (client) + React Query (server)
+  - Backend: Supabase (Auth, DB, RLS)
+  - UI: Radix UI + Tailwind
+  - Forms: React Hook Form + Zod
+  - Analytics: Chart.js
 
-User Types and Access
-	1.	Platform Owners
-	•	Overall system administrators.
-	•	Manage platform-level settings and user accounts.
-	2.	Community Owners
-	•	Control a single community’s branding, events, job boards.
-	•	Manage member access and configuration within their tenant.
-	3.	Members
-	•	Explore job postings, events, and community content.
-	•	Participate in community discussions, update profiles.
-	4.	Employers
-	•	Post new jobs and manage applicants within a community.
-	•	Access relevant member profiles if permitted.
+• Architecture
+  - SaaS with multi-tenant isolation
+  - Community-specific routes
+  - Row-Level Security (RLS)
 
-Key Features
-	•	Custom Job Boards: Each community has its unique board with filters.
-	•	Community Management: Events, permissions, announcements.
-	•	Analytics Dashboard: Admin-level metrics and charts.
-	•	Branding Controls: Community owners can customize basic UI elements.
+## Database Management
+1. Migration Structure
+   • supabase/migrations/ with YYYYMMDDHHMMSS prefix
+   • Consolidated auth migration
+   • Archive old migrations
 
-Code Generation Rules
+2. Organization
+   • Extensions → Schemas → Types → Tables → Functions → Policies
+   • Proper dependency order
+   • Strategic indexing
 
-1. TypeScript Best Practices
-	•	Strict typing (no any).
-	•	Use interfaces/enums for clear shapes and fixed values.
+3. Documentation
+   • README.md: Setup guide
+   • DEPENDENCIES.md: Versions
+   • SCHEMA_VERSION.md: Changes
 
-2. React Component Structure
-	•	Functional components with hooks.
-	•	Explicit prop interfaces.
-	•	Keep components small and focused.
+4. Security
+   • RLS by default
+   • Security definer functions
+   • Rate limiting
+   • Cross-tenant isolation
+
+5. Conventions
+   • UUID primary keys
+   • Timestamptz
+   • JSONB metadata
+   • Enum types
+   • Foreign keys
+
+## User Types
+1. Platform Owners: System administration
+2. Community Owners: Tenant management
+3. Members: Content access
+4. Employers: Job management
+
+## Key Features
+• Custom job boards
+• Community management
+• Analytics dashboard
+• Branding controls
+
+## Code Rules
+1. TypeScript
+   • Strict typing
+   • Clear interfaces/enums
+
+2. React Components
+   • Functional + hooks
+   • Small, focused
+   • Typed props
 
 3. State Management
-	•	React Query for server-fetched data (caching, async).
-	•	Jotai (or Zustand) for client/global state.
-	•	Separate domain logic from UI components.
+   • React Query: Server state
+   • Jotai: Client state
+   • Clean separation
 
-4. API and Data Handling
-	•	Service or repository pattern.
-	•	Validate incoming/outgoing data (Zod).
-	•	Custom error classes for clarity (e.g., APIError).
-
-5. File Structure
-	•	Organize features by domain (jobs, auth, communities).
-	•	Keep consistent naming, e.g., JobList.tsx, JobFilters.tsx.
-	•	Example Layout:
-
+4. File Structure
 src/
 ├── components/
-│   ├── features/ (platform, auth, jobs, etc.)
+│   ├── features/
 │   ├── layout/
 │   └── ui/
 ├── pages/
-├── lib/ (hooks, stores, utils)
-└── ...
+└── lib/
 
-Component Organization
+5. Documentation
+   • JSDoc/TSDoc
+   • AI Context blocks
+   • Keep updated
 
-Feature Folders
-	•	Platform: Dashboard, user management, oversight tools.
-	•	Authentication: Login, registration, password resets.
-	•	Communities: Creation, settings, member management.
-	•	Jobs:
-	•	JobList.tsx: Job listings (infinite scroll).
-	•	JobFilters.tsx: Filter side panel.
-	•	SelectedFilters.tsx: Display active filters.
-	•	Member Hub: Profile, feeds, personal dashboard.
+6. Testing
+   • Jest/Vitest
+   • React Testing Library
+   • Error states
 
-Layout Components
-	•	MainLayout.tsx: Application shell (header, sidebar).
-	•	CommunityLayout.tsx: Community-scoped layout.
+7. Security
+   • Input validation
+   • Output sanitization
+   • RLS enforcement
 
-UI Components
-	•	Atoms: Buttons, inputs, icons (smallest building blocks).
-	•	Molecules: Larger combos (forms, cards, modals).
+8. Performance
+   • Memoization
+   • Query optimization
+   • Virtualization
 
-Core Libraries
-	1.	Hooks
-	•	Authentication (login, logout).
-	•	Data fetching (React Query).
-	•	UI utilities (scroll sync, modals).
-	2.	State
-	•	Jotai or Zustand for global atoms.
-	•	React Query for remote data.
-	3.	Services
-	•	API calls, repositories for database access.
-	•	Auth services (token management, RLS checks).
-
-Pages
-	•	Platform: Owner-only pages (platform settings).
-	•	Auth: Login, registration, password resets.
-	•	Community: Home, event pages, job board.
-	•	Member: Profile, personal settings, activity feed.
-
-Best Practices
-	1.	Component Organization: Feature-first structure, small reusable components.
-	2.	State Management: Minimal local state, rely on Jotai + React Query.
-	3.	Type Safety: Strict definitions, no implicit any.
-	4.	Code Style: Consistent naming, short functions, purposeful comments.
-
-Future Considerations
-	•	Scalability: Lazy loading, code splitting, caching.
-	•	Maintainability: Well-documented, robust test coverage.
-	•	Feature Expansion: Additional domain modules (e.g., marketplace), more customization.
-
-6. Documentation
-	•	Use JSDoc or TSDoc for functions and complex logic.
-	•	Keep docs updated with code changes.
-	•	Example:
-
-/**
- * Fetches user profile data from the server
- * @param userId The user ID to fetch
- * @throws APIError If user not found
- */
-
-
-
-7. Testing
-	•	Use Jest or Vitest for unit tests.
-	•	React Testing Library for UI.
-	•	Cover loading states, error handling.
-
-8. Error Handling
-	•	Use error boundaries and typed errors (APIError).
-	•	Log errors properly, show user-friendly messages.
-
-9. Security
-	•	Validate inputs with Zod.
-	•	Sanitize outputs if needed.
-	•	Enforce RLS for tenant data separation.
-
-10. Performance
-	•	Memoize heavy components (React.memo).
-	•	Efficient data fetching, stable query keys.
-	•	Optimize large lists (virtualization if needed).
-
-Frontend Preservation Rules
-
+## Frontend Rules
 1. Design Lock
-	•	No modifications to existing Tailwind classes, layout, or design.
-	•	Maintain all accessibility attributes.
+   • Preserve Tailwind
+   • Keep accessibility
 
-2. Component Modification
-	•	Only change logic (fetching, event handlers).
-	•	Preserve existing prop signatures.
+2. Component Updates
+   • Logic only
+   • Preserve props
 
-3. File Organization
-
-src/
-├── components/
-│   ├── ui/        # Locked UI
-│   ├── features/  # Logic changes allowed
-│   └── layouts/   # Locked layouts
-
-AI Interaction Strategy
-	1.	Task Separation
-	•	Clearly state whether UI changes are needed.
-	•	Use “preserve design” flags if not.
-	2.	Implementation Order
-	•	Implement backend first.
-	•	Integrate state/data flow.
-	•	Finally wire up to existing UI.
-	3.	Review Process
-	•	Verify no design changes unless requested.
-	•	Check accessibility.
-	4.	Documentation Requirements
-	•	Keep separate logs for UI and logic.
-	•	Use @preserve-design tags in components.
-
-AI Context Documentation
-
-Every file should include:
-	1.	Purpose & Responsibility
-	2.	Location Justification
-	3.	Design Constraints
-
-Example:
-
+3. AI Context
 /**
- * AI Context:
- * Purpose: Community login page
- * Location: src/pages/community because it handles /c/:slug routes
- * Constraints: Must use existing UI, preserve accessibility
+ * Purpose: Component role
+ * Location: File placement
+ * Constraints: Design limits
  */
 
-Multi-Tenant Architecture Rules
-	1.	Data Isolation
-	•	Include community_id for relevant records.
-	•	RLS ensures each tenant sees only its data.
-	2.	Feature Customization
-	•	Store community settings in JSONB.
-	•	Use feature flags for toggling advanced features.
-	3.	Security
-	•	Validate tenant context in APIs.
-	•	Handle cross-tenant requests carefully.
+## Multi-tenant Rules
+1. Data Isolation
+   • community_id required
+   • RLS policies
+   • Tenant context
 
-Implementation Guidelines
-	1.	Define types/interfaces.
-	2.	Implement data layer (services, repositories).
-	3.	Build React components with the new logic.
-	4.	Handle errors and add tests.
-	5.	Update documentation.
+2. Feature Control
+   • JSONB settings
+   • Feature flags
+   • API validation
 
-Learning Resources
-	•	TypeScript: TS Handbook
-	•	React: React Docs
-	•	React Query: React Query Docs
-	•	Testing: React Testing Library
+## Implementation Flow
+1. Types/interfaces
+2. Data layer
+3. Components
+4. Error handling
+5. Tests
+6. Documentation
 
-Code Review Checklist
-	1.	Properly typed code
-	2.	Clear, typed React components
-	3.	Robust error handling
-	4.	Tests (unit and integration)
-	5.	Documentation (AI Context, JSDoc)
-	6.	Performance optimization
-	7.	Security (tenant isolation, RLS checks)
-	8.	Formatting consistency
-	9.	UI preservation adhered to
-	10.	Multi-tenant rules followed
+## Review Checklist
+1. Types complete
+2. Error handling
+3. Tests added
+4. Docs updated
+5. Security verified
+6. Performance checked
+7. UI preserved
+8. Multi-tenant ready

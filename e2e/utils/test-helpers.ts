@@ -4,7 +4,8 @@ import { UserRole } from '@/lib/utils/types';
 import jwt from 'jsonwebtoken';
 
 // Test configuration
-const TEST_BASE_URL = process.env.TEST_BASE_URL || 'http://localhost:3000';
+export const TEST_BASE_URL =
+  process.env.TEST_BASE_URL || 'http://localhost:3000';
 export const TEST_USER_EMAIL =
   process.env.TEST_USER_EMAIL || 'test.user@example.com';
 export const TEST_USER_PASSWORD =
@@ -120,7 +121,7 @@ await supabaseAdmin.auth.setSession({
 /**
  * Helper to verify Supabase connection
  */
-async function verifySupabaseConnection(): Promise<boolean> {
+export async function verifySupabaseConnection(): Promise<boolean> {
   try {
     const { data, error } = await supabaseAdmin.auth.getSession();
     if (error) {
@@ -199,7 +200,7 @@ export async function cleanupTestEnvironment(page: Page) {
 /**
  * Signs in a test user
  */
-async function signInTestUser(email: string, password: string) {
+export async function signInTestUser(email: string, password: string) {
   const { data, error } = await supabaseAdmin.auth.signInWithPassword({
     email,
     password,
@@ -219,7 +220,7 @@ interface CreateTestUserParams {
 }
 
 // Create test user using direct API call
-async function createTestUserUsingParams({
+export async function createTestUserUsingParams({
   email,
   password,
   role,
@@ -297,7 +298,7 @@ async function createTestUserUsingParams({
 }
 
 // Enhanced deleteTestUsers with retries
-async function deleteTestUsersWithRetries(
+export async function deleteTestUsersWithRetries(
   maxRetries = 3,
   retryDelay = 1000
 ): Promise<void> {
@@ -369,7 +370,7 @@ async function deleteTestUsersWithRetries(
   }
 }
 
-async function clearInbucketEmails(): Promise<void> {
+export async function clearInbucketEmails(): Promise<void> {
   try {
     await fetch('http://localhost:9000/api/v1/mailbox', {
       method: 'DELETE',
@@ -378,3 +379,5 @@ async function clearInbucketEmails(): Promise<void> {
     console.error('Failed to clear Inbucket emails:', error);
   }
 }
+
+export { UserRole };

@@ -1,5 +1,6 @@
 import { AuthError, AuthResponse, User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
+import { UserRole } from '@/lib/utils/types';
 
 const DEBUG = process.env.NODE_ENV === 'development';
 
@@ -27,7 +28,7 @@ interface AuthResult {
  * Options for signing in with email
  */
 interface SignInOptions {
-  role: string;
+  role: UserRole;
   communitySlug: string;
   firstName?: string;
   lastName?: string;
@@ -46,8 +47,6 @@ class PasswordlessAuthService {
     options: SignInOptions
   ): Promise<AuthResult> {
     try {
-      debugLog('signInWithEmail', 'Starting sign in', { email, options });
-
       // Build callback
       const callbackUrl = new URL('/auth/callback', window.location.origin);
       if (options.communitySlug) {
@@ -69,9 +68,7 @@ class PasswordlessAuthService {
           },
         },
       });
-
       if (error) {
-        debugLog('signInWithEmail', 'Sign in error', { error });
         return {
           success: false,
           message: error.message,
@@ -79,13 +76,11 @@ class PasswordlessAuthService {
         };
       }
 
-      debugLog('signInWithEmail', 'Sign in successful');
       return {
         success: true,
         message: 'Check your email for the magic link',
       };
     } catch (err) {
-      debugLog('signInWithEmail', 'Unexpected error', { err });
       console.error('Passwordless signInWithEmail error:', err);
       return {
         success: false,
@@ -97,27 +92,19 @@ class PasswordlessAuthService {
   }
 
   /**
-   * Verify OTP token hash from magic link
-   * @param tokenHash The token hash from the magic link
-   * @param type The type of verification ('magic-link' for passwordless auth)
+   * Verify OTP from magic link
    */
   async verifyOtp(
     tokenHash: string,
     type: 'magiclink'
   ): Promise<{ session: Session | null; user: User | null }> {
-    debugLog('verifyOtp', 'Starting verification', { tokenHash, type });
-
     const { data, error } = await supabase.auth.verifyOtp({
       token_hash: tokenHash,
       type,
     });
-
     if (error) {
-      debugLog('verifyOtp', 'Verification error', { error });
       throw error;
     }
-
-    debugLog('verifyOtp', 'Verification successful', { data });
     return {
       session: data.session,
       user: data.session?.user || null,
@@ -125,10 +112,9 @@ class PasswordlessAuthService {
   }
 
   /**
-   * Get the current session and user
+   * Get current session if any
    */
   async getSession(): Promise<{ session: Session | null; user: User | null }> {
-    debugLog('getSession', 'Fetching session');
     const { data } = await supabase.auth.getSession();
     return {
       session: data.session,
@@ -137,17 +123,14 @@ class PasswordlessAuthService {
   }
 
   /**
-   * Sign out the current user
+   * Sign out
    */
   async signOut(): Promise<void> {
-    debugLog('signOut', 'Starting sign out');
     const { error } = await supabase.auth.signOut();
     if (error) {
-      debugLog('signOut', 'Sign out error', { error });
       throw error;
     }
-    debugLog('signOut', 'Sign out successful');
   }
 }
 
-export const memberAuth = new PasswordlessAuthService();
+const memberAuth = new PasswordlessAuthService();

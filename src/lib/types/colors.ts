@@ -15,6 +15,6 @@ export const ColorAnalysisSchema = z.object({
 
 export type ColorAnalysis = z.infer<typeof ColorAnalysisSchema>;
 
-export interface ColorCache {
+interface ColorCache {
   [logoUrl: string]: ColorAnalysis;
 }

@@ -64,14 +64,14 @@ const createStorage = () => {
 const { storage } = createStorage();
 
 // Basic types for auth state management
-export type AuthState = {
+type AuthState = {
   session: Session | null;
   user: User | null;
   loading: boolean;
   error: Error | null;
 };
 
-export type AuthStateListener = (state: AuthState) => void;
+type AuthStateListener = (state: AuthState) => void;
 
 // Simple auth state manager
 class AuthStateManager {
@@ -99,7 +99,7 @@ class AuthStateManager {
   }
 }
 
-export const authStateManager = new AuthStateManager();
+const authStateManager = new AuthStateManager();
 
 // Create Supabase client with simple configuration
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
@@ -162,7 +162,7 @@ const {
 });
 
 // Helper function to check for "no rows" errors
-export const isNoRowsError = (error: unknown): boolean => {
+const isNoRowsError = (error: unknown): boolean => {
   if (!error || typeof error !== 'object') return false;
   return (
     'message' in error &&
@@ -172,6 +172,6 @@ export const isNoRowsError = (error: unknown): boolean => {
 };
 
 // Export helper functions for auth state management
-export const getAuthState = () => authStateManager.getState();
-export const subscribeToAuthState = (listener: AuthStateListener) =>
+const getAuthState = () => authStateManager.getState();
+const subscribeToAuthState = (listener: AuthStateListener) =>
   authStateManager.subscribe(listener);

@@ -7,7 +7,7 @@ import {
   generateTestEmail,
   generateTestPassword,
   TestError,
-  wait
+  wait,
 } from './test-utils';
 
 interface TestUser {
@@ -32,7 +32,7 @@ const ctx: TestContext = {
   nonMember: null,
   communityId: null,
   communitySlug: null,
-  createdUsers: []
+  createdUsers: [],
 };
 
 const mockAdminClient = {
@@ -102,10 +102,6 @@ const mockAdminClient = {
       }),
     }),
   })),
-        }),
-      }),
-    };
-  }),
 };
 
 const mockSupabaseClient = {
@@ -265,7 +261,8 @@ describe('Storage Security Tests', () => {
       error: null,
     });
 
-    const { error } = await mockAdminClient.storage.deleteBucket('community-assets');
+    const { error } =
+      await mockAdminClient.storage.deleteBucket('community-assets');
     expect(error).toBeNull();
   });
 
@@ -276,21 +273,31 @@ describe('Storage Security Tests', () => {
     console.log(`Creating test user with role ${role}`);
 
     // Create user with auto-confirm and proper role metadata
-    const { data: user, error: createError } = await mockAdminClient.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true,
-      user_metadata: {
-        full_name: `Test ${role.charAt(0).toUpperCase() + role.slice(1)}`
-      },
-      app_metadata: {
-        role: role === 'owner' ? 'community_admin' : role === 'member' ? 'member' : 'authenticated'
-      }
-    });
+    const { data: user, error: createError } =
+      await mockAdminClient.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: {
+          full_name: `Test ${role.charAt(0).toUpperCase() + role.slice(1)}`,
+        },
+        app_metadata: {
+          role:
+            role === 'owner'
+              ? 'community_admin'
+              : role === 'member'
+                ? 'member'
+                : 'authenticated',
+        },
+      });
 
     if (createError || !user.user) {
       console.error('Create user error:', createError);
-      throw new TestError('USER_CREATE_ERROR', `Failed to create ${role} user`, createError);
+      throw new TestError(
+        'USER_CREATE_ERROR',
+        `Failed to create ${role} user`,
+        createError
+      );
     }
 
     // Wait for user creation to complete
@@ -309,22 +316,32 @@ describe('Storage Security Tests', () => {
     const { error: updateError } = await mockAdminClient.auth.rpc('set_claim', {
       uid: user.user.id,
       claim: 'role',
-      value: role === 'owner' ? 'community_admin' : role === 'member' ? 'member' : 'authenticated'
+      value:
+        role === 'owner'
+          ? 'community_admin'
+          : role === 'member'
+            ? 'member'
+            : 'authenticated',
     });
 
     if (updateError) {
-      throw new TestError('ROLE_UPDATE_ERROR', `Failed to update role for ${role}`, updateError);
+      throw new TestError(
+        'ROLE_UPDATE_ERROR',
+        `Failed to update role for ${role}`,
+        updateError
+      );
     }
 
     // Wait for role update to propagate
     await wait(1000);
 
     // Debug: Check user metadata after role update
-    const { data: updatedUserData, error: updatedUserError } = await mockAdminClient
-      .from('auth.users')
-      .select('raw_app_meta_data')
-      .eq('id', user.user.id)
-      .single();
+    const { data: updatedUserData, error: updatedUserError } =
+      await mockAdminClient
+        .from('auth.users')
+        .select('raw_app_meta_data')
+        .eq('id', user.user.id)
+        .single();
 
     console.log('User metadata after role update:', updatedUserData);
 
@@ -335,7 +352,11 @@ describe('Storage Security Tests', () => {
       .eq('id', user.user.id);
 
     if (profileUpdateError) {
-      throw new TestError('PROFILE_UPDATE_ERROR', `Failed to update profile role for ${role}`, profileUpdateError);
+      throw new TestError(
+        'PROFILE_UPDATE_ERROR',
+        `Failed to update profile role for ${role}`,
+        profileUpdateError
+      );
     }
 
     // Wait for profile update to propagate
@@ -380,22 +401,33 @@ describe('Storage Security Tests', () => {
 
     const { error: signInError } = await client.auth.signInWithPassword({
       email,
-      password
+      password,
     });
 
     if (signInError) {
-      throw new TestError('USER_SIGNIN_ERROR', `Failed to sign in ${role}`, signInError);
+      throw new TestError(
+        'USER_SIGNIN_ERROR',
+        `Failed to sign in ${role}`,
+        signInError
+      );
     }
 
     // Refresh the session to ensure we have the latest claims
     const { error: refreshError } = await client.auth.refreshSession();
-  
+
     if (refreshError) {
-      throw new TestError('SESSION_REFRESH_ERROR', `Failed to refresh session for ${role}`, refreshError);
+      throw new TestError(
+        'SESSION_REFRESH_ERROR',
+        `Failed to refresh session for ${role}`,
+        refreshError
+      );
     }
 
     // Debug: Check session claims
-    const { data: { session }, error: sessionError } = await client.auth.getSession();
+    const {
+      data: { session },
+      error: sessionError,
+    } = await client.auth.getSession();
     if (session) {
       console.log('Session app_metadata:', session.user.app_metadata);
     }
@@ -409,7 +441,7 @@ describe('Storage Security Tests', () => {
       user: user.user,
       email,
       password,
-      client
+      client,
     };
   }
 
@@ -452,27 +484,37 @@ describe('Storage Security Tests', () => {
   beforeAll(async () => {
     try {
       // Enable storage
-      const { error: storageError } = await mockAdminClient.storage
-        .createBucket('community-assets', {
+      const { error: storageError } =
+        await mockAdminClient.storage.createBucket('community-assets', {
           public: false,
           allowedMimeTypes: ['image/png', 'image/jpeg', 'image/gif'],
-          fileSizeLimit: '5MB'
+          fileSizeLimit: '5MB',
         });
 
       if (storageError && !storageError.message.includes('already exists')) {
-        throw new TestError('STORAGE_SETUP_ERROR', 'Failed to create storage bucket', storageError);
+        throw new TestError(
+          'STORAGE_SETUP_ERROR',
+          'Failed to create storage bucket',
+          storageError
+        );
       }
 
       // Update bucket settings
-      const { error: updateError } = await mockAdminClient.storage
-        .updateBucket('community-assets', {
+      const { error: updateError } = await mockAdminClient.storage.updateBucket(
+        'community-assets',
+        {
           public: false,
           allowedMimeTypes: ['image/png', 'image/jpeg', 'image/gif'],
-          fileSizeLimit: '5MB'
-        });
+          fileSizeLimit: '5MB',
+        }
+      );
 
       if (updateError) {
-        throw new TestError('STORAGE_UPDATE_ERROR', 'Failed to update storage bucket', updateError);
+        throw new TestError(
+          'STORAGE_UPDATE_ERROR',
+          'Failed to update storage bucket',
+          updateError
+        );
       }
 
       // Create test users
@@ -487,13 +529,17 @@ describe('Storage Security Tests', () => {
         .insert({
           name: 'Test Community',
           slug: testSlug,
-          owner_id: ctx.owner!.user.id
+          owner_id: ctx.owner!.user.id,
         })
         .select()
         .single();
 
       if (communityError || !community) {
-        throw new TestError('COMMUNITY_CREATE_ERROR', 'Failed to create test community', communityError);
+        throw new TestError(
+          'COMMUNITY_CREATE_ERROR',
+          'Failed to create test community',
+          communityError
+        );
       }
 
       ctx.communityId = community.id;
@@ -504,16 +550,19 @@ describe('Storage Security Tests', () => {
         .from('community_members')
         .insert({
           community_id: community.id,
-          profile_id: ctx.member!.user.id
+          profile_id: ctx.member!.user.id,
         });
 
       if (memberError) {
-        throw new TestError('MEMBER_ADD_ERROR', 'Failed to add test member', memberError);
+        throw new TestError(
+          'MEMBER_ADD_ERROR',
+          'Failed to add test member',
+          memberError
+        );
       }
 
       // Wait for changes to propagate
       await wait(1000);
-
     } catch (error) {
       console.error('Setup failed:', error);
       throw error;
@@ -523,31 +572,50 @@ describe('Storage Security Tests', () => {
   beforeEach(async () => {
     // Refresh sessions before each test
     if (ctx.owner) {
-      const { error: ownerRefreshError } = await ctx.owner.client.auth.refreshSession();
+      const { error: ownerRefreshError } =
+        await ctx.owner.client.auth.refreshSession();
       if (ownerRefreshError) {
-        throw new TestError('SESSION_REFRESH_ERROR', 'Failed to refresh owner session', ownerRefreshError);
+        throw new TestError(
+          'SESSION_REFRESH_ERROR',
+          'Failed to refresh owner session',
+          ownerRefreshError
+        );
       }
       // Debug owner session
       const { data: ownerSession } = await ctx.owner.client.auth.getSession();
       console.log('Owner session claims:', ownerSession?.session?.user);
     }
     if (ctx.member) {
-      const { error: memberRefreshError } = await ctx.member.client.auth.refreshSession();
+      const { error: memberRefreshError } =
+        await ctx.member.client.auth.refreshSession();
       if (memberRefreshError) {
-        throw new TestError('SESSION_REFRESH_ERROR', 'Failed to refresh member session', memberRefreshError);
+        throw new TestError(
+          'SESSION_REFRESH_ERROR',
+          'Failed to refresh member session',
+          memberRefreshError
+        );
       }
       // Debug member session
       const { data: memberSession } = await ctx.member.client.auth.getSession();
       console.log('Member session claims:', memberSession?.session?.user);
     }
     if (ctx.nonMember) {
-      const { error: nonMemberRefreshError } = await ctx.nonMember.client.auth.refreshSession();
+      const { error: nonMemberRefreshError } =
+        await ctx.nonMember.client.auth.refreshSession();
       if (nonMemberRefreshError) {
-        throw new TestError('SESSION_REFRESH_ERROR', 'Failed to refresh non-member session', nonMemberRefreshError);
+        throw new TestError(
+          'SESSION_REFRESH_ERROR',
+          'Failed to refresh non-member session',
+          nonMemberRefreshError
+        );
       }
       // Debug non-member session
-      const { data: nonMemberSession } = await ctx.nonMember.client.auth.getSession();
-      console.log('Non-member session claims:', nonMemberSession?.session?.user);
+      const { data: nonMemberSession } =
+        await ctx.nonMember.client.auth.getSession();
+      console.log(
+        'Non-member session claims:',
+        nonMemberSession?.session?.user
+      );
     }
     await wait(1000);
   });
@@ -559,9 +627,18 @@ describe('Storage Security Tests', () => {
 
   it('should allow owner to upload valid image files', async () => {
     // Log session info for all users
-    console.log('Owner session claims:', (await ctx.owner?.client.auth.getSession())?.data.session?.user);
-    console.log('Member session claims:', (await ctx.member?.client.auth.getSession())?.data.session?.user);
-    console.log('Non-member session claims:', (await ctx.nonMember?.client.auth.getSession())?.data.session?.user);
+    console.log(
+      'Owner session claims:',
+      (await ctx.owner?.client.auth.getSession())?.data.session?.user
+    );
+    console.log(
+      'Member session claims:',
+      (await ctx.member?.client.auth.getSession())?.data.session?.user
+    );
+    console.log(
+      'Non-member session claims:',
+      (await ctx.nonMember?.client.auth.getSession())?.data.session?.user
+    );
 
     if (!ctx.owner || !ctx.communitySlug) {
       throw new Error('Test context not properly initialized');
@@ -569,9 +646,10 @@ describe('Storage Security Tests', () => {
 
     // Debug session state before upload
     console.log('Owner session before upload:', {
-      role: (await ctx.owner.client.auth.getSession())?.data.session?.user.app_metadata.role,
+      role: (await ctx.owner.client.auth.getSession())?.data.session?.user
+        .app_metadata.role,
       id: (await ctx.owner.client.auth.getSession())?.data.session?.user.id,
-      communitySlug: ctx.communitySlug
+      communitySlug: ctx.communitySlug,
     });
 
     // Debug ownership verification
@@ -593,7 +671,7 @@ describe('Storage Security Tests', () => {
     console.log('Debug info:', {
       profile,
       community,
-      filePath
+      filePath,
     });
 
     // Create test file
@@ -606,9 +684,9 @@ describe('Storage Security Tests', () => {
         .upload(filePath, testFile.content, {
           cacheControl: '3600',
           upsert: false,
-          contentType: testFile.type // Explicitly set content type
+          contentType: testFile.type, // Explicitly set content type
         });
-      
+
       if (error) {
         console.error('Upload error:', error);
         uploadError = error;
@@ -627,7 +705,7 @@ describe('Storage Security Tests', () => {
 
     expect(listError).toBeNull();
     expect(data).toBeDefined();
-    expect(data?.some(file => file.name === 'test.png')).toBe(true);
+    expect(data?.some((file) => file.name === 'test.png')).toBe(true);
   });
 
   it('should not allow member to delete images', async () => {

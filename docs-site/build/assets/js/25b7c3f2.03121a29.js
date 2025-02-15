@@ -1,1 +1,0 @@
-"use strict";(self.webpackChunkterrarium_documentation=self.webpackChunkterrarium_documentation||[]).push([[847],{20693:(e,t,r)=>{r.r(t),r.d(t,{default:()=>a});var u=r(96540),n=r(56347);function a(){return u.createElement(n.rd,{to:"/"})}}}]);

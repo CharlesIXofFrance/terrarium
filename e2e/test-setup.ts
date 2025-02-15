@@ -21,9 +21,9 @@ export const adminClient = createClient<Database>(
 );
 
 // Test utilities
-export const generateTestId = () => Math.random().toString(36).substring(7);
-export const generateTestEmail = () => `test-${generateTestId()}@example.com`;
-export const generateTestPassword = () => `password-${generateTestId()}`;
+const generateTestId = () => Math.random().toString(36).substring(7);
+const generateTestEmail = () => `test-${generateTestId()}@example.com`;
+const generateTestPassword = () => `password-${generateTestId()}`;
 
 // Constants for testing
 export const TEST_COMMUNITY = 'test-community';
@@ -34,7 +34,7 @@ export const PASSWORD = 'password123';
 /**
  * Create a test user with the given role and metadata
  */
-export const createTestUser = async (
+const createTestUser = async (
   email: string,
   password: string,
   role: string,
@@ -53,7 +53,7 @@ export const createTestUser = async (
 /**
  * Create a test community owned by the given user
  */
-export const createTestCommunity = async (
+const createTestCommunity = async (
   ownerId: string,
   data: Record<string, unknown> = {}
 ) => {
@@ -78,7 +78,7 @@ export const createTestCommunity = async (
 /**
  * Create a community membership for a user
  */
-export const createTestMembership = async (
+const createTestMembership = async (
   userId: string,
   communityId: string,
   role: string = 'member'
@@ -99,7 +99,7 @@ export const createTestMembership = async (
 /**
  * Delete test users from auth and profiles
  */
-export async function deleteTestUsers() {
+async function deleteTestUsers() {
   try {
     console.log('Deleting test users...');
 
@@ -127,7 +127,7 @@ export async function deleteTestUsers() {
  * Set up test database with initial data
  * Creates a test community with an owner and a member
  */
-export async function setupTestDatabase() {
+async function setupTestDatabase() {
   console.log('Setting up test database...');
 
   // Delete existing test users first

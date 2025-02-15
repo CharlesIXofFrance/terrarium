@@ -20,7 +20,11 @@ import { toast } from 'sonner';
 
 const DEBUG = process.env.NODE_ENV === 'development';
 
-function debugLog(area: string, message: string, data?: Record<string, unknown>): void {
+function debugLog(
+  area: string,
+  message: string,
+  data?: Record<string, unknown>
+): void {
   if (DEBUG) {
     console.log(`[Auth Callback Debug] ${area}:`, message, data || '');
   }
@@ -42,7 +46,11 @@ export const AuthCallback = () => {
         const next = searchParams.get('next');
         const redirectTo = searchParams.get('redirectTo');
 
-        debugLog('handleCallback', 'Processing authentication callback', { subdomain, next, redirectTo });
+        debugLog('handleCallback', 'Processing authentication callback', {
+          subdomain,
+          next,
+          redirectTo,
+        });
 
         // Add timeout for security
         const timeoutPromise = new Promise((_, reject) => {
@@ -50,17 +58,23 @@ export const AuthCallback = () => {
         });
 
         // Race between auth and timeout
-        const { data, error } = await Promise.race([
+        const { data, error } = (await Promise.race([
           supabase.auth.getSessionFromUrl(),
-          timeoutPromise
-        ]) as { data: any, error: any };
+          timeoutPromise,
+        ])) as { data: any; error: any };
 
         if (error || !data.session) {
-          debugLog('handleCallback', 'Failed to retrieve session from URL', { error });
-          throw new Error(error?.message || 'Failed to retrieve session from URL');
+          debugLog('handleCallback', 'Failed to retrieve session from URL', {
+            error,
+          });
+          throw new Error(
+            error?.message || 'Failed to retrieve session from URL'
+          );
         }
         const session = data.session;
-        debugLog('handleCallback', 'Session retrieved successfully', { userId: session.user.id });
+        debugLog('handleCallback', 'Session retrieved successfully', {
+          userId: session.user.id,
+        });
 
         // Update auth state with retrieved user session
         setUser(session.user);
@@ -74,10 +88,15 @@ export const AuthCallback = () => {
             .maybeSingle();
 
           if (commErr) {
-            debugLog('handleCallback', 'Failed to fetch community', { commErr });
+            debugLog('handleCallback', 'Failed to fetch community', {
+              commErr,
+            });
             console.error('Failed to fetch community:', commErr);
           } else if (community) {
-            debugLog('handleCallback', 'Found community', { communityId: community.id, slug: community.slug });
+            debugLog('handleCallback', 'Found community', {
+              communityId: community.id,
+              slug: community.slug,
+            });
             const { error: memberErr } = await supabase
               .from('community_members')
               .upsert({
@@ -87,22 +106,38 @@ export const AuthCallback = () => {
                 status: 'active',
               });
             if (memberErr) {
-              debugLog('handleCallback', 'Failed to upsert community membership', { memberErr });
-              console.error('Failed to upsert community membership:', memberErr);
+              debugLog(
+                'handleCallback',
+                'Failed to upsert community membership',
+                { memberErr }
+              );
+              console.error(
+                'Failed to upsert community membership:',
+                memberErr
+              );
             } else {
-              debugLog('handleCallback', 'Community membership upserted successfully');
+              debugLog(
+                'handleCallback',
+                'Community membership upserted successfully'
+              );
               setCommunity(community);
             }
           }
         }
 
-        const isPlatformLogin = window.location.pathname.startsWith('/platform/') || subdomain === 'platform';
-        navigate(redirectTo || (isPlatformLogin ? '/platform/dashboard' : '/dashboard'), { replace: true });
+        const isPlatformLogin =
+          window.location.pathname.startsWith('/platform/') ||
+          subdomain === 'platform';
+        navigate(
+          redirectTo ||
+            (isPlatformLogin ? '/platform/dashboard' : '/dashboard'),
+          { replace: true }
+        );
       } catch (err) {
-        debugLog('handleCallback', 'Auth callback error', { 
-          error: err, 
+        debugLog('handleCallback', 'Auth callback error', {
+          error: err,
           message: err instanceof Error ? err.message : String(err),
-          stack: err instanceof Error ? err.stack : undefined
+          stack: err instanceof Error ? err.stack : undefined,
         });
         console.error('Auth callback error:', err);
         setError(err instanceof Error ? err.message : 'Auth callback error');
@@ -135,5 +170,3 @@ export const AuthCallback = () => {
 
   return null;
 };
-
-export default AuthCallback;

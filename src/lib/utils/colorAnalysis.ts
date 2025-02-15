@@ -3,7 +3,7 @@ import Vibrant from 'node-vibrant';
 /**
  * Convert RGB array to hex color string
  */
-export function rgbToHex([r, g, b]: number[]): string {
+function rgbToHex([r, g, b]: number[]): string {
   return (
     '#' +
     [r, g, b]
@@ -16,7 +16,7 @@ export function rgbToHex([r, g, b]: number[]): string {
 /**
  * Calculate contrast ratio between two colors
  */
-export function getContrastRatio(color1: string, color2: string): number {
+function getContrastRatio(color1: string, color2: string): number {
   const getLuminance = (hex: string): number => {
     const rgb = parseInt(hex.slice(1), 16);
     const r = (rgb >> 16) & 0xff;
@@ -43,7 +43,7 @@ export function getContrastRatio(color1: string, color2: string): number {
 /**
  * Check if a color meets WCAG contrast requirements
  */
-export function meetsWCAGRequirements(color: string): boolean {
+function meetsWCAGRequirements(color: string): boolean {
   const lightContrast = getContrastRatio(color, '#FFFFFF');
   const darkContrast = getContrastRatio(color, '#000000');
   return Math.max(lightContrast, darkContrast) >= 4.5;

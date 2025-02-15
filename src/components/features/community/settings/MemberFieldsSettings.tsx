@@ -61,7 +61,7 @@ import { cn } from '@/lib/utils';
  * - Must sync with member onboarding
  */
 
-export interface MemberFieldsSettingsProps {
+interface MemberFieldsSettingsProps {
   communityId: string;
   isAddingField?: boolean;
   onAddField?: () => void;

@@ -1,6 +1,5 @@
 import { AuthError, AuthResponse, User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
-import { UserRole } from '@/lib/utils/types';
 
 const DEBUG = process.env.NODE_ENV === 'development';
 
@@ -17,7 +16,7 @@ function debugLog(area: string, message: string, data?: DebugData) {
 /**
  * Result of an authentication operation
  */
-export interface AuthResult {
+interface AuthResult {
   success: boolean;
   message: string;
   error?: string;
@@ -27,8 +26,8 @@ export interface AuthResult {
 /**
  * Options for signing in with email
  */
-export interface SignInOptions {
-  role: UserRole;
+interface SignInOptions {
+  role: string;
   communitySlug: string;
   firstName?: string;
   lastName?: string;
@@ -38,7 +37,7 @@ export interface SignInOptions {
  * Passwordless authentication service for members and employers.
  * Uses magic links for a seamless sign-in experience.
  */
-export class PasswordlessAuthService {
+class PasswordlessAuthService {
   /**
    * Send magic link for members/employers to sign up or sign in
    */
@@ -47,6 +46,8 @@ export class PasswordlessAuthService {
     options: SignInOptions
   ): Promise<AuthResult> {
     try {
+      debugLog('signInWithEmail', 'Starting sign in', { email, options });
+
       // Build callback
       const callbackUrl = new URL('/auth/callback', window.location.origin);
       if (options.communitySlug) {
@@ -68,66 +69,31 @@ export class PasswordlessAuthService {
           },
         },
       });
+
       if (error) {
+        debugLog('signInWithEmail', 'Sign in error', { error });
         return {
           success: false,
           message: error.message,
-          error: error.message
+          error: error.message,
         };
       }
 
+      debugLog('signInWithEmail', 'Sign in successful');
       return {
         success: true,
         message: 'Check your email for the magic link',
       };
     } catch (err) {
+      debugLog('signInWithEmail', 'Unexpected error', { err });
       console.error('Passwordless signInWithEmail error:', err);
       return {
         success: false,
-        message: err instanceof Error ? err.message : 'Failed to send magic link',
+        message:
+          err instanceof Error ? err.message : 'Failed to send magic link',
         error: err instanceof Error ? err.message : 'Unknown error',
       };
     }
-  }
-
-  /**
-   * Verify OTP from magic link
-   */
-  async verifyOtp(tokenHash: string, type: 'magiclink'): Promise<{ session: Session | null; user: User | null }> {
-    const { data, error } = await supabase.auth.verifyOtp({
-      token_hash: tokenHash,
-      type,
-    });
-    if (error) {
-      throw error;
-    }
-    return {
-      session: data.session,
-      user: data.session?.user || null,
-    };
-  }
-
-  /**
-   * Get current session if any
-   */
-  async getSession(): Promise<{ session: Session | null; user: User | null }> {
-    const { data } = await supabase.auth.getSession();
-    return {
-      session: data.session,
-      user: data.session?.user || null,
-    };
-  }
-
-  /**
-   * Sign out
-   */
-  async signOut(): Promise<void> {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      throw error;
-    }
-  }
-}
   }
 
   /**

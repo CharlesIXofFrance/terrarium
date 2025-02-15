@@ -15,11 +15,9 @@ export const userCommunityAtom = atom<any | null>(null);
 export const currentCommunityAtom = atom<Community | null>(null);
 
 // Derived atoms
-export const isAuthenticatedAtom = atom((get) => !!get(userAtom));
-export const userRoleAtom = atom(
-  (get) => get(userAtom)?.user_metadata?.role || null
-);
-export const userEmailAtom = atom((get) => get(userAtom)?.email || null);
+const isAuthenticatedAtom = atom((get) => !!get(userAtom));
+const userRoleAtom = atom((get) => get(userAtom)?.user_metadata?.role || null);
+const userEmailAtom = atom((get) => get(userAtom)?.email || null);
 
 // Setter functions using Jotai primitives
 export const setUser = (get: any, set: any, user: ExtendedUser | null) =>
@@ -28,13 +26,10 @@ export const setSession = (get: any, set: any, session: Session | null) =>
   set(sessionAtom, session);
 export const setProfile = (get: any, set: any, profile: Profile | null) =>
   set(profileAtom, profile);
-export const setUserCommunity = (get: any, set: any, community: any | null) =>
+const setUserCommunity = (get: any, set: any, community: any | null) =>
   set(userCommunityAtom, community);
-export const setCurrentCommunity = (
-  get: any,
-  set: any,
-  community: Community | null
-) => set(currentCommunityAtom, community);
+const setCurrentCommunity = (get: any, set: any, community: Community | null) =>
+  set(currentCommunityAtom, community);
 export const setIsLoading = (get: any, set: any, loading: boolean) =>
   set(isLoadingAtom, loading);
 

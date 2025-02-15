@@ -12,7 +12,7 @@ export interface Permission {
     | 'platform';
 }
 
-export interface RolePermissions {
+interface RolePermissions {
   [role: string]: Permission[];
 }
 

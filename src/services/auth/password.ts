@@ -262,4 +262,4 @@ class PasswordAuthService extends BaseAuthService {
 }
 
 // Export singleton instance
-export const passwordAuthService = new PasswordAuthService(supabase);
+const passwordAuthService = new PasswordAuthService(supabase);

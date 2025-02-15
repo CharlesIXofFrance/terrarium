@@ -20,8 +20,6 @@
  */
 
 // Re-export auth services
-export { memberAuth } from './passwordless';
-export { passwordAuthService as ownerAuth } from './password';
 
 // Re-export auth types from base
 import { AuthError, Session, User } from '@supabase/supabase-js';
@@ -36,7 +34,7 @@ const MAX_ATTEMPTS = 3;
 const RATE_LIMIT_WINDOW = 5 * 60 * 1000; // 5 minutes
 
 // Type definitions
-export interface AuthResult {
+interface AuthResult {
   user: {
     id: string;
     email: string | null;
@@ -55,7 +53,7 @@ export interface AuthResult {
   isNewUser?: boolean;
 }
 
-export interface AuthResponse {
+interface AuthResponse {
   success: boolean;
   message?: string;
   error?: string;
@@ -94,7 +92,7 @@ const emailSchema = z.string().email();
 const communitySlugSchema = z.string().min(3).max(50);
 
 // Helper functions
-export function mapUserToAuthResult(
+function mapUserToAuthResult(
   user: User,
   accessToken: string,
   refreshToken: string,
@@ -361,5 +359,5 @@ export class AuthService extends BaseAuthService {
 }
 
 // Export instances
-export const authService = new AuthService();
+const authService = new AuthService();
 export * from './passwordless';

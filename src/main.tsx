@@ -1,12 +1,19 @@
-import React, { useEffect } from 'react';
+import React, { StrictMode, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Provider, useSetAtom } from 'jotai';
-import { userAtom, sessionAtom, profileAtom, isLoadingAtom, userCommunityAtom, currentCommunityAtom } from './lib/stores/auth';
+import {
+  userAtom,
+  sessionAtom,
+  profileAtom,
+  isLoadingAtom,
+  userCommunityAtom,
+  currentCommunityAtom,
+} from './lib/stores/auth';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import App from './App';
 import { initAuth } from './lib/stores/auth';
-import { ErrorBoundary } from '@/components/layout/molecules/ErrorBoundary';
+import { ErrorBoundary } from './components/layout/molecules/ErrorBoundary';
 
 // Import only the primary font weights needed
 import '@fontsource/inter/400.css';
@@ -20,7 +27,7 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 1000 * 60 * 5, // 5 minutes
-      cacheTime: 1000 * 60 * 30, // 30 minutes
+      gcTime: 1000 * 60 * 30, // 30 minutes
       retry: 1,
       refetchOnWindowFocus: false,
     },
@@ -55,46 +62,53 @@ rootElement.style.visibility = 'visible';
 rootElement.style.opacity = '1';
 rootElement.style.height = '100%';
 
+// Initialize auth in the background
+function AuthInitializer() {
+  const setUser = useSetAtom(userAtom);
+  const setSession = useSetAtom(sessionAtom);
+  const setProfile = useSetAtom(profileAtom);
+  const setIsLoading = useSetAtom(isLoadingAtom);
+  const setUserCommunity = useSetAtom(userCommunityAtom);
+  const setCurrentCommunity = useSetAtom(currentCommunityAtom);
+
+  useEffect(() => {
+    const set = {
+      setUser,
+      setSession,
+      setProfile,
+      setIsLoading,
+      setUserCommunity,
+      setCurrentCommunity,
+    };
+
+    initAuth(set)
+      .then(({ user, profile, session }) => {
+        console.log('Auth initialized successfully', {
+          hasUser: !!user,
+          hasProfile: !!profile,
+          hasSession: !!session,
+        });
+      })
+      .catch((error) => {
+        console.error('Failed to initialize auth:', error);
+      });
+  }, [
+    setUser,
+    setSession,
+    setProfile,
+    setIsLoading,
+    setUserCommunity,
+    setCurrentCommunity,
+  ]);
+
+  return null;
+}
+
 try {
   console.log('Attempting to render React app...');
-  
-  // Initialize auth in the background
-  function AuthInitializer() {
-    const setUser = useSetAtom(userAtom);
-    const setSession = useSetAtom(sessionAtom);
-    const setProfile = useSetAtom(profileAtom);
-    const setIsLoading = useSetAtom(isLoadingAtom);
-    const setUserCommunity = useSetAtom(userCommunityAtom);
-    const setCurrentCommunity = useSetAtom(currentCommunityAtom);
-    
-    useEffect(() => {
-      const set = {
-        setUser,
-        setSession,
-        setProfile,
-        setIsLoading,
-        setUserCommunity,
-        setCurrentCommunity
-      };
-
-      initAuth(set)
-        .then(({ user, profile, session }) => {
-          console.log('Auth initialized successfully', { 
-            hasUser: !!user,
-            hasProfile: !!profile, 
-            hasSession: !!session 
-          });
-        })
-        .catch(error => {
-          console.error('Failed to initialize auth:', error);
-        });
-    }, [setUser, setSession, setProfile, setIsLoading, setUserCommunity, setCurrentCommunity]);
-    
-    return null;
-  }
 
   root.render(
-    <React.StrictMode>
+    <StrictMode>
       <ErrorBoundary>
         <Provider>
           <QueryClientProvider client={queryClient}>
@@ -104,7 +118,7 @@ try {
           </QueryClientProvider>
         </Provider>
       </ErrorBoundary>
-    </React.StrictMode>
+    </StrictMode>
   );
   console.log('React app rendered successfully');
 } catch (error) {

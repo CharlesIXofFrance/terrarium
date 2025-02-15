@@ -18,13 +18,7 @@
  */
 
 import type { Session, User } from '@supabase/supabase-js';
-
-export enum UserRole {
-  MEMBER = 'member',
-  EMPLOYER = 'employer',
-  OWNER = 'owner',
-  ADMIN = 'admin',
-}
+import { UserRole } from '@/lib/utils/types';
 
 export interface AuthUser extends User {
   role: UserRole;

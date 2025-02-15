@@ -24,20 +24,20 @@ interface CustomizationError {
 interface LoginSettings {
   title: string;
   subtitle: string;
-  welcome_message?: string;
-  button_text: string;
-  background_color: string;
-  text_color: string;
-  side_image_url?: string;
-  logo_url?: string;
+  welcomeMessage?: string;
+  buttonText: string;
+  backgroundColor: string;
+  textColor: string;
+  sideImageUrl?: string;
+  logoUrl?: string;
 }
 
 const defaultCustomization: LoginSettings = {
   title: 'Welcome Back',
   subtitle: 'Sign in to your account',
-  button_text: 'Sign In',
-  background_color: '#FFFFFF',
-  text_color: '#000000',
+  buttonText: 'Sign In',
+  backgroundColor: '#FFFFFF',
+  textColor: '#000000',
 };
 
 /**

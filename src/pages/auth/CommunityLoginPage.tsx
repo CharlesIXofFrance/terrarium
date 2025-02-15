@@ -6,47 +6,63 @@
  * 2. Member Login: Existing members can log in
  *
  * Features:
- * - Magic link authentication (passwordless)
+ * - Email/Password and Magic link authentication
  * - Community branding/customization
  * - Access control
  * - Rate limiting
  * - Error handling
  */
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useCommunityCustomization } from '@/hooks/useCommunityCustomization';
-import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/lib/hooks/useAuth';
 import { UserRole } from '@/lib/utils/types';
+
 import { Spinner } from '@/components/ui/atoms/Spinner';
 import { Button } from '@/components/ui/atoms/Button';
 import { Input } from '@/components/ui/atoms/Input';
+import { ErrorBoundary } from '@/components/ui/atoms/ErrorBoundary';
 
 const loginSchema = z.object({
-  email: z.string().email('Invalid email address'),
+  email: z.string().email('Please enter a valid email'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
 });
 
 const signupSchema = loginSchema.extend({
-  firstName: z.string().min(1, 'First name is required'),
-  lastName: z.string().min(1, 'Last name is required'),
+  firstName: z.string().min(2, 'First name must be at least 2 characters'),
+  lastName: z.string().min(2, 'Last name must be at least 2 characters'),
+  password: z
+    .string()
+    .min(8, 'Password must be at least 8 characters')
+    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+    .regex(/[0-9]/, 'Password must contain at least one number')
+    .regex(
+      /[^A-Za-z0-9]/,
+      'Password must contain at least one special character'
+    ),
+  confirmPassword: z.string(),
 });
 
-type LoginFormData = z.infer<typeof loginSchema>;
 type SignupFormData = z.infer<typeof signupSchema>;
+type LoginFormData = z.infer<typeof loginSchema>;
 
 interface CommunityLoginPageProps {
   communitySlug?: string;
 }
 
 export function CommunityLoginPage({ communitySlug }: CommunityLoginPageProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSignup, setIsSignup] = useState(false);
-  const [verificationSent, setVerificationSent] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const {
+    signInWithPassword,
+    signUpWithPassword,
+    isLoading: authLoading,
+  } = useAuth();
+  const [isSignup, setIsSignup] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Get community slug from props or subdomain
   const params = new URLSearchParams(window.location.search);
@@ -55,7 +71,7 @@ export function CommunityLoginPage({ communitySlug }: CommunityLoginPageProps) {
 
   const {
     customization,
-    isLoading,
+    isLoading: customizationLoading,
     error: customizationError,
   } = useCommunityCustomization(slug);
 
@@ -63,16 +79,18 @@ export function CommunityLoginPage({ communitySlug }: CommunityLoginPageProps) {
     register,
     handleSubmit,
     formState: { errors },
+    watch,
     reset,
   } = useForm<SignupFormData>({
     resolver: zodResolver(isSignup ? signupSchema : loginSchema),
+    mode: 'onChange',
   });
 
   if (!slug) {
     return <Navigate to="/login" replace />;
   }
 
-  if (isLoading) {
+  if (customizationLoading || authLoading) {
     return (
       <div className="flex h-screen items-center justify-center">
         <Spinner data-testid="spinner" />
@@ -85,265 +103,179 @@ export function CommunityLoginPage({ communitySlug }: CommunityLoginPageProps) {
     return <Navigate to="/login" replace />;
   }
 
-  const onSubmit = async (data: SignupFormData) => {
+  const onSubmit = async (data: SignupFormData | LoginFormData) => {
     try {
-      setIsSubmitting(true);
       setError(null);
 
-      // Get community data first
-      const { data: community, error: communityError } = await supabase
-        .from('communities')
-        .select('id, name, slug')
-        .eq('slug', slug)
-        .single();
-
-      if (communityError || !community) {
-        throw new Error(communityError?.message || 'Community not found');
+      if (!customization) {
+        throw new Error('Community not found');
       }
 
-      // Build clean callback URL - we let Supabase handle the token_hash
-      const callbackUrl = new URL('/auth/callback', window.location.origin);
+      if (isSignup) {
+        const signupData = data as SignupFormData;
+        if (signupData.password !== signupData.confirmPassword) {
+          setError("Passwords don't match");
+          return;
+        }
 
-      // Add community context and type
-      callbackUrl.searchParams.set('subdomain', community.slug);
-      callbackUrl.searchParams.set('type', isSignup ? 'signup' : 'signin');
-
-      // Add next path if provided
-      if (path && path !== '/login') {
-        callbackUrl.searchParams.set('next', path);
-      }
-
-      console.log('Sending magic link with URL:', callbackUrl.toString());
-
-      console.log('Community data:', community);
-
-      const metadata = {
-        firstName: isSignup ? data.firstName : undefined,
-        lastName: isSignup ? data.lastName : undefined,
-        role: UserRole.MEMBER,
-        community_id: community.id,
-        community_slug: community.slug,
-        community_name: community.name,
-        is_new_user: isSignup,
-      };
-
-      console.log('Sending auth request with metadata:', metadata);
-
-      // Auth call with proper metadata
-      // Add rate limiting check
-      const { data: rateLimitData } = await supabase
-        .from('auth_rate_limits')
-        .select('attempts, last_attempt')
-        .eq('email', data.email)
-        .single();
-
-      if (
-        rateLimitData?.attempts >= 5 &&
-        new Date().getTime() - new Date(rateLimitData.last_attempt).getTime() <
-          300000
-      ) {
-        throw new Error('Too many attempts. Please try again in 5 minutes.');
-      }
-
-      // Update rate limit
-      await supabase.from('auth_rate_limits').upsert({
-        email: data.email,
-        attempts: (rateLimitData?.attempts || 0) + 1,
-        last_attempt: new Date().toISOString(),
-      });
-
-      // Add CAPTCHA verification for additional security
-      const captchaToken = await getCaptchaToken();
-
-      const { data: authData, error: authError } =
-        await supabase.auth.signInWithOtp({
-          email: data.email,
+        const { error: signupError } = await signUpWithPassword({
+          email: signupData.email,
+          password: signupData.password,
           options: {
-            emailRedirectTo: callbackUrl.toString(),
             data: {
-              ...metadata,
-              csrf_token: crypto.randomUUID(), // Add CSRF protection
+              firstName: signupData.firstName,
+              lastName: signupData.lastName,
+              role: UserRole.MEMBER,
+              communitySlug: slug,
             },
-            captchaToken,
           },
         });
 
-      // Log auth attempt for audit
-      await supabase.from('auth_logs').insert([
-        {
-          email: data.email,
-          action: isSignup ? 'signup_attempt' : 'login_attempt',
-          ip_address: await fetch('https://api.ipify.org?format=json')
-            .then((r) => r.json())
-            .then((data) => data.ip),
-          user_agent: navigator.userAgent,
-          community_slug: slug,
-          success: !authError,
-        },
-      ]);
+        if (signupError) throw signupError;
+        navigate('/auth/verify');
+      } else {
+        const loginData = data as LoginFormData;
+        const { error: loginError } = await signInWithPassword({
+          email: loginData.email,
+          password: loginData.password,
+        });
 
-      console.log('Auth response:', { authData, error: authError });
-
-      if (authError) {
-        throw new Error(authError.message);
+        if (loginError) throw loginError;
+        navigate(path);
       }
-
-      setVerificationSent(true);
     } catch (err) {
       console.error('Authentication error:', err);
-      setError(
-        err instanceof Error ? err.message : 'Failed to send magic link'
-      );
-    } finally {
-      setIsSubmitting(false);
+      setError(err instanceof Error ? err.message : 'An error occurred');
     }
   };
 
   return (
-    <div
-      className="flex min-h-screen flex-col md:flex-row items-center justify-center"
-      style={{ backgroundColor: customization?.backgroundColor || '#fff' }}
-    >
-      {/* Side Image */}
-      {customization?.sideImageUrl && (
-        <div className="hidden md:block w-1/2 h-screen">
-          <img
-            src={customization.sideImageUrl}
-            alt="Login side image"
-            className="h-full w-full object-cover"
-          />
-        </div>
-      )}
-
-      {/* Login/Signup Form */}
+    <ErrorBoundary>
       <div
-        className={`w-full ${
-          customization?.sideImageUrl ? 'md:w-1/2' : ''
-        } h-screen flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8`}
+        className="flex min-h-screen flex-col md:flex-row items-center justify-center"
+        style={{ backgroundColor: customization?.backgroundColor || '#fff' }}
       >
-        <div className="w-full max-w-md space-y-8">
-          {/* Logo */}
-          {customization?.logoUrl && (
-            <div className="flex justify-center">
-              <img
-                src={customization.logoUrl}
-                alt="Community logo"
-                className="h-12 w-auto"
-              />
-            </div>
-          )}
+        {/* Side Image */}
+        {customization?.sideImageUrl && (
+          <div className="hidden md:block w-1/2 h-screen">
+            <img
+              src={customization.sideImageUrl}
+              alt="Login side image"
+              className="h-full w-full object-cover"
+            />
+          </div>
+        )}
 
-          <div className="text-center">
-            <h2
-              className="mt-6 text-3xl font-bold tracking-tight"
-              style={{ color: customization?.textColor || '#000' }}
-            >
-              {verificationSent
-                ? 'Check your email'
-                : isSignup
+        {/* Login/Signup Form */}
+        <div
+          className={`w-full ${
+            customization?.sideImageUrl ? 'md:w-1/2' : ''
+          } h-screen flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8`}
+        >
+          <div className="w-full max-w-md space-y-8">
+            {/* Logo */}
+            {customization?.logoUrl && (
+              <div className="flex justify-center">
+                <img
+                  src={customization.logoUrl}
+                  alt="Community logo"
+                  className="h-12 w-auto"
+                />
+              </div>
+            )}
+
+            <div className="text-center">
+              <h2
+                className="mt-6 text-3xl font-bold tracking-tight"
+                style={{ color: customization?.textColor || '#000' }}
+              >
+                {isSignup
                   ? 'Join the Community'
                   : customization?.title || 'Welcome Back'}
-            </h2>
-            <p
-              className="mt-2 text-sm"
-              style={{ color: customization?.textColor || '#000' }}
-            >
-              {verificationSent
-                ? 'We sent you a magic link to sign in'
-                : isSignup
+              </h2>
+              <p
+                className="mt-2 text-sm"
+                style={{ color: customization?.textColor || '#000' }}
+              >
+                {isSignup
                   ? 'Create your account'
                   : customization?.subtitle || 'Sign in to your account'}
-            </p>
-          </div>
-
-          {verificationSent ? (
-            <div className="text-center mt-4">
-              <p className="text-sm text-gray-600">
-                Click the link in your email to sign in. If you don't see it,
-                check your spam folder.
               </p>
-              <button
-                type="button"
-                onClick={() => {
-                  setVerificationSent(false);
-                  setError(null);
-                  reset();
-                }}
-                className="mt-4 text-sm font-medium text-indigo-600 hover:text-indigo-500"
-              >
-                Try again with a different email
-              </button>
             </div>
-          ) : (
+
             <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-6">
-              {error && (
-                <div className="rounded-md bg-red-50 p-4">
-                  <p className="text-sm text-red-700">{error}</p>
+              {isSignup && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Input
+                      label="First Name"
+                      {...register('firstName')}
+                      error={errors.firstName?.message}
+                      data-testid="firstName-input"
+                    />
+                  </div>
+                  <div>
+                    <Input
+                      label="Last Name"
+                      {...register('lastName')}
+                      error={errors.lastName?.message}
+                      data-testid="lastName-input"
+                    />
+                  </div>
                 </div>
               )}
 
-              <div className="space-y-4">
-                {isSignup && (
-                  <>
-                    <div>
-                      <label
-                        htmlFor="firstName"
-                        className="block text-sm font-medium text-gray-700"
-                      >
-                        First Name
-                      </label>
-                      <Input
-                        id="firstName"
-                        type="text"
-                        {...register('firstName')}
-                        error={errors.firstName?.message}
-                      />
-                    </div>
-                    <div>
-                      <label
-                        htmlFor="lastName"
-                        className="block text-sm font-medium text-gray-700"
-                      >
-                        Last Name
-                      </label>
-                      <Input
-                        id="lastName"
-                        type="text"
-                        {...register('lastName')}
-                        error={errors.lastName?.message}
-                      />
-                    </div>
-                  </>
-                )}
-                <div>
-                  <label
-                    htmlFor="email"
-                    className="block text-sm font-medium text-gray-700"
-                  >
-                    Email address
-                  </label>
-                  <Input
-                    id="email"
-                    type="email"
-                    autoComplete="email"
-                    {...register('email')}
-                    error={errors.email?.message}
-                  />
-                </div>
+              <div>
+                <Input
+                  label="Email"
+                  type="email"
+                  {...register('email')}
+                  error={errors.email?.message}
+                  data-testid="email-input"
+                />
               </div>
 
-              <Button
-                type="submit"
-                variant="primary"
-                className="w-full"
-                isLoading={isSubmitting}
-              >
-                {isSubmitting
-                  ? 'Sending...'
-                  : isSignup
-                    ? 'Create Account'
-                    : 'Sign In'}
-              </Button>
+              <div>
+                <Input
+                  label="Password"
+                  type="password"
+                  {...register('password')}
+                  error={errors.password?.message}
+                  data-testid="password-input"
+                />
+              </div>
+
+              {isSignup && (
+                <div>
+                  <Input
+                    label="Confirm Password"
+                    type="password"
+                    {...register('confirmPassword')}
+                    error={errors.confirmPassword?.message}
+                    data-testid="confirmPassword-input"
+                  />
+                </div>
+              )}
+
+              {error && (
+                <div
+                  className="text-red-500 text-sm text-center"
+                  data-testid="error-message"
+                >
+                  {error}
+                </div>
+              )}
+
+              <div>
+                <Button
+                  type="submit"
+                  className="w-full"
+                  data-testid="submit-button"
+                  isLoading={authLoading}
+                >
+                  {isSignup ? 'Create Account' : 'Sign In'}
+                </Button>
+              </div>
 
               <div className="text-center">
                 <button
@@ -353,7 +285,7 @@ export function CommunityLoginPage({ communitySlug }: CommunityLoginPageProps) {
                     setError(null);
                     reset();
                   }}
-                  className="text-sm font-medium text-indigo-600 hover:text-indigo-500"
+                  className="text-sm text-indigo-600 hover:text-indigo-500"
                 >
                   {isSignup
                     ? 'Already have an account? Sign in'
@@ -361,9 +293,9 @@ export function CommunityLoginPage({ communitySlug }: CommunityLoginPageProps) {
                 </button>
               </div>
             </form>
-          )}
+          </div>
         </div>
       </div>
-    </div>
+    </ErrorBoundary>
   );
 }

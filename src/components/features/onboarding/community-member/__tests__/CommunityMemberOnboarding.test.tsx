@@ -67,10 +67,11 @@ vi.mock('../steps/CommunityMemberWelcomeStep', () => ({
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          onSubmit({});
+          onSubmit();
         }}
+        data-testid="welcome-form"
       >
-        <button type="submit">Continue</button>
+        <button type="submit" data-testid="welcome-next">Next</button>
       </form>
     </div>
   ),
@@ -79,14 +80,15 @@ vi.mock('../steps/CommunityMemberWelcomeStep', () => ({
 vi.mock('../steps/CommunityMemberIdentityStep', () => ({
   __esModule: true,
   CommunityMemberIdentityStep: ({ onSubmit }: { onSubmit: () => void }) => (
-    <div data-testid="identity-form">
+    <div data-testid="identity-step">
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          onSubmit({});
+          onSubmit();
         }}
+        data-testid="identity-form"
       >
-        <button type="submit">Submit</button>
+        <button type="submit" data-testid="identity-next">Next</button>
       </form>
     </div>
   ),
@@ -95,14 +97,15 @@ vi.mock('../steps/CommunityMemberIdentityStep', () => ({
 vi.mock('../steps/CommunityMemberProfileStep', () => ({
   __esModule: true,
   CommunityMemberProfileStep: ({ onSubmit }: { onSubmit: () => void }) => (
-    <div data-testid="profile-form">
+    <div data-testid="profile-step">
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          onSubmit({});
+          onSubmit();
         }}
+        data-testid="profile-form"
       >
-        <button type="submit">Submit</button>
+        <button type="submit" data-testid="profile-next">Next</button>
       </form>
     </div>
   ),
@@ -111,14 +114,15 @@ vi.mock('../steps/CommunityMemberProfileStep', () => ({
 vi.mock('../steps/CommunityFieldsStep', () => ({
   __esModule: true,
   CommunityFieldsStep: ({ onSubmit }: { onSubmit: () => void }) => (
-    <div data-testid="community-form">
+    <div data-testid="fields-step">
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          onSubmit({});
+          onSubmit();
         }}
+        data-testid="fields-form"
       >
-        <button type="submit">Submit</button>
+        <button type="submit" data-testid="fields-next">Next</button>
       </form>
     </div>
   ),

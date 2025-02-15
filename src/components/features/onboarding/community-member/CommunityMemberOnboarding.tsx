@@ -48,7 +48,11 @@ const onboardingSteps = [
 ] as const;
 type OnboardingStep = (typeof onboardingSteps)[number];
 
-export function CommunityMemberOnboarding() {
+interface CommunityMemberOnboardingProps {
+  onSubmit?: (data: any) => void;
+}
+
+export function CommunityMemberOnboarding({ onSubmit = () => {} }: CommunityMemberOnboardingProps) {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [user] = useAtom(userAtom);

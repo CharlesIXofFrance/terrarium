@@ -20,11 +20,7 @@ import { toast } from 'sonner';
 
 const DEBUG = process.env.NODE_ENV === 'development';
 
-interface DebugData {
-  [key: string]: unknown;
-}
-
-function debugLog(area: string, message: string, data?: DebugData): void {
+function debugLog(area: string, message: string, data?: Record<string, unknown>): void {
   if (DEBUG) {
     console.log(`[Auth Callback Debug] ${area}:`, message, data || '');
   }
@@ -33,187 +29,101 @@ function debugLog(area: string, message: string, data?: DebugData): void {
 export const AuthCallback = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const [error, setError] = useState<string>();
+  const [isLoading, setIsLoading] = useState(true);
   const setUser = useSetAtom(userAtom);
   const setCommunity = useSetAtom(userCommunityAtom);
-  const setIsLoading = useSetAtom(isLoadingAtom);
-  const [error, setError] = useState<string>();
+  const setIsLoadingGlobal = useSetAtom(isLoadingAtom);
 
   useEffect(() => {
     const handleCallback = async () => {
       try {
-        setIsLoading(true);
+        const subdomain = searchParams.get('subdomain') || '';
+        const next = searchParams.get('next');
+        const redirectTo = searchParams.get('redirectTo');
 
-        // Get token hash and type from URL
-        const tokenHash = searchParams.get('token_hash');
-        const type = searchParams.get('type');
-        const communitySlug = searchParams.get('subdomain');
+        debugLog('handleCallback', 'Processing authentication callback', { subdomain, next, redirectTo });
 
-        debugLog('handleCallback', 'URL parameters', {
-          tokenHash,
-          type,
-          communitySlug,
-          allParams: Object.fromEntries(searchParams.entries()),
+        // Add timeout for security
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Authentication timeout')), 10000);
         });
 
-        if (!tokenHash || !type) {
-          throw new Error('Invalid callback URL');
+        // Race between auth and timeout
+        const { data, error } = await Promise.race([
+          supabase.auth.getSessionFromUrl(),
+          timeoutPromise
+        ]) as { data: any, error: any };
+
+        if (error || !data.session) {
+          debugLog('handleCallback', 'Failed to retrieve session from URL', { error });
+          throw new Error(error?.message || 'Failed to retrieve session from URL');
         }
+        const session = data.session;
+        debugLog('handleCallback', 'Session retrieved successfully', { userId: session.user.id });
 
-        if (!communitySlug) {
-          debugLog('handleCallback', 'No community slug found');
-          throw new Error('Community not found in URL');
-        }
-
-        // Exchange token hash for session
-        debugLog('handleCallback', 'Verifying OTP');
-        console.log('Starting OTP verification with:', {
-          type: 'email',
-          token_hash: tokenHash,
-          searchParams: Object.fromEntries(searchParams.entries()),
-        });
-
-        // Get the session - Supabase will automatically handle the auth flow
-        const {
-          data: { session },
-          error: sessionError,
-        } = await supabase.auth.getSession();
-
-        if (sessionError) {
-          debugLog('handleCallback', 'Session error', { error: sessionError });
-          throw new Error(sessionError.message);
-        }
-
-        if (!session) {
-          debugLog('handleCallback', 'No session found');
-          throw new Error('No session found after authentication');
-        }
-
-        // Set up auth state change listener
-        supabase.auth.onAuthStateChange((event, currentSession) => {
-          debugLog('handleCallback', 'Auth state changed', {
-            event,
-            currentSession,
-          });
-          if (event === 'SIGNED_IN' && currentSession) {
-            // Handle successful sign in
-            debugLog('handleCallback', 'User signed in', {
-              user: currentSession.user,
-            });
-          } else if (event === 'SIGNED_OUT') {
-            // Handle sign out
-            navigate('/login');
-          }
-        });
-
-        // Create user profile if needed
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
-
-        if (!profile) {
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .insert({
-              id: session.user.id,
-              email: session.user.email,
-              first_name: session.user.user_metadata?.firstName,
-              last_name: session.user.user_metadata?.lastName,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            });
-
-          if (profileError) {
-            debugLog('handleCallback', 'Profile creation error', {
-              error: profileError,
-            });
-            throw profileError;
-          }
-        }
-
-        debugLog('handleCallback', 'Session obtained', {
-          userId: session.user.id,
-          email: session.user.email,
-        });
-
-        // Get community data
-        debugLog('handleCallback', 'Fetching community data', {
-          communitySlug,
-        });
-        const { data: community, error: communityError } = await supabase
-          .from('communities')
-          .select('*')
-          .eq('slug', communitySlug)
-          .single();
-
-        if (communityError) {
-          debugLog('handleCallback', 'Community fetch error', {
-            error: communityError,
-          });
-          throw communityError;
-        }
-        if (!community) {
-          debugLog('handleCallback', 'Community not found', { communitySlug });
-          throw new Error('Community not found');
-        }
-
-        // Get or create community member
-        debugLog('handleCallback', 'Creating/updating community member');
-        const { data: member, error: memberError } = await supabase
-          .from('community_members')
-          .upsert(
-            {
-              profile_id: session.user.id,
-              community_id: community.id,
-              role: session.user.user_metadata?.role || 'member',
-              status: 'active',
-              onboarding_completed: false,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            },
-            {
-              onConflict: 'profile_id,community_id',
-              ignoreDuplicates: false,
-            }
-          )
-          .select('*, profile:profiles(*)')
-          .single();
-
-        if (memberError) {
-          debugLog('handleCallback', 'Member upsert error', {
-            error: memberError,
-          });
-          throw memberError;
-        }
-
-        debugLog('handleCallback', 'Member data', { member });
-
-        // Set global state
+        // Update auth state with retrieved user session
         setUser(session.user);
-        setCommunity(community);
 
-        // Redirect based on onboarding status
-        const redirectPath = member.onboarding_completed
-          ? `/?subdomain=${communitySlug}&path=/dashboard`
-          : `/?subdomain=${communitySlug}&path=/onboarding`;
+        // If subdomain exists, upsert community membership
+        if (subdomain) {
+          const { data: community, error: commErr } = await supabase
+            .from('communities')
+            .select('id, slug, owner_id')
+            .eq('slug', subdomain)
+            .maybeSingle();
 
-        debugLog('handleCallback', 'Redirecting', { redirectPath });
-        navigate(redirectPath, { replace: true });
-      } catch (error) {
-        debugLog('handleCallback', 'Error in callback', { error });
-        console.error('Auth callback error:', error);
-        toast.error(
-          error instanceof Error ? error.message : 'Authentication failed'
-        );
-        navigate('/login');
+          if (commErr) {
+            debugLog('handleCallback', 'Failed to fetch community', { commErr });
+            console.error('Failed to fetch community:', commErr);
+          } else if (community) {
+            debugLog('handleCallback', 'Found community', { communityId: community.id, slug: community.slug });
+            const { error: memberErr } = await supabase
+              .from('community_members')
+              .upsert({
+                profile_id: session.user.id,
+                community_id: community.id,
+                role: 'member',
+                status: 'active',
+              });
+            if (memberErr) {
+              debugLog('handleCallback', 'Failed to upsert community membership', { memberErr });
+              console.error('Failed to upsert community membership:', memberErr);
+            } else {
+              debugLog('handleCallback', 'Community membership upserted successfully');
+              setCommunity(community);
+            }
+          }
+        }
+
+        const isPlatformLogin = window.location.pathname.startsWith('/platform/') || subdomain === 'platform';
+        navigate(redirectTo || (isPlatformLogin ? '/platform/dashboard' : '/dashboard'), { replace: true });
+      } catch (err) {
+        debugLog('handleCallback', 'Auth callback error', { 
+          error: err, 
+          message: err instanceof Error ? err.message : String(err),
+          stack: err instanceof Error ? err.stack : undefined
+        });
+        console.error('Auth callback error:', err);
+        setError(err instanceof Error ? err.message : 'Auth callback error');
+        toast.error('Authentication failed');
       } finally {
+        debugLog('handleCallback', 'Auth callback completed');
         setIsLoading(false);
+        setIsLoadingGlobal(false);
       }
     };
 
     handleCallback();
-  }, [navigate, searchParams, setUser, setCommunity, setIsLoading]);
+  }, [navigate, searchParams, setUser, setCommunity, setIsLoadingGlobal]);
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
 
   if (error) {
     return (
@@ -223,11 +133,7 @@ export const AuthCallback = () => {
     );
   }
 
-  return (
-    <div className="flex h-screen items-center justify-center">
-      <Spinner size="lg" />
-    </div>
-  );
+  return null;
 };
 
 export default AuthCallback;

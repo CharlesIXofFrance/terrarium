@@ -1,0 +1,405 @@
+/**
+ * Auth Callback Page
+ *
+ * This page handles the callback after a user clicks a verification link.
+ * The flow works as follows:
+ * 1. User clicks magic link in email
+ * 2. Link redirects to this page with token_hash
+ * 3. We verify the token using Proof Key for Code Exchange
+ * 4. We complete sign in and create community member if needed
+ * 5. Redirect to appropriate page (onboarding or dashboard)
+ */
+
+import { useEffect, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSetAtom } from 'jotai';
+import { userAtom, userCommunityAtom, isLoadingAtom } from '@/lib/stores/auth';
+import { supabase } from '@/lib/supabase';
+import { Spinner } from '@/components/ui/atoms/Spinner';
+import { toast } from 'sonner';
+
+const DEBUG = process.env.NODE_ENV === 'development';
+
+interface DebugData {
+  [key: string]: unknown;
+}
+
+function debugLog(area: string, message: string, data?: DebugData): void {
+  if (DEBUG) {
+    console.log(`[Auth Callback Debug] ${area}:`, message, data || '');
+  }
+}
+
+export const AuthCallback = () => {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const [error, setError] = useState<string>();
+  const [isLoading, setIsLoading] = useState(true);
+  const setUser = useSetAtom(userAtom);
+  const setCommunity = useSetAtom(userCommunityAtom);
+  const setIsLoadingGlobal = useSetAtom(isLoadingAtom);
+
+  useEffect(() => {
+    const handleCallback = async () => {
+      try {
+        const tokenHash = searchParams.get('token_hash');
+        const type = searchParams.get('type');
+        const subdomain = searchParams.get('subdomain') || '';
+        const next = searchParams.get('next');
+        const redirectTo = searchParams.get('redirectTo');
+
+        const isPlatformLogin = 
+          window.location.pathname.startsWith('/platform/') || 
+          subdomain === 'platform';
+
+        if (DEBUG) {
+          console.log('[Auth Callback] Parameters:', {
+            tokenHash, type, subdomain, next, redirectTo, isPlatformLogin
+          });
+        }
+
+        // Handle magic link verification
+        if (type === 'magiclink' && tokenHash) {
+          const { data, error: verifyError } = await supabase.auth.verifyOtp({
+            token_hash: tokenHash,
+            type: 'magiclink'
+          });
+          
+          if (verifyError || !data?.user) {
+            throw new Error(verifyError?.message || 'Magic link verification failed');
+          }
+
+          // Handle community membership if subdomain exists
+          if (subdomain) {
+            const { data: community, error: commErr } = await supabase
+              .from('communities')
+              .select('id, slug, owner_id')
+              .eq('slug', subdomain)
+              .maybeSingle();
+
+            if (commErr) {
+              console.error('Failed to fetch community:', commErr);
+            } else if (community) {
+              const { error: memberErr } = await supabase
+                .from('community_members')
+                .upsert({
+                  profile_id: data.user.id,
+                  community_id: community.id,
+                  role: 'member',
+                  status: 'active'
+                });
+
+              if (memberErr) {
+                console.error('Failed to create membership:', memberErr);
+              } else {
+                setCommunity(community);
+              }
+            }
+          }
+
+          setUser(data.user);
+          navigate(redirectTo || `/?subdomain=${subdomain}&path=/onboarding`, { replace: true });
+        } else {
+          // Handle regular session check
+          const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+          
+          if (sessionError || !session) {
+            throw new Error(sessionError?.message || 'No session found');
+          }
+
+          setUser(session.user);
+          
+          // Redirect based on user type
+          if (isPlatformLogin) {
+            navigate('/platform/dashboard', { replace: true });
+          } else {
+            navigate(next || '/dashboard', { replace: true });
+          }
+        }
+      } catch (err) {
+        console.error('Auth callback error:', err);
+        setError(err instanceof Error ? err.message : 'Auth callback error');
+        toast.error('Authentication failed');
+      } finally {
+        setIsLoading(false);
+        setIsLoadingGlobal(false);
+      }
+    };
+
+    handleCallback();
+  }, [navigate, searchParams, setUser, setCommunity, setIsLoadingGlobal]);
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-red-500">{error}</div>
+      </div>
+    );
+  }
+
+  return null;
+};
+
+  if (error) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-red-500">{error}</div>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
+
+  return null;
+};
+        const tokenHash = searchParams.get('token_hash');
+        const type = searchParams.get('type');
+        const subdomain = searchParams.get('subdomain'); // For community auth
+        const next = searchParams.get('next'); // Custom redirect path
+        const redirectTo = searchParams.get('redirectTo'); // From login form
+        const state = window.history.state?.state; // From router state
+
+        // Check if this is a platform login
+        const isPlatformLogin = 
+          window.location.pathname.startsWith('/platform/') || 
+          subdomain === 'platform';
+
+        debugLog('handleCallback', 'URL parameters', {
+          tokenHash,
+          type,
+          subdomain,
+          next,
+          redirectTo,
+          state,
+          isPlatformLogin,
+          pathname: window.location.pathname
+        });
+
+        // For non-magic-link auth, we don't need token_hash and type
+        if (!tokenHash && !type) {
+          debugLog('handleCallback', 'No token hash or type - assuming password login');
+        } else if ((tokenHash && !type) || (!tokenHash && type)) {
+          throw new Error('Invalid callback URL');
+        }
+
+        debugLog('handleCallback', 'Starting auth callback', { 
+          tokenHash, 
+          type,
+          subdomain,
+          next
+        });
+        
+        // Get the session first
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError) throw new Error(sessionError.message);
+        if (!session?.user) throw new Error('No user found');
+
+        debugLog('handleCallback', 'Session obtained', { userId: session.user.id });
+
+        // Try to get existing profile and role
+        const [profileResult, roleResult] = await Promise.all([
+          supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single(),
+          supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', session.user.id)
+            .single()
+        ]);
+
+        // Handle profile creation or error
+        let profile;
+        if (profileResult.error) {
+          if (profileResult.error.code === 'PGRST116') {
+            // Profile doesn't exist, create it
+            debugLog('handleCallback', 'No profile exists, creating one');
+
+            // Determine if this is a community signup
+            if (subdomain) {
+              // Get community data
+              const { data: community, error: communityError } = await supabase
+                .from('communities')
+                .select('id, name, slug')
+                .eq('slug', subdomain)
+                .single();
+
+              if (communityError || !community) {
+                throw new Error(communityError?.message || 'Community not found');
+              }
+
+              // Create community member profile
+              const { data: newProfile, error: createError } = await supabase
+                .from('profiles')
+                .insert({
+                  id: session.user.id,
+                  first_name: session.user.user_metadata?.first_name || '',
+                  last_name: session.user.user_metadata?.last_name || '',
+                  email: session.user.email,
+                  role: 'member',
+                  updated_at: new Date().toISOString(),
+                  primary_community_id: community.id
+                })
+                .select()
+                .single();
+
+              if (createError) {
+                debugLog('handleCallback', 'Profile creation error', { error: createError });
+                throw new Error(createError.message);
+              }
+
+              // Create community membership
+              const { error: membershipError } = await supabase
+                .from('community_members')
+                .insert({
+                  user_id: session.user.id,
+                  community_id: community.id,
+                  role: 'member'
+                });
+
+              if (membershipError) {
+                debugLog('handleCallback', 'Membership creation error', { error: membershipError });
+                throw new Error(membershipError.message);
+              }
+
+              profile = newProfile;
+              setCommunity(community);
+            } else {
+              // Create platform owner profile
+              const { data: newProfile, error: createError } = await supabase
+                .from('profiles')
+                .insert({
+                  id: session.user.id,
+                  first_name: session.user.user_metadata?.first_name || '',
+                  last_name: session.user.user_metadata?.last_name || '',
+                  email: session.user.email,
+                  role: roleResult.data?.role || 'owner',
+                  updated_at: new Date().toISOString(),
+                  onboarding_complete: false,
+                  is_platform_user: isPlatformLogin
+                })
+                .select()
+                .single();
+
+              if (createError) {
+                debugLog('handleCallback', 'Profile creation error', { error: createError });
+                throw new Error(createError.message);
+              }
+
+              profile = newProfile;
+            }
+
+            debugLog('handleCallback', 'Profile created', { profile });
+
+            // Update user metadata
+            const { error: updateError } = await supabase.auth.updateUser({
+              data: { 
+                role: profile.role,
+                community_id: profile.primary_community_id
+              }
+            });
+
+            if (updateError) {
+              debugLog('handleCallback', 'Metadata update error', { error: updateError });
+              throw new Error(updateError.message);
+            }
+          } else {
+            // Some other error occurred
+            debugLog('handleCallback', 'Profile fetch error', { error: profileError });
+            throw new Error(profileError.message);
+          }
+        } else {
+          profile = existingProfile;
+        }
+
+        // Set user in state
+        setUser({
+          ...session.user,
+          role: profile.role,
+          ...profile
+        });
+
+        // Determine redirect path
+        let redirectPath;
+        
+        // First check explicit redirectTo from login
+        if (redirectTo) {
+          redirectPath = redirectTo;
+        }
+        // Then check state from router
+        else if (state?.from?.pathname) {
+          redirectPath = state.from.pathname;
+        }
+        // Then check subdomain-specific paths
+        else if (subdomain && subdomain !== 'platform') {
+          redirectPath = next || `/${subdomain}/dashboard`;
+        }
+        // Finally fall back to platform paths
+        else {
+          // For platform users, check onboarding status
+          if (isPlatformLogin || profile.is_platform_user) {
+            redirectPath = profile.onboarding_complete ? '/dashboard' : '/onboarding';
+            // Ensure platform prefix if needed
+            if (window.location.pathname.startsWith('/platform/')) {
+              redirectPath = `/platform${redirectPath}`;
+            }
+          } else {
+            redirectPath = '/dashboard';
+          }
+        }
+
+        debugLog('handleCallback', 'Redirecting', { redirectPath });
+        
+        // Navigate with replace to avoid back button issues
+        navigate(redirectPath, { replace: true });
+
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Authentication failed';
+        debugLog('handleCallback', 'Error in callback', { error });
+        console.error('Auth callback error:', error);
+        setError(message);
+        toast.error(message);
+        
+        // Redirect to appropriate login page
+        const subdomain = searchParams.get('subdomain');
+        navigate(subdomain ? `/${subdomain}/login` : '/login');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    handleCallback();
+  }, [navigate, searchParams, setUser, setCommunity, setIsLoading]);
+
+  if (error) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-red-500">{error}</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex h-screen items-center justify-center">
+      <Spinner size="lg" />
+    </div>
+  );
+};
+
+export default AuthCallback;

@@ -2,11 +2,28 @@
  * Core types for the Terrarium application
  */
 
+import { User as SupabaseUser } from '@supabase/supabase-js';
+
 export enum UserRole {
   OWNER = 'owner',
   ADMIN = 'admin',
   MEMBER = 'member',
   EMPLOYER = 'employer',
+}
+
+// Type guard for UserRole
+export const isUserRole = (role: string): role is UserRole => {
+  return Object.values(UserRole).includes(role as UserRole);
+};
+
+export interface ExtendedUser extends SupabaseUser {
+  role: UserRole;
+  firstName?: string;
+  lastName?: string;
+  onboardingComplete: boolean;
+  emailVerified: boolean;
+  accessToken?: string;
+  mfaEnabled: boolean;
 }
 
 export interface User {
@@ -17,7 +34,7 @@ export interface User {
   role: UserRole;
   communityId?: string;
   communitySlug?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface Community {

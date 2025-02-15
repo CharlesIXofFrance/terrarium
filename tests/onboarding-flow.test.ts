@@ -81,20 +81,24 @@ describe('Onboarding Flow', () => {
   afterAll(async () => {
     if (userId) {
       try {
-        // Clean up test data in correct order
-        mockSupabase.from.mockImplementation((table) => ({
-          select: vi.fn().mockReturnValue({
-            eq: vi.fn().mockReturnValue({
-              delete: vi.fn().mockResolvedValue({
-                data: null,
-                error: null,
-              }),
-            }),
-          }),
-        }));
+        // Clean up test data in correct order using RPC calls
+        mockSupabase.rpc.mockImplementation((name, params) => {
+          if (name === 'delete_community') {
+            return Promise.resolve({
+              data: null,
+              error: null,
+            });
+          } else if (name === 'delete_profile') {
+            return Promise.resolve({
+              data: null,
+              error: null,
+            });
+          }
+          return Promise.reject(new Error('Unknown RPC call'));
+        });
 
-        await mockSupabase.from('communities').select('*').eq('owner_id', userId).delete();
-        await mockSupabase.from('profiles').select('*').eq('id', userId).delete();
+        await mockSupabase.rpc('delete_community', { user_id: userId });
+        await mockSupabase.rpc('delete_profile', { user_id: userId });
 
         mockSupabase.auth.admin.deleteUser.mockResolvedValueOnce({
           data: null,

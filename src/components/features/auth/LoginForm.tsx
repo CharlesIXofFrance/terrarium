@@ -1,142 +1,109 @@
 import React, { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { SupabaseClient } from '@supabase/supabase-js';
-import { Input } from '../../ui/atoms/Input';
-import { Button } from '../../ui/atoms/Button';
-import { Alert } from '../../ui/atoms/Alert';
+import type { Session, User, AuthResponse } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import { Input } from '@/components/ui/atoms/Input';
+import { Button } from '@/components/ui/atoms/Button';
+import { Alert } from '@/components/ui/atoms/Alert';
 import { supabase } from '../../../lib/supabase';
 import { parseDomain } from '@/lib/utils/subdomain';
+import { authLogger } from '@/lib/utils/logger';
+import type { Database } from '@/lib/database.types';
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+
+type DbClient = SupabaseClient<Database>;
 
 interface LoginFormProps {
-  onSuccess: (data: { user: any; session: any }) => void;
-  supabaseClient?: SupabaseClient;
+  onSuccess: (data: { user: User; session: Session }) => void;
+  supabaseClient?: DbClient;
+  type?: 'platform' | 'community';
 }
 
-interface LoginFormData {
-  email: string;
-  password: string;
-}
+const loginSchema = z.object({
+  email: z
+    .string()
+    .min(1, 'Email is required')
+    .email('Please enter a valid email'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
+});
 
-export const LoginForm: React.FC<LoginFormProps> = ({
+type LoginFormData = z.infer<typeof loginSchema>;
+
+const LoginForm: React.FC<LoginFormProps> = ({
   onSuccess,
   supabaseClient = supabase,
+  type = 'community',
 }) => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [searchParams] = useSearchParams();
 
-  const handleLogin = async (data: LoginFormData) => {
-    setError(null);
-    setIsLoading(true);
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+  });
 
+  // Helper function to safely extract error message
+  const getErrorMessage = (error: unknown): string => {
+    if (!error) return 'An unexpected error occurred';
+
+    if (error instanceof Error) {
+      return error.message || 'An unexpected error occurred';
+    }
+
+    if (typeof error === 'object' && error !== null) {
+      const msg = (error as { message?: unknown }).message;
+      if (typeof msg === 'string') return msg;
+      if (msg) return JSON.stringify(msg);
+    }
+
+    return typeof error === 'string' ? error : 'An unexpected error occurred';
+  };
+
+  const onSubmit = async (data: LoginFormData) => {
     try {
-      // Get hostname and subdomain
-      const { hostname } = window.location;
-      const { subdomain } = parseDomain();
-
-      // Get community slug - try different sources
-      const communitySlug =
-        hostname === 'localhost' || hostname === '127.0.0.1'
-          ? searchParams.get('subdomain') || '' // Get from URL in localhost
-          : hostname.includes('localhost')
-            ? subdomain
-            : hostname.split('.')[0];
-
-      // Clean the slug - remove any path components
-      const cleanSlug = communitySlug.split('/')[0];
-
-      // Construct callback URL with CSRF protection
-      const callbackUrl = new URL('/auth/callback', window.location.origin);
-      callbackUrl.searchParams.set('subdomain', cleanSlug);
-      callbackUrl.searchParams.set('csrf', crypto.randomUUID());
-
-      // Get user role from metadata
-      const { data: roleData, error: roleError } = await supabaseClient
-        .from('user_roles')
-        .select('role')
-        .eq('email', data.email)
-        .single();
-
-      // Only allow platform admins and community owners
-      if (
-        !roleError &&
-        roleData?.role !== 'PLATFORM_ADMIN' &&
-        roleData?.role !== 'COMMUNITY_OWNER'
-      ) {
-        setError('Please use magic link login for community access');
-        return;
-      }
-
-      const { data: authData, error: authError } =
-        await supabaseClient!.auth.signInWithPassword({
+      setError(null);
+      const { data: authData, error } =
+        await supabaseClient.auth.signInWithPassword({
           email: data.email,
           password: data.password,
-          options: {
-            redirectTo: callbackUrl.toString(),
-            captchaToken: await getCaptchaToken(), // Add CAPTCHA for additional security
-          },
         });
 
-      if (authError) {
-        // Enhanced error handling
-        if (authError.message.includes('Invalid login credentials')) {
-          setError('Invalid email or password');
-        } else if (authError.message.includes('Too many requests')) {
-          setError('Too many login attempts. Please try again in 5 minutes.');
-        } else if (authError.message.includes('Email not confirmed')) {
-          setError('Please verify your email address before logging in');
+      if (error) {
+        if (error.message.includes('Too many attempts')) {
+          setError('Too many attempts. Please try again later.');
+        } else if (error.message === 'MFA required') {
+          // Handle MFA if needed
+          setError('MFA authentication required');
         } else {
-          setError(authError.message);
+          setError(error.message);
         }
         return;
       }
 
-      if (authData.user && authData.session) {
-        // Log successful login attempt for audit
-        await supabaseClient.from('auth_logs').insert([
-          {
-            user_id: authData.user.id,
-            action: 'login',
-            ip_address: await fetch('https://api.ipify.org?format=json')
-              .then((r) => r.json())
-              .then((data) => data.ip),
-            user_agent: navigator.userAgent,
-          },
-        ]);
-
+      // Successful login - handle navigation in parent component
+      if (onSuccess && authData?.user && authData?.session) {
         onSuccess({ user: authData.user, session: authData.session });
       }
     } catch (err) {
       console.error('Login error:', err);
-      if (err instanceof Error) {
-        if (err.message.includes('network')) {
-          setError('Network error. Please check your connection.');
-        } else if (err.message.includes('rate limit')) {
-          setError('Too many login attempts. Please try again in 5 minutes.');
-        } else {
-          setError(err.message);
-        }
-      } else {
-        setError('An unexpected error occurred. Please try again.');
-      }
-    } finally {
-      setIsLoading(false);
+      setError(err instanceof Error ? err.message : 'An error occurred');
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    handleLogin({ email, password });
-  };
-
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form
+      onSubmit={handleSubmit(onSubmit)}
+      className="space-y-6"
+      data-testid="login-form"
+    >
       {error && (
-        <Alert variant="destructive">
-          <p>{error}</p>
-        </Alert>
+        <Alert variant="error" message={error} data-testid="error-message" />
       )}
 
       <div>
@@ -149,15 +116,25 @@ export const LoginForm: React.FC<LoginFormProps> = ({
         <div className="mt-1">
           <Input
             id="email"
-            name="email"
+            {...register('email')}
             type="email"
-            data-testid="email-input"
             autoComplete="email"
             required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            aria-invalid={!!errors.email}
+            aria-describedby={errors.email ? 'email-error' : undefined}
+            data-testid="email-input"
             className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
           />
+          {errors.email && (
+            <p
+              id="email-error"
+              className="mt-1 text-sm text-red-600"
+              role="alert"
+              data-testid="email-error"
+            >
+              {errors.email.message}
+            </p>
+          )}
         </div>
       </div>
 
@@ -171,15 +148,25 @@ export const LoginForm: React.FC<LoginFormProps> = ({
         <div className="mt-1">
           <Input
             id="password"
-            name="password"
+            {...register('password')}
             type="password"
-            data-testid="password-input"
             autoComplete="current-password"
             required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            aria-invalid={!!errors.password}
+            aria-describedby={errors.password ? 'password-error' : undefined}
+            data-testid="password-input"
             className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
           />
+          {errors.password && (
+            <p
+              id="password-error"
+              className="mt-1 text-sm text-red-600"
+              role="alert"
+              data-testid="password-error"
+            >
+              {errors.password.message}
+            </p>
+          )}
         </div>
       </div>
 
@@ -199,6 +186,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
           type="submit"
           data-testid="submit-button"
           disabled={isLoading}
+          isLoading={isLoading}
           className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
         >
           {isLoading ? 'Signing in...' : 'Sign in'}
@@ -207,3 +195,5 @@ export const LoginForm: React.FC<LoginFormProps> = ({
     </form>
   );
 };
+
+export default LoginForm;

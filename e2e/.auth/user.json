@@ -1,0 +1,34 @@
+{
+  "cookies": [],
+  "origins": [
+    {
+      "origin": "http://localhost:3000",
+      "localStorage": [
+        {
+          "name": "loglevel:app",
+          "value": "DEBUG"
+        },
+        {
+          "name": "loglevel",
+          "value": "TRACE"
+        },
+        {
+          "name": "loglevel:auth",
+          "value": "TRACE"
+        },
+        {
+          "name": "loglevel:router",
+          "value": "TRACE"
+        },
+        {
+          "name": "loglevel:api",
+          "value": "TRACE"
+        },
+        {
+          "name": "sb-terrarium-auth-token",
+          "value": "{\"access_token\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwOi8vMTI3LjAuMC4xOjU0MzIxL2F1dGgvdjEiLCJzdWIiOiI4Y2Y5ODU0ZS02MDI0LTQyMmUtOGZiNi1jMTk3M2Y1MmE5NDMiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzM5ODE4OTI1LCJpYXQiOjE3MzkyMTQxMjUsImVtYWlsIjoib3duZXJAZXhhbXBsZS5jb20iLCJwaG9uZSI6IiIsImFwcF9tZXRhZGF0YSI6eyJwcm92aWRlciI6ImVtYWlsIiwicHJvdmlkZXJzIjpbImVtYWlsIl19LCJ1c2VyX21ldGFkYXRhIjp7ImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJmaXJzdE5hbWUiOiJUZXN0IiwibGFzdE5hbWUiOiJPd25lciIsIm9uYm9hcmRpbmdDb21wbGV0ZSI6dHJ1ZSwicm9sZSI6Im93bmVyIn0sInJvbGUiOiJhdXRoZW50aWNhdGVkIiwiYWFsIjoiYWFsMSIsImFtciI6W3sibWV0aG9kIjoicGFzc3dvcmQiLCJ0aW1lc3RhbXAiOjE3MzkyMTQxMjV9XSwic2Vzc2lvbl9pZCI6ImU4YjVjZjUxLTRhOTItNDg2Yi04ODU3LWQyOTQyMTBmNzU2MCIsImlzX2Fub255bW91cyI6ZmFsc2V9.1HxaHMc4c7oW_C_55cSjBQ-MI2n6NSnZVD6vd_Z5ScE\",\"token_type\":\"bearer\",\"expires_in\":604800,\"expires_at\":1739818925,\"refresh_token\":\"ElT5WHlKz_eOOjwzkxF-OA\",\"user\":{\"id\":\"8cf9854e-6024-422e-8fb6-c1973f52a943\",\"aud\":\"authenticated\",\"role\":\"authenticated\",\"email\":\"owner@example.com\",\"email_confirmed_at\":\"2025-02-10T19:02:02.476415Z\",\"phone\":\"\",\"confirmed_at\":\"2025-02-10T19:02:02.476415Z\",\"last_sign_in_at\":\"2025-02-10T19:02:05.368113751Z\",\"app_metadata\":{\"provider\":\"email\",\"providers\":[\"email\"]},\"user_metadata\":{\"email_verified\":true,\"firstName\":\"Test\",\"lastName\":\"Owner\",\"onboardingComplete\":true,\"role\":\"owner\"},\"identities\":[{\"identity_id\":\"66ab0566-3059-425f-8912-e7f4022a044d\",\"id\":\"8cf9854e-6024-422e-8fb6-c1973f52a943\",\"user_id\":\"8cf9854e-6024-422e-8fb6-c1973f52a943\",\"identity_data\":{\"email\":\"owner@example.com\",\"email_verified\":false,\"phone_verified\":false,\"sub\":\"8cf9854e-6024-422e-8fb6-c1973f52a943\"},\"provider\":\"email\",\"last_sign_in_at\":\"2025-02-10T19:02:02.474943Z\",\"created_at\":\"2025-02-10T19:02:02.474989Z\",\"updated_at\":\"2025-02-10T19:02:02.474989Z\",\"email\":\"owner@example.com\"}],\"created_at\":\"2025-02-10T19:02:02.472972Z\",\"updated_at\":\"2025-02-10T19:02:05.36982Z\",\"is_anonymous\":false}}"
+        }
+      ]
+    }
+  ]
+}

@@ -3,9 +3,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
-import { LoginForm } from '../LoginForm';
-import { RegisterForm } from '../RegisterForm';
-import { Alert } from '@/components/ui/alert';
+import LoginForm from '../LoginForm';
+import RegisterForm from '../RegisterForm';
+import { Alert } from '@/components/ui/atoms/Alert';
+import { AuthError, Session, User } from '@supabase/supabase-js';
 
 // Mock Supabase
 vi.mock('@/lib/supabase', () => ({
@@ -18,12 +19,15 @@ vi.mock('@/lib/supabase', () => ({
 }));
 
 // Mock Alert component
-vi.mock('@/components/ui/alert', () => ({
-  Alert: ({ message, variant = 'error' }) => (
-    <div role="alert" data-variant={variant}>
+vi.mock('@/components/ui/atoms/Alert', () => ({
+  Alert: React.forwardRef<
+    HTMLDivElement,
+    { message?: string; variant?: string }
+  >(({ message, variant = 'error' }, ref) => (
+    <div role="alert" data-variant={variant} ref={ref}>
       {message}
     </div>
-  ),
+  )),
 }));
 
 describe('Auth Components', () => {
@@ -33,15 +37,26 @@ describe('Auth Components', () => {
 
   describe('RegisterForm', () => {
     it('should handle successful registration', async () => {
-      const mockUser = { id: '123', email: 'test@example.com' };
+      const mockUser: User = {
+        id: '123',
+        email: 'test@example.com',
+        app_metadata: {},
+        user_metadata: {},
+        aud: 'authenticated',
+        created_at: new Date().toISOString(),
+        role: 'authenticated',
+        updated_at: new Date().toISOString(),
+      };
+
       vi.mocked(supabase.auth.signUp).mockResolvedValueOnce({
         data: { user: mockUser, session: null },
         error: null,
       });
 
+      const onSuccess = vi.fn();
       render(
         <MemoryRouter>
-          <RegisterForm />
+          <RegisterForm onSuccess={onSuccess} />
         </MemoryRouter>
       );
 
@@ -66,9 +81,10 @@ describe('Auth Components', () => {
     });
 
     it('should show error for password mismatch', async () => {
+      const onSuccess = vi.fn();
       render(
         <MemoryRouter>
-          <RegisterForm />
+          <RegisterForm onSuccess={onSuccess} />
         </MemoryRouter>
       );
 
@@ -92,14 +108,17 @@ describe('Auth Components', () => {
     });
 
     it('should handle registration error', async () => {
+      const mockAuthError = new AuthError('Registration failed', 400);
+
       vi.mocked(supabase.auth.signUp).mockResolvedValueOnce({
         data: { user: null, session: null },
-        error: new Error('Registration failed'),
+        error: mockAuthError,
       });
 
+      const onSuccess = vi.fn();
       render(
         <MemoryRouter>
-          <RegisterForm />
+          <RegisterForm onSuccess={onSuccess} />
         </MemoryRouter>
       );
 
@@ -125,15 +144,35 @@ describe('Auth Components', () => {
 
   describe('LoginForm', () => {
     it('should handle successful login', async () => {
-      const mockUser = { id: '123', email: 'test@example.com' };
+      const mockUser: User = {
+        id: '123',
+        email: 'test@example.com',
+        app_metadata: {},
+        user_metadata: {},
+        aud: 'authenticated',
+        created_at: new Date().toISOString(),
+        role: 'authenticated',
+        updated_at: new Date().toISOString(),
+      };
+
+      const mockSession: Session = {
+        access_token: 'token123',
+        refresh_token: 'refresh123',
+        expires_in: 3600,
+        expires_at: 3600,
+        token_type: 'bearer',
+        user: mockUser,
+      };
+
       vi.mocked(supabase.auth.signInWithPassword).mockResolvedValueOnce({
-        data: { user: mockUser, session: null },
+        data: { user: mockUser, session: mockSession },
         error: null,
       });
 
+      const onSuccess = vi.fn();
       render(
         <MemoryRouter>
-          <LoginForm />
+          <LoginForm onSuccess={onSuccess} />
         </MemoryRouter>
       );
 
@@ -150,22 +189,26 @@ describe('Auth Components', () => {
         expect(supabase.auth.signInWithPassword).toHaveBeenCalledWith({
           email: 'test@example.com',
           password: 'password123',
-          options: {
-            redirectTo: expect.any(String),
-          },
+        });
+        expect(onSuccess).toHaveBeenCalledWith({
+          user: mockUser,
+          session: mockSession,
         });
       });
     });
 
     it('should handle login error', async () => {
+      const mockAuthError = new AuthError('Invalid credentials', 400);
+
       vi.mocked(supabase.auth.signInWithPassword).mockResolvedValueOnce({
         data: { user: null, session: null },
-        error: new Error('Invalid credentials'),
+        error: mockAuthError,
       });
 
+      const onSuccess = vi.fn();
       render(
         <MemoryRouter>
-          <LoginForm />
+          <LoginForm onSuccess={onSuccess} />
         </MemoryRouter>
       );
 
@@ -186,9 +229,10 @@ describe('Auth Components', () => {
     });
 
     it('should validate required fields', async () => {
+      const onSuccess = vi.fn();
       render(
         <MemoryRouter>
-          <LoginForm />
+          <LoginForm onSuccess={onSuccess} />
         </MemoryRouter>
       );
 

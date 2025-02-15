@@ -40,66 +40,94 @@ export interface SignInOptions {
  */
 export class PasswordlessAuthService {
   /**
-   * Send a magic link to the user's email using Proof Key for Code Exchange (PKCE) flow
-   * @param email User's email address
-   * @param options Additional options like role and community info
+   * Send magic link for members/employers to sign up or sign in
    */
   async signInWithEmail(
     email: string,
     options: SignInOptions
   ): Promise<AuthResult> {
     try {
-      debugLog('signInWithEmail', 'Starting auth flow', { email, ...options });
-
-      // Construct callback URL with community info and PKCE parameters
+      // Build callback
       const callbackUrl = new URL('/auth/callback', window.location.origin);
-      callbackUrl.searchParams.set('communitySlug', options.communitySlug);
+      if (options.communitySlug) {
+        callbackUrl.searchParams.set('subdomain', options.communitySlug);
+      }
+      callbackUrl.searchParams.set('type', 'magiclink');
 
-      debugLog('signInWithEmail', 'Callback URL constructed', {
-        url: callbackUrl.toString(),
-      });
-
+      // Attempt signInWithOtp
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
           emailRedirectTo: callbackUrl.toString(),
           data: {
-            role: options.role,
+            role: options.role || 'member',
             communitySlug: options.communitySlug,
-            firstName: options.firstName,
-            lastName: options.lastName,
-            isNewUser: Boolean(options.firstName && options.lastName),
+            firstName: options.firstName || '',
+            lastName: options.lastName || '',
+            isNewUser: !!(options.firstName && options.lastName),
           },
-          shouldCreateUser: Boolean(options.firstName && options.lastName),
         },
       });
-
       if (error) {
-        debugLog('signInWithEmail', 'Auth error', { error });
-        if (error.message.includes('rate limit')) {
-          return {
-            success: false,
-            message: 'Too many requests',
-            error: 'Too many requests',
-          };
-        }
-        throw error;
+        return {
+          success: false,
+          message: error.message,
+          error: error.message
+        };
       }
 
-      debugLog('signInWithEmail', 'Magic link sent successfully');
       return {
         success: true,
         message: 'Check your email for the magic link',
       };
     } catch (err) {
-      debugLog('signInWithEmail', 'Unexpected error', { error: err });
+      console.error('Passwordless signInWithEmail error:', err);
       return {
         success: false,
-        message:
-          err instanceof Error ? err.message : 'Failed to send magic link',
+        message: err instanceof Error ? err.message : 'Failed to send magic link',
         error: err instanceof Error ? err.message : 'Unknown error',
       };
     }
+  }
+
+  /**
+   * Verify OTP from magic link
+   */
+  async verifyOtp(tokenHash: string, type: 'magiclink'): Promise<{ session: Session | null; user: User | null }> {
+    const { data, error } = await supabase.auth.verifyOtp({
+      token_hash: tokenHash,
+      type,
+    });
+    if (error) {
+      throw error;
+    }
+    return {
+      session: data.session,
+      user: data.session?.user || null,
+    };
+  }
+
+  /**
+   * Get current session if any
+   */
+  async getSession(): Promise<{ session: Session | null; user: User | null }> {
+    const { data } = await supabase.auth.getSession();
+    return {
+      session: data.session,
+      user: data.session?.user || null,
+    };
+  }
+
+  /**
+   * Sign out
+   */
+  async signOut(): Promise<void> {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      throw error;
+    }
+  }
+}
   }
 
   /**

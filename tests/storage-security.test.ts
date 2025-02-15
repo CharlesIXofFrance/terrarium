@@ -55,50 +55,53 @@ const mockAdminClient = {
       deleteUser: vi.fn(),
       updateUserById: vi.fn(),
     },
-    rpc: vi.fn().mockImplementation((name, params) => {
-      if (name === 'set_claim') {
+    onAuthStateChange: vi.fn(),
+    refreshSession: vi.fn(),
+  },
+  rpc: vi.fn().mockImplementation((name, params) => {
+    switch (name) {
+      case 'set_claim':
         return Promise.resolve({
           data: null,
           error: null,
         });
-      }
-      return Promise.reject(new Error('Unknown RPC call'));
+      case 'get_user_role':
+        return Promise.resolve({
+          data: { role: 'owner' },
+          error: null,
+        });
+      case 'create_community':
+        return Promise.resolve({
+          data: {
+            id: 'test-community-id',
+            slug: 'test-community',
+          },
+          error: null,
+        });
+      case 'delete_community':
+      case 'delete_profile':
+        return Promise.resolve({
+          data: null,
+          error: null,
+        });
+      default:
+        return Promise.reject(new Error(`Unknown RPC call: ${name}`));
+    }
+  }),
+  from: vi.fn((table) => ({
+    select: vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({
+        single: vi.fn().mockResolvedValue({
+          data: {
+            id: 'test-user-id',
+            role: 'owner',
+            slug: 'test-community',
+          },
+          error: null,
+        }),
+      }),
     }),
-  },
-  from: vi.fn((table) => {
-    return {
-      select: vi.fn().mockReturnValue({
-        eq: vi.fn().mockReturnValue({
-          single: vi.fn().mockResolvedValue({
-            data: {
-              raw_app_meta_data: { role: 'owner' },
-            },
-            error: null,
-          }),
-        }),
-      }),
-      update: vi.fn().mockReturnValue({
-        eq: vi.fn().mockResolvedValue({
-          data: null,
-          error: null,
-        }),
-      }),
-      insert: vi.fn().mockReturnValue({
-        select: vi.fn().mockReturnValue({
-          single: vi.fn().mockResolvedValue({
-            data: {
-              id: 'test-user-id',
-              role: 'owner',
-              slug: 'test-community',
-            },
-            error: null,
-          }),
-        }),
-      }),
-      delete: vi.fn().mockReturnValue({
-        eq: vi.fn().mockResolvedValue({
-          data: null,
-          error: null,
+  })),
         }),
       }),
     };

@@ -6,8 +6,11 @@ const mockSupabase = {
     signInWithPassword: vi.fn(),
     signOut: vi.fn(),
     getSession: vi.fn(),
+    onAuthStateChange: vi.fn(),
+    refreshSession: vi.fn(),
   },
   from: vi.fn(),
+  rpc: vi.fn(),
 };
 
 // Test configuration
@@ -44,15 +47,9 @@ describe('Authentication Flow', () => {
       error: null,
     };
 
-    mockSupabase.from.mockReturnValue({
-      select: vi.fn().mockReturnValue({
-        eq: vi.fn().mockReturnValue({
-          single: vi.fn().mockResolvedValue(mockHealthCheck),
-        }),
-      }),
-    });
+    mockSupabase.rpc.mockResolvedValueOnce(mockHealthCheck);
 
-    const { data, error } = await mockSupabase.from('health').select('*').eq('id', 1).single();
+    const { data, error } = await mockSupabase.rpc('check_health');
     expect(error).toBeNull();
     expect(data).toBeDefined();
     expect(data.status).toBe('healthy');

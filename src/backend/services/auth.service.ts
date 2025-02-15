@@ -48,73 +48,36 @@ export const authService = {
         });
       }
 
-      // If we have a session but no user profile yet, wait briefly for it
-      if (data.session) {
-        let profile = null;
-        let lastError = null;
-
-        for (let i = 0; i < MAX_PROFILE_RETRIES; i++) {
-          const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', data.session.user.id)
-            .single();
-
-          if (profileError) {
-            lastError = profileError;
-            if (i < MAX_PROFILE_RETRIES - 1) {
-              await new Promise((resolve) =>
-                setTimeout(resolve, PROFILE_RETRY_DELAY)
-              );
-              continue;
-            }
-            break;
-          }
-
-          if (profileData) {
-            profile = profileData;
-            break;
-          }
-
-          if (i < MAX_PROFILE_RETRIES - 1) {
-            await new Promise((resolve) =>
-              setTimeout(resolve, PROFILE_RETRY_DELAY)
-            );
-          }
-        }
-
-        if (!profile && lastError) {
-          throw new AuthenticationError(
-            'PROFILE_ERROR',
-            'Failed to fetch user profile',
-            { originalError: lastError }
-          );
-        }
-
-        return {
-          user: profile,
-          session: data.session,
-          needsEmailVerification: false,
-        };
+      if (!data.session) {
+        throw new AuthenticationError('NoSession', 'No session data returned');
       }
+
+      // Format token with Bearer scheme
+      const token = `Bearer ${data.session.access_token}`;
+
+      // Store token with proper format
+      localStorage.setItem(
+        'sb-terrarium-auth-token',
+        JSON.stringify({
+          ...data.session,
+          token_type: 'bearer',
+        })
+      );
 
       return {
-        user: null,
-        session: null,
-        needsEmailVerification: true,
+        user: data.user,
+        access_token: token,
+        refresh_token: data.session.refresh_token,
+        expires_at:
+          data.session.expires_at ?? Math.floor(Date.now() / 1000) + 3600, // Default to 1 hour if undefined
       };
     } catch (error) {
-      if (error instanceof AuthenticationError) {
+      if (error instanceof RateLimitError) {
         throw error;
       }
-      if (error instanceof RateLimitError) {
-        throw new AuthenticationError('RATE_LIMIT_ERROR', error.message, {
-          originalError: error,
-        });
-      }
       throw new AuthenticationError(
-        'LOGIN_ERROR',
-        error instanceof Error ? error.message : 'Failed to login',
+        'LoginFailed',
+        'Failed to authenticate user',
         { originalError: error }
       );
     }
@@ -132,7 +95,8 @@ export const authService = {
         password: data.password,
         options: {
           data: {
-            full_name: data.full_name,
+            firstName: data.firstName,
+            lastName: data.lastName,
             role: 'owner',
           },
           emailRedirectTo: `${window.location.origin}/auth/callback`,

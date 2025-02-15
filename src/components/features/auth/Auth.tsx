@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { useAuth } from '@/lib/hooks/useAuth';
+import { useAuth, type UseAuthReturn } from '@/lib/hooks/useAuth';
 import { useMutation } from '@tanstack/react-query';
-import { ownerAuth } from '@/services/auth';
 import { z } from 'zod';
 import { UserRole } from '@/lib/utils/types';
 
@@ -25,17 +24,19 @@ export function Auth() {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
 
+  const { signIn } = useAuth();
+
   const signUpMutation = useMutation({
     mutationFn: async (data: z.infer<typeof signUpSchema>) => {
-      const result = await ownerAuth.signUp({
+      const result = await signIn({
         email: data.email,
         password: data.password,
         firstName: data.firstName,
         lastName: data.lastName,
         role: data.role,
       });
-      if (!result.success) {
-        throw new Error(result.error?.message || 'Failed to sign up');
+      if (!result) {
+        throw new Error('Failed to sign up');
       }
       return result;
     },
@@ -43,12 +44,12 @@ export function Auth() {
 
   const signInMutation = useMutation({
     mutationFn: async (data: z.infer<typeof signInSchema>) => {
-      const result = await ownerAuth.signIn({
+      const result = await signIn({
         email: data.email,
         password: data.password,
       });
-      if (!result.success) {
-        throw new Error(result.error?.message || 'Failed to sign in');
+      if (!result) {
+        throw new Error('Failed to sign in');
       }
       return result;
     },
@@ -82,14 +83,14 @@ export function Auth() {
   };
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <div data-testid="loading-indicator">Loading...</div>;
   }
 
   return (
     <div>
       {user ? (
         <div>
-          <p>Welcome, {user.email}!</p>
+          <p data-testid="user-email">Welcome, {user.email}!</p>
         </div>
       ) : (
         <div>
@@ -99,14 +100,16 @@ export function Auth() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Email"
+              data-testid="email-input"
             />
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Password"
+              data-testid="password-input"
             />
-            <button type="submit">Sign In</button>
+            <button type="submit" data-testid="login-button" disabled={signInMutation.isPending}>Sign In</button>
           </form>
           <form onSubmit={handleSignUp}>
             <input
@@ -114,26 +117,30 @@ export function Auth() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Email"
+              data-testid="signup-email-input"
             />
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Password"
+              data-testid="signup-password-input"
             />
             <input
               type="text"
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
               placeholder="First Name"
+              data-testid="firstname-input"
             />
             <input
               type="text"
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
               placeholder="Last Name"
+              data-testid="lastname-input"
             />
-            <button type="submit">Sign Up</button>
+            <button type="submit" data-testid="signup-button" disabled={signUpMutation.isPending}>Sign Up</button>
           </form>
         </div>
       )}

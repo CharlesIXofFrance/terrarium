@@ -19,6 +19,7 @@
    - auth.auth_factor_type
    - auth.auth_factor_status
    - auth.aal_level
+   - public.community_role
 
 ## Table Dependencies
 
@@ -48,7 +49,19 @@
 
 ## Function Dependencies
 
-1. **public.is_platform_admin()**
+1. **auth.check_role(role_name text)**
+   - No dependencies
+   - Required by: RLS policies
+
+2. **auth.get_role()**
+   - No dependencies
+   - Required by: RLS policies
+
+3. **auth.get_community_id()**
+   - No dependencies
+   - Required by: RLS policies
+
+4. **public.is_platform_admin()**
 
    - Depends on: profiles table
    - Required by: RLS policies

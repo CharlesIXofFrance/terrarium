@@ -4,12 +4,14 @@ import { parseDomain } from '@/lib/utils/subdomain';
 import { LandingPage } from '@/pages/LandingPage';
 import { CommunityRoutes } from './CommunityRoutes';
 import { PlatformRoutes } from './PlatformRoutes';
-import { ProtectedRoute } from '@/components/features/auth/ProtectedRoute';
+import { AuthGuard } from '@/components/features/auth/AuthGuard';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { CommunityLoginPage } from '@/pages/auth/CommunityLoginPage';
 import { VerifyCallback } from '@/pages/auth/VerifyCallback';
 import { PlatformRegister } from '@/pages/auth/PlatformRegister';
 import { PlatformLogin } from '@/pages/auth/PlatformLogin';
+import { UnauthorizedPage } from '@/pages/auth/UnauthorizedPage';
+import { OwnerOnboarding } from '@/components/features/onboarding/OwnerOnboarding';
 
 export const SubdomainRouter: React.FC = () => {
   const { type, subdomain } = parseDomain();
@@ -25,7 +27,7 @@ export const SubdomainRouter: React.FC = () => {
   const path =
     pathParam?.endsWith('/') && pathParam !== '/'
       ? pathParam.slice(0, -1)
-      : pathParam || '/';
+      : pathParam || location.pathname;
 
   console.log('SubdomainRouter - Debug:', {
     type,
@@ -35,10 +37,14 @@ export const SubdomainRouter: React.FC = () => {
     pathParam,
     path,
     user,
+    env: process.env.NODE_ENV,
+    url: window.location.href,
+    fullPath: window.location.pathname + window.location.search,
   });
 
   // Handle auth confirmation route for all domains
-  if (location.pathname === '/auth/confirm' || path === '/auth/confirm') {
+  if (path === '/auth/confirm') {
+    console.log('Rendering VerifyCallback');
     return (
       <Routes>
         <Route path="*" element={<VerifyCallback />} />
@@ -48,6 +54,7 @@ export const SubdomainRouter: React.FC = () => {
 
   // Community subdomain routes
   if (type === 'community' && community) {
+    console.log('Rendering community routes');
     // If not logged in, show login page
     if (!user) {
       return (
@@ -62,39 +69,59 @@ export const SubdomainRouter: React.FC = () => {
 
     return (
       <Routes>
-        <Route
-          path="*"
-          element={
-            <ProtectedRoute>
-              <CommunityRoutes />
-            </ProtectedRoute>
-          }
-        />
+        <Route element={<AuthGuard allowedRoles={['owner', 'member']} />}>
+          <Route path="*" element={<CommunityRoutes />} />
+        </Route>
       </Routes>
     );
   }
 
   // Platform subdomain routes
-  if (type === 'platform') {
+  if (
+    type === 'platform' ||
+    community === 'platform' ||
+    (user?.role === 'owner' && !community)
+  ) {
+    console.log('Rendering platform routes');
+    // Show login/register pages if not logged in
+    if (!user) {
+      console.log('User not logged in, showing platform auth routes');
+      return (
+        <Routes>
+          <Route path="/platform/register" element={<PlatformRegister />} />
+          <Route path="/register" element={<PlatformRegister />} />
+          <Route path="/platform/login" element={<PlatformLogin />} />
+          <Route path="/login" element={<PlatformLogin />} />
+          <Route path="/auth/callback" element={<VerifyCallback />} />
+          <Route path="/unauthorized" element={<UnauthorizedPage />} />
+          <Route path="*" element={<PlatformLogin />} />
+        </Routes>
+      );
+    }
+
+    // Show platform routes for authenticated users
     return (
       <Routes>
-        <Route
-          path="*"
-          element={
-            <ProtectedRoute>
-              <PlatformRoutes />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/onboarding" element={<OwnerOnboarding />} />
+        <Route path="/auth/callback" element={<VerifyCallback />} />
+        <Route path="/unauthorized" element={<UnauthorizedPage />} />
+        <Route path="*" element={<PlatformRoutes />} />
       </Routes>
     );
   }
 
-  // Main domain routes - show landing page if no subdomain
+  // Main domain routes
+  console.log('Rendering main domain routes');
   return (
     <Routes>
       <Route path="/" element={<LandingPage />} />
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="/platform/register" element={<PlatformRegister />} />
+      <Route path="/register" element={<PlatformRegister />} />
+      <Route path="/platform/login" element={<PlatformLogin />} />
+      <Route path="/login" element={<PlatformLogin />} />
+      <Route path="/auth/callback" element={<VerifyCallback />} />
+      <Route path="/unauthorized" element={<UnauthorizedPage />} />
+      <Route path="*" element={<PlatformLogin />} />
     </Routes>
   );
 };

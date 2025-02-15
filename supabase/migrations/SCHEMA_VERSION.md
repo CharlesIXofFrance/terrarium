@@ -1,19 +1,20 @@
 # Terrarium Schema Version
 
-## Current Version: 2025-01-31-001
+## Current Version: 2025-02-06-001
 
 ### Version Components
 
 - Year: 2025
-- Month: 01
-- Day: 31
+- Month: 02
+- Day: 06
 - Sequence: 001
 
 ## Schema Health
 
 - Status: ✅ Active
-- Last Verified: 2025-01-31 13:19
-- Current Migration: `20250131130000_consolidated_auth_schema.sql`
+- Last Verified: 2025-02-06 12:14
+- Current Migration: `20250206121400_baseline_migration.sql`
+- Migration Strategy: Consolidated baseline with incremental changes
 
 ## Core Components
 

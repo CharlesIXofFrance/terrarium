@@ -1,0 +1,164 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/compose-spec/compose-spec/master/schema/compose-spec.json
+version: '3.8'
+services:
+  inbucket:
+    container_name: terrarium-test-inbucket
+    image: inbucket/inbucket:latest
+    ports:
+      - '9000:9000' # Web interface
+      - '2500:2500' # SMTP
+      - '1100:1100' # POP3
+    environment:
+      - INBUCKET_WEB_ADDR=:9000
+      - INBUCKET_SMTP_ADDR=:2500
+      - INBUCKET_POP3_ADDR=:1100
+    networks:
+      - test-network
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'wget',
+          '--no-verbose',
+          '--tries=1',
+          '--spider',
+          'http://localhost:9000/',
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+
+  db:
+    container_name: terrarium-test-db
+    image: postgres:15-alpine
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - ./supabase/tests/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  auth:
+    container_name: terrarium-test-auth
+    image: supabase/gotrue:v2.132.3
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - '9999:9999'
+    environment:
+      GOTRUE_API_HOST: 0.0.0.0
+      GOTRUE_API_PORT: 9999
+      API_EXTERNAL_URL: http://localhost:8000
+      GOTRUE_DB_DRIVER: postgres
+      GOTRUE_DB_HOST: db
+      GOTRUE_DB_PORT: 5432
+      GOTRUE_DB_USER: postgres
+      GOTRUE_DB_PASSWORD: postgres
+      GOTRUE_DB_NAME: postgres
+      DATABASE_URL: postgres://postgres:postgres@db:5432/postgres?sslmode=disable
+      GOTRUE_JWT_SECRET: super-secret-jwt-token-for-testing
+      GOTRUE_JWT_EXP: 3600
+      GOTRUE_JWT_DEFAULT_GROUP_NAME: authenticated
+      GOTRUE_JWT_AUD: authenticated
+      GOTRUE_JWT_ISSUER: supabase
+      GOTRUE_JWT_ADMIN_ROLES: service_role
+      GOTRUE_JWT_ADMIN_GROUP_NAME: service_role
+      GOTRUE_JWT_ADMIN_EMAIL: service_role@supabase.io
+      GOTRUE_DB_AUTOMIGRATE: 'true'
+      GOTRUE_SITE_URL: http://localhost:3000
+      GOTRUE_MAILER_AUTOCONFIRM: 'true'
+      GOTRUE_SMS_AUTOCONFIRM: 'true'
+      GOTRUE_OPERATOR_TOKEN: super-secret-operator-token
+      GOTRUE_EXTERNAL_EMAIL_ENABLED: 'true'
+      GOTRUE_API_EXTERNAL_URL: http://localhost:9999
+      PORT: 9999
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'wget',
+          '--no-verbose',
+          '--tries=1',
+          '--spider',
+          'http://localhost:9999/health',
+        ]
+      timeout: 5s
+      interval: 5s
+      retries: 3
+    networks:
+      - test-network
+
+  supabase:
+    container_name: terrarium-test-supabase
+    image: kong:3.5.0
+    depends_on:
+      db:
+        condition: service_healthy
+      auth:
+        condition: service_healthy
+    environment:
+      KONG_DATABASE: 'off'
+      KONG_DECLARATIVE_CONFIG: /etc/kong/kong.yml
+      KONG_DNS_ORDER: LAST,A,CNAME
+      KONG_PLUGINS: bundled,jwt,acl
+      KONG_PROXY_LISTEN: 0.0.0.0:8000
+      KONG_PORT_MAPS: 80:8000
+      KONG_JWT_SECRET: super-secret-jwt-token-for-testing
+    ports:
+      - '8000:8000'
+    volumes:
+      - ./kong.yml:/etc/kong/kong.yml
+    networks:
+      - test-network
+    healthcheck:
+      test: ['CMD', 'kong', 'health']
+      interval: 5s
+      timeout: 5s
+      retries: 3
+
+  test:
+    container_name: terrarium-test-runner
+    image: mcr.microsoft.com/playwright:v1.41.1-jammy
+    depends_on:
+      db:
+        condition: service_healthy
+      auth:
+        condition: service_healthy
+      supabase:
+        condition: service_healthy
+      inbucket:
+        condition: service_healthy
+    volumes:
+      - .:/app
+    working_dir: /app
+    entrypoint: >
+      /bin/bash -c "
+        echo 'Waiting for services to be ready...' &&
+        sleep 5 &&
+        rm -rf node_modules package-lock.json &&
+        npm install &&
+        npm run test:e2e
+      "
+    environment:
+      - SUPABASE_URL=http://supabase:8000
+      - GOTRUE_URL=http://auth:9999
+      - SUPABASE_JWT_SECRET=super-secret-jwt-token-for-testing
+      - GOTRUE_OPERATOR_TOKEN=super-secret-operator-token
+      - SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJvbGUiOiJzZXJ2aWNlX3JvbGUiLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
+      - VITE_SUPABASE_URL=http://supabase:8000
+      - VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJvbGUiOiJhbm9uIiwiZXhwIjoxOTgzODEyOTk2fQ.FhK1kZAZFDk0uJkqGHkTxpEFNGI5Xo4wTNnQwqEz4Qs
+      - PWDEBUG=1
+    networks:
+      - test-network
+
+networks:
+  test-network:
+    driver: bridge

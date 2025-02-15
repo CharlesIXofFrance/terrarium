@@ -19,6 +19,14 @@ Multi-tenant community platform with per-tenant branding, job boards, events, an
 ## Database Management
 1. Migration Structure
    • supabase/migrations/ with YYYYMMDDHHMMSS prefix
+   • Required YAML header format:
+     - id: timestamp
+     - title: concise description
+     - description: detailed explanation
+     - affected_tables: list
+     - dependencies: list
+     - rollback: commands
+   • Migration dashboard generation
    • Consolidated auth migration
    • Archive old migrations
 
@@ -31,20 +39,32 @@ Multi-tenant community platform with per-tenant branding, job boards, events, an
    • README.md: Setup guide
    • DEPENDENCIES.md: Versions
    • SCHEMA_VERSION.md: Changes
+   • MIGRATIONS_DASHBOARD.md: Auto-generated overview
+   • Update all docs on schema changes
+   • Document breaking changes immediately
+   • Keep migration list current
+   • Run migration_dashboard.py after changes
 
-4. Security
+4. Documentation Updates
+   • Update SCHEMA_VERSION.md with new version
+   • Add new migrations to README.md
+   • Update dependencies in DEPENDENCIES.md
+   • Document all new types and functions
+   • Note any breaking changes
+   • Update version timestamps
+
+5. Security
    • RLS by default
    • Security definer functions
    • Rate limiting
    • Cross-tenant isolation
 
-5. Conventions
+6. Conventions
    • UUID primary keys
    • Timestamptz
    • JSONB metadata
    • Enum types
    • Foreign keys
-
 ## User Types
 1. Platform Owners: System administration
 2. Community Owners: Tenant management

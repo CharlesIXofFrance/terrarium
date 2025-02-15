@@ -1,0 +1,15 @@
+[auth]
+site_url = "http://127.0.0.1:3000"
+additional_redirect_urls = ["http://127.0.0.1:3000"]
+jwt_expiry = 3600
+enable_signup = true
+
+[auth.external.email]
+enabled = true
+double_confirm_changes = true
+enable_confirmations = true
+
+[auth.external.email.mailer]
+site_name = "Terrarium"
+sender_name = "Terrarium"
+external_hosts = ["127.0.0.1"]

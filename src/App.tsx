@@ -1,170 +1,68 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
+import { AuthDebug } from '@/components/auth/AuthDebug';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { useAtom } from 'jotai';
-import { userAtom, userCommunityAtom } from '@/lib/stores/auth';
-import { currentCommunityAtom } from '@/lib/stores/community';
-import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/lib/hooks/useAuth';
 import { SubdomainRouter } from '@/components/routing/SubdomainRouter';
 import { Toaster } from '@/components/ui/atoms/Toaster';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { ErrorBoundary } from '@/components/layout/molecules/ErrorBoundary';
+import { LoadingSpinner } from '@/components/ui/atoms/LoadingSpinner';
+import { ErrorDisplay } from '@/components/ui/atoms/ErrorDisplay';
 import { VerifyCallback } from '@/pages/auth/VerifyCallback';
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      refetchOnWindowFocus: false,
-    },
-  },
-});
+import { authLogger } from '@/lib/utils/logger';
 
 export default function App() {
-  const [, setUser] = useAtom(userAtom);
-  const [, setUserCommunity] = useAtom(userCommunityAtom);
-  const [, setCurrentCommunity] = useAtom(currentCommunityAtom);
-  const [isLoading, setIsLoading] = useState(true);
+  const { user, isLoading, session } = useAuth();
 
   useEffect(() => {
-    let mounted = true;
-
-    const initializeAuth = async () => {
-      try {
-        // Get initial session
-        const {
-          data: { session },
-          error: sessionError,
-        } = await supabase.auth.getSession();
-        if (sessionError) {
-          console.error('Failed to get session:', sessionError);
-          return;
-        }
-
-        if (session?.user && mounted) {
-          // Fetch user profile
-          const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
-
-          if (profileError) {
-            if (profileError.message.includes('Results contain 0 rows')) {
-              // Profile doesn't exist, create it
-              const { data: newProfile, error: createError } = await supabase
-                .from('profiles')
-                .insert([
-                  {
-                    id: session.user.id,
-                    email: session.user.email,
-                    role: 'member',
-                    profile_complete: false,
-                    onboarding_step: 0,
-                  },
-                ])
-                .select()
-                .single();
-
-              if (createError) {
-                console.error('Failed to create profile:', createError);
-                return;
-              }
-
-              setUser({ ...session.user, ...newProfile });
-            } else {
-              console.error('Failed to fetch profile:', profileError);
-              return;
-            }
-          } else {
-            setUser({ ...session.user, ...profile });
-          }
-
-          // If user has a community, fetch it
-          if (profile?.community_id) {
-            const { data: community, error: communityError } = await supabase
-              .from('communities')
-              .select('*')
-              .eq('id', profile.community_id)
-              .single();
-
-            if (communityError) {
-              console.error('Failed to fetch community:', communityError);
-              return;
-            }
-
-            setUserCommunity(community);
-            setCurrentCommunity(community);
-          }
-        }
-      } catch (error) {
-        console.error('Error in auth initialization:', error);
-      } finally {
-        if (mounted) {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    initializeAuth();
-
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state change:', { event, hasSession: !!session });
-
-      if (session?.user && mounted) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
-
-        setUser({ ...session.user, ...profile });
-
-        // If user has a community, fetch it
-        if (profile?.community_id) {
-          const { data: community } = await supabase
-            .from('communities')
-            .select('*')
-            .eq('id', profile.community_id)
-            .single();
-
-          setUserCommunity(community);
-          setCurrentCommunity(community);
-        }
-      } else if (mounted) {
-        setUser(null);
-        setUserCommunity(null);
-        setCurrentCommunity(null);
-      }
-      setIsLoading(false);
+    // Only log when auth state actually changes
+    authLogger.debug('[App] Auth state updated:', {
+      isLoading,
+      hasUser: !!user,
+      hasSession: !!session,
     });
+  }, [user, isLoading, session]);
 
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
-  }, [setUser, setUserCommunity, setCurrentCommunity]);
+  // Enable development tools
+  const isDevelopment = import.meta.env.DEV;
+  const DevTools = isDevelopment
+    ? lazy(() =>
+        import('@/components/development/DevTools').then((m) => ({
+          default: m.DevTools,
+        }))
+      )
+    : () => null;
 
+  // Return the main app structure with routing
   return (
-    <QueryClientProvider client={queryClient}>
-      <Router>
+    <Router>
+      <div data-testid="app-root" className="app-container" role="main">
+        {isDevelopment && <AuthDebug />}
         <ErrorBoundary>
-          {isLoading ? (
-            <div>Loading...</div>
-          ) : (
+          <Suspense
+            fallback={
+              <div className="flex items-center justify-center min-h-screen bg-gray-50">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+                  <p className="mt-4 text-gray-600">Loading application...</p>
+                </div>
+              </div>
+            }
+          >
             <Routes>
-              <Route path="/auth/confirm" element={<VerifyCallback />} />
-              <Route path="/*" element={<SubdomainRouter />} />
+              {/* Public routes that don't require authentication */}
+              <Route path="/auth/callback" element={<VerifyCallback />} />
+
+              {/* All routes are handled by SubdomainRouter which has its own auth logic */}
+              <Route
+                path="/*"
+                element={isLoading ? <LoadingSpinner /> : <SubdomainRouter />}
+              />
             </Routes>
-          )}
-          <Toaster />
+            {isDevelopment && <DevTools />}
+          </Suspense>
         </ErrorBoundary>
-      </Router>
-      <ReactQueryDevtools initialIsOpen={false} />
-    </QueryClientProvider>
+        <Toaster />
+      </div>
+    </Router>
   );
 }

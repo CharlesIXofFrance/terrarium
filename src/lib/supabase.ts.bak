@@ -1,0 +1,468 @@
+import { createClient } from '@supabase/supabase-js';
+import type { Database } from './database.types';
+import type { Session } from '@supabase/supabase-js';
+import type { AuthChangeEvent, User } from '@supabase/supabase-js';
+import { AuthError } from '@supabase/supabase-js';
+import { authLogger } from './utils/logger';
+
+/**
+ * Enhanced Supabase client with support for both browser and Node environments,
+ * including comprehensive error handling, logging, and session management.
+ */
+
+// Get environment variables with test environment support
+const getEnvVar = (key: string): string => {
+  // Check if we're in a test environment
+  const isTestEnv =
+    typeof process !== 'undefined' &&
+    (process.env?.NODE_ENV === 'test' || process.env?.VITEST);
+
+  if (isTestEnv) {
+    // Use local Supabase instance for tests
+    if (key === 'VITE_SUPABASE_URL') {
+      return 'http://127.0.0.1:54321';
+    }
+    if (key === 'VITE_SUPABASE_ANON_KEY') {
+      return 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0';
+    }
+  }
+
+  // Try Vite env first
+  if (typeof import.meta !== 'undefined' && import.meta.env?.[key]) {
+    return import.meta.env[key];
+  }
+
+  // Fallback to process.env if available
+  if (typeof process !== 'undefined' && process.env?.[key]) {
+    return process.env[key]!;
+  }
+
+  // If no value found, throw error
+  throw new Error(`Missing environment variable: ${key}`);
+};
+
+// Validate required environment variables
+const supabaseUrl = getEnvVar('VITE_SUPABASE_URL');
+const supabaseAnonKey = getEnvVar('VITE_SUPABASE_ANON_KEY');
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  const error = new Error('Missing required Supabase environment variables');
+  authLogger.error('Supabase client initialization failed', error);
+  throw error;
+}
+
+// Create storage implementation that works in both browser and Node environments
+const createStorage = () => {
+  const logStorageOperation = (operation: string, key: string, value?: any) => {
+    authLogger.debug(`Storage operation: ${operation}`, {
+      key,
+      valuePresent: !!value,
+      environment: typeof window !== 'undefined' ? 'browser' : 'node',
+    });
+  };
+
+  // Check if we're in a browser environment
+  if (typeof window !== 'undefined') {
+    return {
+      storage: window.localStorage,
+      storageOptions: {
+        getItem: (key: string) => {
+          const item = window.localStorage.getItem(key);
+          logStorageOperation('get', key, item);
+          return item;
+        },
+        setItem: (key: string, value: string) => {
+          logStorageOperation('set', key, value);
+          window.localStorage.setItem(key, value);
+        },
+        removeItem: (key: string) => {
+          logStorageOperation('remove', key);
+          window.localStorage.removeItem(key);
+        },
+      },
+    };
+  }
+
+  // Memory storage for Node environment
+  const memoryStorage: { [key: string]: string } = {};
+  return {
+    storage: {
+      getItem: (key: string) => memoryStorage[key] || null,
+      setItem: (key: string, value: string) => {
+        memoryStorage[key] = value;
+      },
+      removeItem: (key: string) => {
+        delete memoryStorage[key];
+      },
+      clear: () => {
+        Object.keys(memoryStorage).forEach((key) => delete memoryStorage[key]);
+      },
+      length: 0,
+      key: () => null,
+    },
+    storageOptions: {
+      getItem: (key: string) => {
+        const item = memoryStorage[key] || null;
+        logStorageOperation('get', key, item);
+        return item;
+      },
+      setItem: (key: string, value: string) => {
+        logStorageOperation('set', key, value);
+        memoryStorage[key] = value;
+      },
+      removeItem: (key: string) => {
+        logStorageOperation('remove', key);
+        delete memoryStorage[key];
+      },
+    },
+  };
+};
+
+// Initialize storage
+const { storage } = createStorage();
+
+// Custom fetch implementation with retries and logging
+const createCustomFetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+  const maxRetries = 3;
+  let attempt = 0;
+
+  while (attempt < maxRetries) {
+    try {
+      const response = await fetch(input, {
+        ...init,
+        headers: {
+          ...init?.headers,
+          'x-client-info': 'terrarium@1.0.0',
+          'x-custom-timestamp': new Date().toISOString(),
+        },
+      });
+
+      if (!response.ok && attempt < maxRetries - 1) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return response;
+    } catch (error) {
+      attempt++;
+      if (attempt === maxRetries) throw error;
+      await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
+    }
+  }
+  throw new Error('Max retries reached');
+};
+
+/**
+ * Enhanced error handler for auth-related errors
+ * Provides specific handling for common error cases and detailed logging
+ * Reference: https://supabase.com/docs/reference/javascript/auth-api
+ *
+ * @param error - The error object to handle
+ * @returns never - Always throws the error after logging
+ */
+const handleAuthError = (error: AuthError) => {
+  const errorContext = {
+    timestamp: new Date().toISOString(),
+    environment: typeof window !== 'undefined' ? 'browser' : 'node',
+    stack: error.stack,
+    code: error.code,
+    status: error.status,
+    name: error.name,
+    url: typeof window !== 'undefined' ? window.location.href : '',
+    sessionStatus: 'unknown',
+  };
+
+  // Get current session status if possible
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    errorContext.sessionStatus = session ? 'active' : 'none';
+  } catch (e) {
+    errorContext.sessionStatus = 'error';
+  }
+
+  // Check for specific error types with enhanced detection
+  const isRoleError =
+    error.message?.toLowerCase().includes('role') ||
+    error.message?.toLowerCase().includes('platform_admin') ||
+    error.message?.toLowerCase().includes('permission denied');
+  const isPGRST116 =
+    error.code === 'PGRST116' ||
+    error.message?.includes('Results contain 0 rows');
+  const isSessionError =
+    error.message?.toLowerCase().includes('session') ||
+    error.message?.toLowerCase().includes('token') ||
+    error.status === 401;
+
+  // Log error with appropriate context
+  if (isPGRST116) {
+    authLogger.error('Database query returned no rows', {
+      error,
+      code: 'PGRST116',
+      suggestion: 'Verify user profile exists and migrations are applied',
+      stack: error.stack,
+      timestamp: new Date().toISOString(),
+    });
+  } else if (isRoleError) {
+    authLogger.error('Role conversion error during authentication', {
+      error,
+      message: 'Role conversion failed - ensure roles match enum values',
+      hint: 'platform_admin should be converted to admin',
+      stack: error.stack,
+      timestamp: new Date().toISOString(),
+    });
+  } else if (isSessionError) {
+    authLogger.error('Session management error', {
+      error,
+      suggestion: 'Check auth configuration and token refresh settings',
+      stack: error.stack,
+      timestamp: new Date().toISOString(),
+    });
+  } else if (error.status === 401) {
+    authLogger.error('Unauthorized access', {
+      ...errorContext,
+      error,
+      suggestion:
+        'Check if the user is authenticated and has valid credentials',
+    });
+  } else if (error.status === 403) {
+    authLogger.error('Forbidden access', {
+      ...errorContext,
+      error,
+      suggestion: 'Check if the user has the required permissions',
+    });
+  } else if (error.name === 'AuthApiError') {
+    authLogger.error('Supabase Auth API error', {
+      ...errorContext,
+      error,
+      suggestion: 'Check auth configuration and credentials',
+    });
+  } else {
+    authLogger.error('Authentication error', {
+      ...errorContext,
+      error,
+      context: 'Supabase client authentication',
+    });
+  }
+
+  // Always rethrow the error after logging
+  throw error;
+};
+
+// Pre-compute timestamp for headers
+const customTimestamp = new Date().toISOString();
+
+// Create and export the enhanced Supabase client with proper typing
+type AuthState = {
+  session: Session | null;
+  user: Session['user'] | null;
+  loading: boolean;
+  error: Error | null;
+};
+
+type AuthStateListener = (state: AuthState) => void;
+type AuthChangeEvent = 'INITIAL_SESSION' | 'SIGNED_IN' | 'SIGNED_OUT' | 'USER_UPDATED' | 'USER_DELETED' | 'PASSWORD_RECOVERY';
+
+class AuthStateManager {
+  private currentState: AuthState = {
+    session: null,
+    user: null,
+    loading: true,
+    error: null,
+  };
+  private listeners: Set<AuthStateListener> = new Set();
+
+  subscribe(listener: AuthStateListener) {
+    this.listeners.add(listener);
+    // Immediately notify new subscriber of current state
+    listener(this.currentState);
+    return () => this.listeners.delete(listener);
+  }
+
+  private notify() {
+    this.listeners.forEach((listener) => listener(this.currentState));
+  }
+
+  updateState(partial: Partial<AuthState>) {
+    this.currentState = { ...this.currentState, ...partial };
+    this.notify();
+  }
+
+  getState(): AuthState {
+    return this.currentState;
+  }
+}
+
+const authStateManager = new AuthStateManager();
+
+/**
+ * Enhanced Supabase client configured with PKCE flow and proper session handling
+ * @see https://supabase.com/docs/guides/auth/sessions/pkce-flow
+ */
+/**
+ * Enhanced Supabase client configured with PKCE flow and proper session handling
+ * @see https://supabase.com/docs/guides/auth/sessions/pkce-flow
+ */
+export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    flowType: 'pkce',
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true,
+    storage,
+    storageKey: 'sb-terrarium-auth-token',
+    debug: process.env.NODE_ENV === 'development'
+  },
+  global: {
+    headers: {
+      'x-client-info': 'terrarium@1.0.0',
+      'x-client-version': '1.0.0',
+      'x-custom-timestamp': customTimestamp
+    },
+    fetch: createCustomFetch
+  }
+});
+
+// Set up auth state change listener
+const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+  // Only handle specific auth events
+  if (!['INITIAL_SESSION', 'SIGNED_IN', 'SIGNED_OUT', 'USER_UPDATED'].includes(event)) {
+    return;
+  }
+
+  const eventData = {
+    event,
+    hasSession: !!session,
+    userId: session?.user?.id,
+    userEmail: session?.user?.email,
+    timestamp: new Date().toISOString()
+  };
+
+  authLogger.debug('[Supabase] Auth state changed:', eventData);
+
+  try {
+    // Update auth state
+    authStateManager.updateState({
+      session,
+      user: session?.user ?? null,
+      loading: false,
+      error: null
+    });
+
+    // Handle specific events
+    if (event === 'SIGNED_OUT') {
+      // Clear any stored auth data
+      storage.removeItem('sb-terrarium-auth-token');
+    }
+  } catch (error) {
+    authLogger.error('[Supabase] Error handling auth state change:', error);
+    if (error instanceof AuthError) {
+      handleAuthError(error);
+    } else {
+      throw error;
+    }
+  }
+});
+// Error handling for auth state changes
+const handleAuthStateError = (error: unknown) => {
+  if (!(error instanceof Error)) return;
+
+  const isAuthError = (err: Error): err is AuthError => {
+    return err instanceof AuthError || '__isAuthError' in err;
+  };
+
+  const errorContext = {
+    code: isAuthError(error) ? error.code : undefined,
+    status: isAuthError(error) ? error.status : undefined,
+    name: error.name,
+    message: error.message,
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV,
+  };
+
+  authLogger.error('[Supabase] Auth state change error:', errorContext);
+
+  if (isAuthError(error)) {
+    handleAuthError(error);
+  } else {
+    throw error;
+  }
+};
+
+// Export the client for use in other modules
+export { supabase };
+
+
+
+
+
+      // Log all errors with context
+      authLogger.error('[Supabase] Auth error:', errorContext);
+
+      // Handle specific error cases
+      switch (true) {
+        case isAuthError(error) && error.code === 'PGRST116':
+          authLogger.error('[Supabase] Missing database record', {
+            ...errorContext,
+            solution: 'Verify database migrations and RLS policies',
+          });
+          break;
+
+        case isAuthError(error) && error.status === 401:
+          authLogger.error('[Supabase] Unauthorized access', {
+            ...errorContext,
+            solution:
+              'Check if user is authenticated and has valid credentials',
+          });
+          break;
+
+        case isAuthError(error) && error.status === 403:
+          authLogger.error('[Supabase] Forbidden access', {
+            ...errorContext,
+            solution: 'Check if user has required permissions',
+          });
+          break;
+
+        case error.name === 'AuthApiError':
+          authLogger.error('[Supabase] Auth API error', {
+            ...errorContext,
+            solution: 'Check auth configuration and credentials',
+          });
+          break;
+
+        case error.message?.includes('Email not confirmed'):
+          authLogger.warn('[Supabase] User email not confirmed');
+          break;
+
+        case error.message?.includes('Invalid login credentials'):
+          authLogger.warn('[Supabase] Invalid credentials provided');
+          break;
+
+        case error.message?.includes('Email rate limit exceeded'):
+          authLogger.warn('[Supabase] Email rate limit reached');
+          break;
+
+        default:
+          // Pass unexpected errors to global handler
+          if (isAuthError(error)) {
+        handleAuthError(error);
+      } else {
+        authLogger.error('[Supabase] Unexpected error:', error);
+        throw error;
+      }
+      }
+    },
+  },
+  global: {
+    headers: {
+      'x-client-info': 'terrarium@1.0.0',
+      'x-client-version': '1.0.0',
+      'x-custom-timestamp': customTimestamp,
+    },
+    fetch: createCustomFetch,
+  },
+});
+
+// Helper function to check for "no rows" errors
+export const isNoRowsError = (error: unknown): boolean => {
+  if (!error || typeof error !== 'object') return false;
+  return 'message' in error && typeof (error as { message: unknown }).message === 'string' && 
+    (error as { message: string }).message.includes('Results contain 0 rows');
+};

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Loader2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   isLoading?: boolean;
@@ -12,9 +13,11 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     {
       className = '',
       children,
-      isLoading,
+      isLoading = false,
       variant = 'primary',
       size = 'md',
+      disabled,
+      type = 'button',
       ...props
     },
     ref
@@ -40,13 +43,20 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     return (
       <button
         ref={ref}
-        className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${className}`}
-        disabled={isLoading}
+        type={type}
+        className={cn(baseStyles, variants[variant], sizes[size], className)}
+        disabled={isLoading || disabled}
+        aria-busy={isLoading ? 'true' : 'false'}
+        aria-disabled={isLoading || disabled}
         {...props}
       >
-        {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+        {isLoading && (
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+        )}
         {children}
       </button>
     );
   }
 );
+
+Button.displayName = 'Button';

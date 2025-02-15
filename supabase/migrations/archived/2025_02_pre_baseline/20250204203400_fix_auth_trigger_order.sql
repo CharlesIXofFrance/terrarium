@@ -1,0 +1,79 @@
+-- Drop existing trigger
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+
+CREATE OR REPLACE FUNCTION public.handle_auth_user_created()
+RETURNS trigger
+SECURITY DEFINER SET search_path = public
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    default_role public.app_role;
+    debug_msg text;
+BEGIN
+    -- Debug logging
+    debug_msg := format('Auth trigger executing for user %s with metadata %s', NEW.id, NEW.raw_user_meta_data::text);
+    raise log '%', debug_msg;
+
+    -- Set default role based on registration source and metadata
+    default_role := CASE
+        -- Map platform_admin to admin role
+        WHEN NEW.raw_user_meta_data->>'role' = 'platform_admin' THEN 'admin'::public.app_role
+        -- Handle other valid roles
+        WHEN NEW.raw_user_meta_data->>'role' IS NOT NULL 
+             AND NEW.raw_user_meta_data->>'role' IN ('owner', 'admin', 'member', 'employer')
+        THEN (NEW.raw_user_meta_data->>'role')::public.app_role
+        -- Default to member
+        ELSE 'member'::public.app_role
+    END;
+
+    -- Debug logging
+    debug_msg := format('Setting role to %s', default_role);
+    raise log '%', debug_msg;
+
+    -- Create profile
+    INSERT INTO public.profiles (
+        id,
+        email,
+        role,
+        first_name,
+        last_name,
+        avatar_url,
+        username
+    )
+    VALUES (
+        NEW.id,
+        NEW.email,
+        default_role,
+        NEW.raw_user_meta_data->>'first_name',
+        NEW.raw_user_meta_data->>'last_name',
+        NEW.raw_user_meta_data->>'avatar_url',
+        NEW.raw_user_meta_data->>'username'
+    );
+
+    -- Update auth.users role to match profile role
+    UPDATE auth.users 
+    SET raw_user_meta_data = jsonb_set(
+        COALESCE(raw_user_meta_data, '{}'::jsonb),
+        '{role}',
+        to_jsonb(default_role::text)
+    )
+    WHERE id = NEW.id;
+
+    -- Debug logging
+    debug_msg := format('Profile created for user %s with role %s', NEW.id, default_role);
+    raise log '%', debug_msg;
+
+    RETURN NEW;
+EXCEPTION
+    WHEN others THEN
+        -- Debug logging
+        debug_msg := format('Error in auth trigger: %s', SQLERRM);
+        raise log '%', debug_msg;
+        RETURN NEW;
+END;
+$$;
+
+-- Recreate trigger
+CREATE TRIGGER on_auth_user_created
+    AFTER INSERT ON auth.users
+    FOR EACH ROW EXECUTE FUNCTION public.handle_auth_user_created();

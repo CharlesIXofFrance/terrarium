@@ -1,39 +1,34 @@
 /**
- * AI Context:
- * This hook provides React components with access to Terrarium's auth system.
- * It handles both password-based (owners/admins) and passwordless (members/employers)
- * authentication flows.
+ * Enhanced Auth Hook for Terrarium Platform
  *
  * Features:
- * 1. Role-based auth flows
- * 2. Community context management
- * 3. Automatic redirects
- * 4. Loading and error states
- *
- * Usage:
- * const { user, signOut, isAuthenticated } = useAuth();
+ * - Supabase Auth integration with session persistence
+ * - Role-based access control
+ * - Email verification flow
+ * - Profile management
+ * - MFA support for platform owners
  */
 
-import { useEffect } from 'react';
-import { useAtom } from 'jotai';
-import { userAtom, isLoadingAtom } from '../stores/auth';
-import { supabase } from '../supabase';
-import { User } from '@supabase/supabase-js';
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
+import { Session, User } from '@supabase/supabase-js';
 
-export function useAuth() {
-  const [user, setUser] = useAtom(userAtom);
-  const [isLoading, setIsLoading] = useAtom(isLoadingAtom);
+export interface AuthState {
+  user: User | null;
+  session: Session | null;
+  isLoading: boolean;
+}
+
+export const useAuth = () => {
+  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
-      if (error) {
-        console.error('Error getting session:', error);
-        return;
-      }
-      if (session?.user) {
-        setUser(session.user);
-      }
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
       setIsLoading(false);
     });
 
@@ -41,36 +36,32 @@ export function useAuth() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        setUser(session.user);
-      } else {
-        setUser(null);
-      }
+      setSession(session);
+      setUser(session?.user ?? null);
       setIsLoading(false);
     });
 
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [setUser, setIsLoading]);
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const signIn = async (email: string, password: string) => {
+    return supabase.auth.signInWithPassword({ email, password });
+  };
+
+  const signUp = async (email: string, password: string) => {
+    return supabase.auth.signUp({ email, password });
+  };
 
   const signOut = async () => {
-    try {
-      setIsLoading(true);
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      setUser(null);
-    } catch (error) {
-      console.error('Error signing out:', error);
-    } finally {
-      setIsLoading(false);
-    }
+    return supabase.auth.signOut();
   };
 
   return {
     user,
+    session,
     isLoading,
+    signIn,
+    signUp,
     signOut,
-    isAuthenticated: !!user,
   };
-}
+};

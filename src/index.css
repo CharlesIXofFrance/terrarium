@@ -28,9 +28,36 @@
     --radius: 0.5rem;
   }
 
+  * {
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+
+  html, body {
+    min-height: 100vh;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    display: block !important;
+  }
+
+  #root {
+    display: block !important;
+    min-height: 100vh !important;
+    height: 100vh !important;
+    width: 100% !important;
+    border: 4px solid red !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: static !important;
+    z-index: 9999 !important;
+    background: white !important;
+  }
+
   body {
     @apply bg-[#F3F4F6] text-[#1B262C] antialiased text-[17px];
     font-family: 'Roboto', sans-serif;
+    min-height: 100vh;
   }
 
   h1,

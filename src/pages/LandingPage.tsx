@@ -101,7 +101,7 @@ export function LandingPage() {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen" data-testid="landing-page">
       <Navbar onDashboardClick={handleDashboardClick} />
       <Hero onGetStarted={handleDashboardClick} />
       <Features />
